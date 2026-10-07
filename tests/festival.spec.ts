@@ -15,9 +15,9 @@ test("arrival, home sections, timeline tabs, and real links work", async ({ page
   await arrive(page);
   await expect(page.locator("#hero-title")).toContainText("TECHNIKA");
   await page.getByRole("tab", { name: /DAY II ·/ }).click();
-  await expect(page.getByRole("tabpanel")).toContainText("The Triwizard Spellathon");
+  await expect(page.getByRole("tabpanel", { name: /DAY II ·/ })).toContainText("The Triwizard Spellathon");
   await page.getByRole("tab", { name: /DAY II ·/ }).press("ArrowRight");
-  await expect(page.getByRole("tabpanel")).toContainText("The Yule Ball");
+  await expect(page.getByRole("tabpanel", { name: /DAY III ·/ })).toContainText("The Yule Ball");
   for (const id of ["about", "campus", "sponsors"]) {
     await page.locator(`#${id}`).scrollIntoViewIfNeeded();
     await expect(page.locator(`#${id} h2`)).toBeVisible();
@@ -34,8 +34,8 @@ test("every themed portal is readable, images load, and layout fits", async ({ p
     await expect(page.locator(route === "/" ? ".hero-details" : ".inner-hero")).toHaveCSS("opacity", "1");
     if (route !== "/") await expect(page.locator(".soon-badge")).toBeVisible();
     await page.evaluate(async () => { await document.fonts.ready; await Promise.all([...document.images].filter((img) => img.loading !== "lazy").map((img) => img.decode().catch(() => {}))); });
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
-    expect(overflow, `${route} must fit ${testInfo.project.name}`).toBe(false);
+    const width = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(width, `${route} must fit ${testInfo.project.name}`).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
     const broken = await page.evaluate(() => [...document.images].filter((img) => img.complete && img.naturalWidth === 0).map((img) => img.src));
     expect(broken).toEqual([]);
     await page.screenshot({ path: `test-results/${testInfo.project.name}-${route === "/" ? "home" : route.slice(1)}.png`, scale: "css" });
@@ -103,7 +103,7 @@ test("reduced motion and narrow phone screens remain usable", async ({ page }) =
   for (const route of ["/", "/registrations", "/members", "/delegate", "/alumni", "/contact"]) {
     await page.goto(route);
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), route).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth), route).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
   }
 });
 

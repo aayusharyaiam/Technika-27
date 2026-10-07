@@ -4,14 +4,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, ChevronDown, Menu, X } from "lucide-react";
+import { ArrowUpRight, ChevronDown, Menu, X, UserRound } from "lucide-react";
 import { navigation } from "@/lib/festival";
+import { useAuth } from "./auth-provider";
+import { useHouse } from "./house-provider";
 
 export function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const { house, theme } = useHouse();
 
   useEffect(() => {
     if (!open) return;
@@ -50,12 +54,14 @@ export function Header() {
             </div>}
           </div>)}
         </div>
-        <Link href="/registrations" className="button button-gold nav-cta">Register now <ArrowUpRight size={13} /></Link>
+        <Link href={user ? "/account" : "/login"} className="nav-account" aria-label={user ? "My account" : "Sign in"}><UserRound size={15}/><span>{user ? "Common room" : "Sign in"}</span>{house !== "default" && <small>{theme.initial}</small>}</Link>
+        <Link href={user ? "/registrations" : "/signup"} className="button button-gold nav-cta">{user ? "Register now" : "Join the magic"} <ArrowUpRight size={13} /></Link>
         <button ref={menuButton} className="mobile-menu-button" aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(!open)}>{open ? <X size={21} /> : <Menu size={21} />}</button>
       </nav>
       {open && <div ref={menuRef} id="mobile-navigation" className="mobile-navigation" data-lenis-prevent>
         <span className="eyebrow">The Marauder’s Map</span>
         {navigation.map((item, index) => <Link href={item.href} key={item.href} className={pathname === item.href ? "active" : ""} aria-current={pathname === item.href ? "page" : undefined} onClick={() => setOpen(false)}><span><small>0{index + 1}</small>{item.label}</span><ArrowUpRight size={19} /></Link>)}
+        <Link href={user ? "/account" : "/login"} onClick={() => setOpen(false)}><span><UserRound size={17}/>{user ? "My common room" : "Sign in / Sign up"}</span><ArrowUpRight size={19}/></Link>
         <p>All paths lead to a little magic.</p>
       </div>}
     </header>

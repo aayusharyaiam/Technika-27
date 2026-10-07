@@ -8,6 +8,7 @@ import { ArrowRight, Sparkles, WandSparkles } from "lucide-react";
 import { AmbientParticles, Divider } from "./ornaments";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { MagicInteractions } from "./magic-interactions";
+import { WandCursor } from "./wand-cursor";
 
 const MagicContext = createContext({ enabled: true, ready: false });
 export const useMagic = () => useContext(MagicContext);
@@ -25,6 +26,11 @@ function WandSparks({ enabled }: { enabled: boolean }) {
     let frame = 0;
     let lastSpawn = 0;
     const finePointer = window.matchMedia("(pointer: fine)");
+    let accent = "#ffd893";
+    const getAccent = () => { accent = getComputedStyle(document.documentElement).getPropertyValue("--gold").trim() || "#ffd893"; };
+    const palette = new MutationObserver(getAccent);
+    palette.observe(document.documentElement, { attributes: true, attributeFilter: ["data-house"] });
+    getAccent();
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio, 2);
       canvas.width = window.innerWidth * dpr;
@@ -37,7 +43,7 @@ function WandSparks({ enabled }: { enabled: boolean }) {
       for (const p of sparks) {
         p.age++; p.x += p.vx; p.y += p.vy; p.vy += .025;
         ctx.globalAlpha = Math.max(0, (1 - p.age / p.life) * .9);
-        ctx.fillStyle = p.blue ? "#b8e3ff" : "#ffd893";
+        ctx.fillStyle = p.blue ? "#b8e3ff" : accent;
         ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 7;
         ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
       }
@@ -62,7 +68,7 @@ function WandSparks({ enabled }: { enabled: boolean }) {
     window.addEventListener("resize", resize);
     window.addEventListener("pointermove", move, { passive: true });
     window.addEventListener("pointerdown", click, { passive: true });
-    return () => { cancelAnimationFrame(frame); ctx.clearRect(0, 0, canvas.width, canvas.height); window.removeEventListener("resize", resize); window.removeEventListener("pointermove", move); window.removeEventListener("pointerdown", click); };
+    return () => { palette.disconnect(); cancelAnimationFrame(frame); ctx.clearRect(0, 0, canvas.width, canvas.height); window.removeEventListener("resize", resize); window.removeEventListener("pointermove", move); window.removeEventListener("pointerdown", click); };
   }, [enabled]);
   return <canvas className="wand-sparks" ref={canvasRef} aria-hidden="true" />;
 }
@@ -101,7 +107,7 @@ function LoadingScreen({ dismiss }: { dismiss: () => void }) {
       resourcesReady = true; finishWhenReady();
     });
     // Slow or unavailable imagery must never trap a visitor behind the introduction.
-    const timeout = window.setTimeout(() => { resourcesReady = true; finishWhenReady(); }, 6500);
+    const timeout = window.setTimeout(complete, 6500);
     skip.current = complete;
     return () => {
       active = false;
@@ -158,6 +164,7 @@ export function Experience({ children }: { children: React.ReactNode }) {
     <div className="experience-content" inert={loading || undefined}>{children}</div>
     <AnimatePresence>{loading && <LoadingScreen dismiss={dismiss} />}</AnimatePresence>
     <WandSparks enabled={enabled} />
+    <WandCursor/>
     <MagicInteractions />
     {!loading && <><div className="scroll-progress" aria-hidden="true" /><button className={`magic-toggle ${enabled ? "" : "magic-disabled"}`} aria-label={enabled ? "Pause magical effects" : "Enable magical effects"} aria-pressed={enabled} onClick={() => setPreference(enabled ? "off" : "on")} title={enabled ? "Pause magical effects" : "Enable magical effects"}>{enabled ? <WandSparkles size={17} /> : <Sparkles size={17} />}<span>{enabled ? "Magic on" : "Enable magic"}</span></button></>}
   </MagicContext.Provider></MotionConfig>;

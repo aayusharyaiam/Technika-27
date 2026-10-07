@@ -7,6 +7,7 @@ import { ArrowDown, ArrowUpRight, BookOpen, MapPin, Sparkles } from "lucide-reac
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { AmbientParticles, SnitchArtwork } from "./ornaments";
 import { useMagic } from "./experience";
+import { HouseBanners } from "./house-banners";
 
 function GoldenSnitch() {
   const realmRef = useRef<HTMLDivElement>(null);
@@ -124,6 +125,7 @@ export function Hero() {
   return <section ref={ref} className="hero" aria-labelledby="hero-title">
     <div className="hero-castle"><Image src="/images/hogwarts.webp" alt="Moonlit Hogwarts castle above the misty Black Lake, with floating golden candles" fill priority sizes="100vw" quality={90} /></div>
     <div className="hero-shade" /><div className="hero-moon-aura" aria-hidden="true" />
+    <div className="castle-house-light" aria-hidden="true"/><HouseBanners/>
     <AmbientParticles count={46} />
     <div className="floating-candles" aria-hidden="true">{[9, 18, 29, 72, 83, 93].map((left, i) => <i key={left} style={{ left: `${left}%`, top: `${23 + (i * 13) % 38}%`, animationDelay: `${i * -.8}s` }}><span /></i>)}</div>
     <GoldenSnitch />
