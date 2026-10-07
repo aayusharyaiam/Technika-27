@@ -1,0 +1,23 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import { BookOpen, Droplets, LockKeyhole } from "lucide-react";
+import { BackLink, Countdown, SoonBadge } from "@/components/coming-soon";
+import { Divider, Eyebrow } from "@/components/ornaments";
+import { Reveal } from "@/components/reveal";
+
+export const metadata: Metadata = { title: "Alumni — The Hall of Legacies" };
+
+const memories = [
+  { title: "The Goblet of Silicon", type: "Ingenuity preserved", description: "The late nights. The first working prototype. The cheers that made it all worthwhile.", image: 1, color: "blue" },
+  { title: "The Celestial Foundry", type: "Possibility remembered", description: "Ideas that took flight. Friendships that found their orbit. A little brilliance that never faded.", image: 2, color: "gold" },
+  { title: "The Alchemical Spark", type: "Creativity immortalised", description: "The experiments, the breakthroughs, and the people who made every moment extraordinary.", image: 3, color: "crimson" },
+];
+
+export default function AlumniPage() {
+  return <div className="inner-page alumni-page"><div className="shell">
+    <div className="alumni-hero"><Reveal className="inner-hero"><Eyebrow>Sanctum of the ancient order</Eyebrow><h1>The Hall of Legacies<br /><em>unseals soon.</em></h1><p>You left more than footsteps in these halls.<br />You left a little magic. It’s time to come home.</p><SoonBadge>Alumni chapter coming soon</SoonBadge></Reveal><Reveal delay={.15} className="alumni-clock"><Countdown compact /></Reveal></div>
+    <Reveal className="legacy-quote"><span>“</span><p>Once part of the story.<br /><em>Always part of the magic.</em></p><BookOpen size={28} strokeWidth={1} /></Reveal>
+    <section id="memories" className="memories-section"><Reveal className="section-heading-row"><div><Eyebrow>Pensieve archives</Eyebrow><h2>Some memories <em>never lose their magic.</em></h2></div><p>A glimpse into our enchanted archive.<br />The real stories will be unveiled soon.</p></Reveal><div className="memory-grid">{memories.map((memory, i) => <Reveal key={memory.title} delay={i * .1}><article className={`memory-card accent-${memory.color}`}><div className="memory-image"><Image src={`/images/memory-${memory.image}.webp`} fill sizes="(max-width: 768px) 100vw, 33vw" alt={memory.title === "The Goblet of Silicon" ? "An enchanted blue chalice in a Gothic library" : memory.title === "The Celestial Foundry" ? "Golden celestial astrolabes in a vaulted observatory" : "Glowing potions and an ancient cauldron in an alchemy workshop"} /><span><Droplets size={11} /> MEMORY VIAL 0{i + 1}</span></div><div className="memory-copy"><span>{memory.type}</span><h3>{memory.title}</h3><p>{memory.description}</p><small><LockKeyhole size={11} />Archive sealed · coming soon</small></div></article></Reveal>)}</div></section>
+    <Reveal className="alumni-ledger"><span className="ledger-star">✧</span><Eyebrow>The tome of everlasting kinship</Eyebrow><h2>Old friends.<br /><em>New chapters.</em></h2><p>Alumni reunions, mentorship opportunities, and a celebration of the people who helped write the Technika story are being prepared. Your chapter is far from over.</p><Divider /><BackLink /></Reveal>
+  </div></div>;
+}
