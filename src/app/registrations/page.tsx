@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import { createPageMetadata } from "@/lib/seo";
+import { BreadcrumbsSchema } from "@/components/structured-data";
 import Image from "next/image";
 import { LockKeyhole, Shield, Sparkles } from "lucide-react";
 import { BackLink, CalendarButton, Countdown, SoonBadge } from "@/components/coming-soon";
@@ -6,10 +7,10 @@ import { Divider, Eyebrow } from "@/components/ornaments";
 import { Reveal } from "@/components/reveal";
 import { houses } from "@/lib/festival";
 
-export const metadata: Metadata = { title: "Registrations — The Sorting Ceremony" };
+export const metadata = createPageMetadata("/registrations");
 
 export default function RegistrationsPage() {
-  return <div className="inner-page registration-page"><div className="inner-backdrop"><Image src="/images/great-hall-1.webp" fill sizes="100vw" alt="" priority /></div><div className="shell">
+  return <div className="inner-page registration-page"><BreadcrumbsSchema path="/registrations" /><div className="inner-backdrop"><Image src="/images/great-hall-1.webp" fill sizes="100vw" alt="" priority /></div><div className="shell">
     <Reveal className="inner-hero centered"><Eyebrow>Decree of the sorting ceremony</Eyebrow><h1>The Great Hall gates<br />will soon <em>unseal.</em></h1><p>The Sorting Hat is deliberating. Your place in the story is being prepared.<br className="desktop-break" /> Bring your curiosity. We’ll bring the magic.</p><SoonBadge>Registrations coming soon</SoonBadge></Reveal>
     <Reveal className="registration-clock"><Countdown /><div className="sorting-quote"><Sparkles size={20} /><blockquote>“It is our choices that show what we truly are,<br />far more than our abilities.”<cite>Choose your quest. Find your house.</cite></blockquote></div></Reveal>
     <section className="houses-section" id="houses"><Reveal className="section-heading-row"><div><Eyebrow>House guild alignments</Eyebrow><h2>Four houses. <em>One extraordinary journey.</em></h2></div><p>Different strengths. A shared spirit.<br />Which hall will claim you?</p></Reveal><div className="house-grid">{houses.map((house, i) => <Reveal delay={i * .08} key={house.name}><article className="house-card" style={{ "--house-color": house.color } as React.CSSProperties}><span className="house-watermark">{house.rune}</span><div className="house-seal"><Shield size={22} strokeWidth={1.25} /><b>{house.rune}</b></div><span className="house-track">{house.track}</span><h3>House {house.name}</h3><h4>{house.title}</h4><p>{house.description}</p><span className="house-locked"><LockKeyhole size={11} />Gate sealed</span></article></Reveal>)}</div></section>

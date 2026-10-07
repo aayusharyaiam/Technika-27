@@ -1,14 +1,15 @@
-import type { Metadata } from "next";
+import { createPageMetadata } from "@/lib/seo";
+import { BreadcrumbsSchema } from "@/components/structured-data";
 import { ScrollText, Sparkles } from "lucide-react";
 import { BackLink, SoonBadge } from "@/components/coming-soon";
 import { OrderGallery } from "@/components/order-gallery";
 import { Divider, Eyebrow } from "@/components/ornaments";
 import { Reveal } from "@/components/reveal";
 
-export const metadata: Metadata = { title: "Members — The Order of Technika" };
+export const metadata = createPageMetadata("/members");
 
 export default function MembersPage() {
-  return <div className="inner-page members-page"><div className="shell">
+  return <div className="inner-page members-page"><BreadcrumbsSchema path="/members" /><div className="shell">
     <Reveal className="inner-hero centered"><Eyebrow>Ministry of revels & arcane logistics</Eyebrow><span className="inner-overline">The inner sanctum</span><h1>The Order of <em>Technika.</em></h1><p>Behind every extraordinary moment is a rather extraordinary crew.<br className="desktop-break" /> Meet the minds weaving the magic of Technika ’27. Soon.</p><SoonBadge>The roster is under an enchanted veil</SoonBadge><Divider /></Reveal>
     <Reveal className="order-decree"><div className="notice-seal"><ScrollText size={21} /></div><div><span className="eyebrow">Classified enchantment</span><h3>The Order shall be unveiled soon.</h3><p>The portraits are in place. Their stories are still being written.</p></div><span className="decree-number">DECREE<br /><b>VII</b></span></Reveal>
     <Reveal><OrderGallery /></Reveal>

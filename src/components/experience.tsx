@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "motion/react";
 import Lenis from "lenis";
 import { ArrowRight, Sparkles, WandSparkles } from "lucide-react";
 import { AmbientParticles, Divider } from "./ornaments";
+import { gsap, ScrollTrigger } from "@/lib/gsap";
+import { MagicInteractions } from "./magic-interactions";
 
 const MagicContext = createContext({ enabled: true, ready: false });
 export const useMagic = () => useContext(MagicContext);
@@ -66,6 +68,50 @@ function WandSparks({ enabled }: { enabled: boolean }) {
 }
 
 function LoadingScreen({ dismiss }: { dismiss: () => void }) {
+  const [progress, setProgress] = useState(0);
+  const skip = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    const counter = { value: 0 };
+    let baselineReady = false;
+    let resourcesReady = false;
+    let completing = false;
+    let active = true;
+    let last = -1;
+    let closeTimer = 0;
+    const paint = () => {
+      const value = Math.round(counter.value);
+      if (value !== last && active) { last = value; setProgress(value); }
+    };
+    const complete = () => {
+      if (completing || !active) return;
+      completing = true;
+      gsap.killTweensOf(counter);
+      gsap.to(counter, { value: 100, duration: .55, ease: "power2.out", onUpdate: paint, onComplete: () => {
+        closeTimer = window.setTimeout(dismiss, 450);
+      } });
+    };
+    const finishWhenReady = () => { if (baselineReady && resourcesReady) complete(); };
+    gsap.to(counter, { value: 88, duration: 2.4, ease: "power2.inOut", onUpdate: paint, onComplete: () => {
+      baselineReady = true; finishWhenReady();
+    } });
+    const criticalImages = [...document.images].filter((image) => image.loading !== "lazy");
+    Promise.all([document.fonts.ready, ...criticalImages.map((image) => image.decode().catch(() => {}))]).then(() => {
+      if (!active) return;
+      resourcesReady = true; finishWhenReady();
+    });
+    // Slow or unavailable imagery must never trap a visitor behind the introduction.
+    const timeout = window.setTimeout(() => { resourcesReady = true; finishWhenReady(); }, 6500);
+    skip.current = complete;
+    return () => {
+      active = false;
+      gsap.killTweensOf(counter);
+      window.clearTimeout(timeout);
+      window.clearTimeout(closeTimer);
+      skip.current = null;
+    };
+  }, [dismiss]);
+
   return <motion.div className="loading-screen" role="dialog" aria-modal="true" aria-labelledby="loading-title" initial={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.04, filter: "blur(8px)" }} transition={{ duration: .8, ease: "easeInOut" }}>
     <AmbientParticles count={28} />
     <div className="loader-map" aria-hidden="true"><span>✧</span><span>✦</span><span>✧</span></div>
@@ -74,9 +120,10 @@ function LoadingScreen({ dismiss }: { dismiss: () => void }) {
       <div className="loader-crest"><i /><Image src="/images/crest.webp" width={200} height={200} alt="Technika 27 Golden Snitch crest" priority /></div>
       <h2 id="loading-title">“I solemnly swear that<br />I am up to no good.”</h2>
       <Divider />
-      <p>Gathering the stars. Lighting the castle.<br />Preparing your extraordinary adventure.</p>
-      <div className="loading-progress" role="progressbar" aria-label="Preparing the magical experience"><motion.span initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 2.3, ease: "easeInOut" }} /></div>
-      <button className="button button-gold" onClick={dismiss} autoFocus>Enter Hogwarts <ArrowRight size={15} /></button>
+      <p className="loading-phase">{progress < 30 ? "Gathering the stars…" : progress < 65 ? "Lighting the castle…" : progress < 100 ? "Weaving your adventure…" : "The magic is ready."}</p>
+      <div className="loading-counter" aria-hidden="true"><span>{String(progress).padStart(2, "0")}</span><small>%</small></div>
+      <div className="loading-progress" role="progressbar" aria-label="Preparing the magical experience" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{ transform: `scaleX(${progress / 100})` }} /></div>
+      <button className="button button-gold" onClick={() => skip.current?.()} autoFocus>Enter Hogwarts <ArrowRight size={15} /></button>
       <small>TECHNIKA ’27 · BIT PATNA</small>
     </motion.div>
   </motion.div>;
@@ -84,14 +131,10 @@ function LoadingScreen({ dismiss }: { dismiss: () => void }) {
 
 export function Experience({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
-  const [effects, setEffects] = useState(true);
+  const [preference, setPreference] = useState<"system" | "on" | "off">("system");
   const reducedMotion = useReducedMotion();
-  const enabled = effects && !reducedMotion;
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setLoading(false), 2800);
-    return () => window.clearTimeout(timer);
-  }, []);
+  const enabled = preference === "on" || (preference === "system" && !reducedMotion);
+  const dismiss = useCallback(() => setLoading(false), []);
 
   useEffect(() => {
     if (!loading) return;
@@ -103,14 +146,19 @@ export function Experience({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     document.documentElement.dataset.magic = enabled ? "on" : "off";
     if (!enabled || loading) return;
-    const lenis = new Lenis({ duration: 1.15, smoothWheel: true, syncTouch: false, anchors: { offset: -105 }, autoRaf: true });
-    return () => lenis.destroy();
+    const lenis = new Lenis({ duration: 1.3, smoothWheel: true, syncTouch: false, anchors: { offset: -105 } });
+    const tick = (time: number) => lenis.raf(time * 1000);
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add(tick);
+    gsap.ticker.lagSmoothing(0);
+    return () => { lenis.off("scroll", ScrollTrigger.update); gsap.ticker.remove(tick); lenis.destroy(); };
   }, [enabled, loading]);
 
-  return <MotionConfig reducedMotion="user"><MagicContext.Provider value={{ enabled, ready: !loading }}>
+  return <MotionConfig reducedMotion={enabled ? "never" : "always"}><MagicContext.Provider value={{ enabled, ready: !loading }}>
     <div className="experience-content" inert={loading || undefined}>{children}</div>
-    <AnimatePresence>{loading && <LoadingScreen dismiss={() => setLoading(false)} />}</AnimatePresence>
+    <AnimatePresence>{loading && <LoadingScreen dismiss={dismiss} />}</AnimatePresence>
     <WandSparks enabled={enabled} />
-    {!loading && <button className="magic-toggle" aria-label={effects ? "Pause magical effects" : "Enable magical effects"} aria-pressed={effects} onClick={() => setEffects(!effects)} title={effects ? "Pause magical effects" : "Enable magical effects"}>{effects ? <WandSparkles size={17} /> : <Sparkles size={17} />}<span>{effects ? "Magic on" : "Magic paused"}</span></button>}
+    <MagicInteractions />
+    {!loading && <><div className="scroll-progress" aria-hidden="true" /><button className={`magic-toggle ${enabled ? "" : "magic-disabled"}`} aria-label={enabled ? "Pause magical effects" : "Enable magical effects"} aria-pressed={enabled} onClick={() => setPreference(enabled ? "off" : "on")} title={enabled ? "Pause magical effects" : "Enable magical effects"}>{enabled ? <WandSparkles size={17} /> : <Sparkles size={17} />}<span>{enabled ? "Magic on" : "Enable magic"}</span></button></>}
   </MagicContext.Provider></MotionConfig>;
 }

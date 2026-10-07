@@ -6,6 +6,7 @@ async function arrive(page: Page, path = "/") {
   await page.keyboard.press("Enter");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.locator("h1")).toBeVisible();
+  if (path === "/") await expect(page.locator(".hero-details")).toHaveCSS("opacity", "1");
 }
 
 test("arrival, home sections, timeline tabs, and real links work", async ({ page }) => {
@@ -104,4 +105,98 @@ test("reduced motion and narrow phone screens remain usable", async ({ page }) =
     await expect(page.getByRole("dialog")).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), route).toBe(true);
   }
+});
+
+test("the loading sequence reaches 100 before revealing the website", async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = window as unknown as { loaderValues: number[] };
+    state.loaderValues = [];
+    new MutationObserver(() => {
+      const bar = document.querySelector('[role="progressbar"]');
+      if (!bar) return;
+      const value = Number(bar.getAttribute("aria-valuenow"));
+      if (state.loaderValues.at(-1) !== value) state.loaderValues.push(value);
+    }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ["aria-valuenow"] });
+  });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const values = await page.evaluate(() => (window as unknown as { loaderValues: number[] }).loaderValues);
+  expect(values[0]).toBe(0);
+  expect(values.at(-1)).toBe(100);
+  expect(values.length).toBeGreaterThan(5);
+  expect(values).toEqual([...values].sort((a, b) => a - b));
+  await expect(page.locator(".hero-details")).toHaveCSS("opacity", "1");
+});
+
+test("GSAP castle parallax responds to scrolling", async ({ page }) => {
+  await arrive(page);
+  const before = await page.locator(".hero-castle").evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m42);
+  await page.evaluate(() => window.scrollTo({ top: 420, behavior: "instant" }));
+  await expect.poll(() => page.locator(".hero-castle").evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m42)).toBeGreaterThan(before + 50);
+});
+
+test("the autonomous snitch passes both in front of and behind the title", async ({ page }) => {
+  await arrive(page);
+  const snitch = page.locator(".flying-snitch");
+  await expect(snitch).toBeVisible();
+  const box = await snitch.boundingBox();
+  expect(box?.width).toBeGreaterThan(90);
+  await expect(page.locator(".snitch-realm")).toHaveAttribute("data-depth", "front");
+  await expect(page.locator(".snitch-realm")).toHaveAttribute("data-depth", "behind", { timeout: 16000 });
+});
+
+test("explicit motion controls can override a reduced-motion system preference", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await arrive(page);
+  await expect(page.getByRole("button", { name: "Enable magical effects" })).toHaveAttribute("aria-pressed", "false");
+  await page.getByRole("button", { name: "Enable magical effects" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-magic", "on");
+  const first = await page.locator(".flying-snitch").getAttribute("style");
+  await expect.poll(() => page.locator(".flying-snitch").getAttribute("style")).not.toBe(first);
+  expect(await page.locator(".snitch-wing-left").evaluate((el) => getComputedStyle(el).animationDuration)).toBe("0.15s");
+});
+
+test("cards and buttons have visible hover microinteractions", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop");
+  await arrive(page);
+  const button = page.locator(".hero-actions .button-gold");
+  const before = await button.evaluate((el) => getComputedStyle(el, "::after").transform);
+  await button.hover();
+  await expect.poll(() => button.evaluate((el) => getComputedStyle(el, "::after").transform)).not.toBe(before);
+  const card = page.locator(".event-card").first();
+  await card.scrollIntoViewIfNeeded();
+  await card.hover();
+  await expect(card).toHaveClass(/magic-card-active/);
+  await expect.poll(() => card.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m42)).toBeLessThan(-3);
+  await page.getByRole("tab", { name: /DAY II ·/ }).click();
+  const nextCard = page.locator(".event-card").first();
+  await expect(nextCard).toContainText("The Triwizard Spellathon");
+  await nextCard.hover();
+  await expect(nextCard).toHaveClass(/magic-card-active/);
+});
+
+test("public routes ship unique server-side SEO and crawler documents", async ({ request }) => {
+  const titles: string[] = [];
+  for (const route of ["/", "/registrations", "/members", "/delegate", "/alumni", "/contact"]) {
+    const response = await request.get(route);
+    expect(response.ok()).toBe(true);
+    const html = await response.text();
+    const title = html.match(/<title>([^<]+)<\/title>/)?.[1];
+    expect(title).toBeTruthy();
+    titles.push(title!);
+    expect(html).toContain('name="description"');
+    expect(html).toContain('rel="canonical"');
+    expect(html).toContain('property="og:title"');
+    expect(html).toContain('name="twitter:card"');
+    expect(html).toContain('id="festival-site-schema"');
+    if (route !== "/") expect(html).toContain('id="page-breadcrumbs"');
+  }
+  expect(new Set(titles).size).toBe(6);
+  const robots = await request.get("/robots.txt");
+  expect(await robots.text()).toContain("Allow: /");
+  expect(await robots.text()).toContain("Sitemap:");
+  const sitemap = await request.get("/sitemap.xml");
+  expect((await sitemap.text()).match(/<loc>/g)).toHaveLength(6);
+  const socialImage = await request.get("/images/social-card.jpg");
+  expect(socialImage.headers()["content-type"]).toContain("image/jpeg");
 });

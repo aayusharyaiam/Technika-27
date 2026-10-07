@@ -1,6 +1,6 @@
 # Technika ’27 · BIT Patna
 
-A cinematic, dark Wizarding World–inspired festival website built from the supplied **Arcane Luminary / Stitch** designs. Next.js App Router, TypeScript, Tailwind CSS 4, Motion, and Lenis.
+A cinematic, dark Wizarding World–inspired festival website built from the supplied **Arcane Luminary / Stitch** designs. Next.js App Router, TypeScript, Tailwind CSS 4, **GSAP + ScrollTrigger + MotionPathPlugin**, Motion, and Lenis.
 
 ## Run locally
 
@@ -33,13 +33,15 @@ All five secondary pages intentionally announce **coming soon**. The custom 404 
 
 ## Magical details
 
-- Full-screen, automatically dismissing loading experience; “Enter Hogwarts” also skips it.
-- Castle and mist scroll parallax, drifting candles, fireflies, scroll reveals.
-- The Golden Snitch follows a time-driven flight path; it does **not** track the mouse. Its layer changes relative to the title, so the actual opaque letter shapes hide it on the background pass.
+- Full-screen loading experience with a **0–100 percentage counter**, progress bar, resource readiness, and automatic completion. “Enter Hogwarts” accelerates the counter to 100.
+- GSAP orchestrates the post-loader castle zoom, staggered 3D title-letter reveal, subtitle, buttons, and supporting details.
+- Multi-speed ScrollTrigger parallax for the castle, moonlight, mist, candles, Technika crest, and Great Hall.
+- A larger, clearly visible Golden Snitch follows a **GSAP motion path**; it does **not** track the mouse. Its layer changes relative to the title, so the actual opaque letter shapes hide it on the background pass. Flight pauses when the hero is outside the viewport or the browser tab is hidden.
+- Scroll-triggered reveals with staggered cards, 3D card tilts, pointer-position gold highlights, button shine, animated navigation underlines, route-transition veils, and a scroll progress indicator.
 - Native Elder Wand cursor for fine-pointer devices, subtle spark trail, and click/tap spell bursts.
-- Lenis smooth wheel scrolling, native touch scrolling, gold scrollbars.
+- Lenis smooth wheel scrolling synchronised to the GSAP ticker and ScrollTrigger, native touch scrolling, gold scrollbars.
 - Responsive floating navigation and keyboard-accessible mobile menu, timeline tabs, filters, and native accordion FAQs.
-- The floating wand button pauses ambient magic. System reduced-motion preferences disable parallax, smooth scrolling, and autonomous flight.
+- The floating wand button reflects the **actual** motion state. System reduced-motion preferences are honoured initially; “Enable magical effects” explicitly turns on the complete animation experience, including CSS microanimations.
 - “Save the date” downloads a valid `.ics` calendar file; it does not submit a registration or email signup.
 
 ## Content & assets
@@ -52,6 +54,18 @@ The original references are preserved in `image refs/`. Optimised versions of th
 
 `npm run assets` regenerates assets from the reference folder (requires `curl` and network access for the hosted images and fonts). `npm run assets -- --fonts-only` only refreshes fonts. EB Garamond and Outfit are provided under the included SIL Open Font Licenses.
 
+`npm run assets:social` regenerates the branded 1200×630 social preview and the Apple touch icon locally.
+
+## SEO & crawl management
+
+- Every page has a unique title, description, canonical URL, Open Graph card, and Twitter preview through `src/lib/seo.ts`.
+- `/sitemap.xml` contains the six public pages. `/robots.txt` allows production crawling and advertises the sitemap. Vercel preview environments are marked `noindex` and disallow crawling.
+- Server-rendered JSON-LD describes the website, festival organisation, BIT Patna, and page breadcrumbs.
+- The provisional dates are **not** advertised as a confirmed Event rich result.
+- Set `NEXT_PUBLIC_SITE_URL` in Vercel to the final public origin, especially for a custom domain. Otherwise Vercel’s production URL is used automatically.
+- Optionally set `GOOGLE_SITE_VERIFICATION` to your Search Console HTML verification token, then submit the production `/sitemap.xml` URL in Search Console.
+- Keep page descriptions, content, dates, and the sponsor list current when the festival details are confirmed.
+
 ## Checks
 
 ```bash
@@ -62,7 +76,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The Playwright suite checks desktop/mobile routes, overflow, image loading, navigation, schedule tabs, filters, calendar download, FAQs, autonomous motion, and reduced-motion support. Screenshots are generated under ignored `test-results/`.
+The Playwright suite checks desktop/mobile routes, overflow, image loading, navigation, schedule tabs, filters, calendar downloads, FAQs, 0–100 loading, actual parallax, autonomous snitch depth changes, hover interactions, reduced-motion overrides, and server-rendered SEO/robots/sitemap output. Screenshots are generated under ignored `test-results/`.
 
 ## Deployment
 
