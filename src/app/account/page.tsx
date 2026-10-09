@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { AccountRoom } from "@/components/account-room";
+import { createPrivatePageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "My Account — Your Common Room", robots: { index: false, follow: false } };
+export const metadata = createPrivatePageMetadata("/account", "My account | Technika ’27", "Your private Technika ’27 account room.");
 export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {
