@@ -1,0 +1,566 @@
+/* =========================================================================
+   REFERENCE COMING SOON PORTAL — PIXEL-ACCURATE STYLING
+   ========================================================================= */
+
+.reference-portal-stage {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background: #08060f;
+  color: var(--text);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Atmospheric Backdrop (Hogwarts Castle, Moon & Night Mist) */
+.reference-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.reference-castle-img {
+  object-fit: cover;
+  object-position: center 38%;
+  opacity: 0.68;
+  filter: contrast(1.22) brightness(0.85) saturate(1.05);
+}
+
+.reference-full-moon {
+  position: absolute;
+  top: 4%;
+  right: 18%;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 40% 40%,
+    rgba(255, 255, 235, 0.45) 0%,
+    rgba(240, 220, 175, 0.25) 50%,
+    rgba(180, 150, 100, 0.05) 75%,
+    transparent 100%
+  );
+  box-shadow: 0 0 60px 20px rgba(255, 235, 170, 0.15);
+  filter: drop-shadow(0 0 40px rgba(255, 220, 140, 0.2));
+  pointer-events: none;
+}
+
+.reference-dark-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    rgba(11, 8, 20, 0.42) 0%,
+    rgba(8, 6, 15, 0.78) 65%,
+    #08060f 100%
+  );
+}
+
+/* Floating Candles in the Castle Distance */
+.reference-candles {
+  position: absolute;
+  inset: 0;
+}
+
+.reference-candle {
+  position: absolute;
+  width: 3px;
+  height: 22px;
+  border-radius: 1px;
+  background: linear-gradient(180deg, #f7ecd2, #8b6d3b);
+  opacity: 0.75;
+  animation: candle-bob 6s ease-in-out infinite;
+}
+
+.reference-candle .flame {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 8px;
+  border-radius: 50% 50% 30% 30%;
+  background: #fff4cb;
+  box-shadow:
+    0 0 6px #ffd466,
+    0 0 16px 3px rgba(255, 185, 60, 0.4);
+  animation: flame-flicker 2s infinite alternate;
+}
+
+/* Ornamental Golden Frame with Corner Accents */
+.reference-frame {
+  position: fixed;
+  inset: 18px;
+  z-index: 5;
+  border: 1px solid rgba(212, 175, 91, 0.22);
+  pointer-events: none;
+}
+
+.reference-frame .corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+}
+
+.reference-frame .corner.top-left {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid #ffd893;
+  border-left: 2px solid #ffd893;
+}
+
+.reference-frame .corner.top-right {
+  top: -1px;
+  right: -1px;
+  border-top: 2px solid #ffd893;
+  border-right: 2px solid #ffd893;
+}
+
+.reference-frame .corner.bottom-left {
+  bottom: -1px;
+  left: -1px;
+  border-bottom: 2px solid #ffd893;
+  border-left: 2px solid #ffd893;
+}
+
+.reference-frame .corner.bottom-right {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid #ffd893;
+  border-right: 2px solid #ffd893;
+}
+
+/* Wandering Golden Snitch Realm */
+.reference-snitch-realm {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.reference-snitch {
+  position: absolute;
+  width: 120px;
+  height: 58px;
+  left: -60px;
+  top: -29px;
+  will-change: transform;
+  filter: drop-shadow(0 0 10px #ffca53cc)
+    drop-shadow(0 0 20px rgba(255, 180, 50, 0.4));
+}
+
+.reference-snitch svg {
+  width: 100%;
+  height: auto;
+}
+
+.reference-snitch-halo {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  left: 44px;
+  top: 13px;
+  background: rgba(255, 218, 128, 0.35);
+  border-radius: 50%;
+  filter: blur(10px);
+}
+
+/* Main Container — Exact Vertical Spacing and Centering */
+.reference-container {
+  position: relative;
+  z-index: 10;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ✦ BIT PATNA PRESENTS ✦ */
+.reference-presents {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.reference-presents .golden-wing {
+  width: 38px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #b89554, transparent);
+}
+
+.reference-presents .star-ornament {
+  font-size: 10px;
+  color: #e5bd68;
+}
+
+.reference-presents .presents-text {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  color: #edd8b4;
+  margin: 0;
+  text-transform: uppercase;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
+
+/* Circular Golden Seal Crest with Snitch & Wand */
+.reference-seal-wrap {
+  position: relative;
+  width: 86px;
+  height: 86px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reference-seal-glow {
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 216, 147, 0.28) 0%,
+    transparent 70%
+  );
+  animation: pulse-glow 3.5s ease-in-out infinite alternate;
+}
+
+.reference-seal-img {
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(239, 188, 85, 0.5));
+  filter: brightness(0) saturate(100%) invert(82%) sepia(32%) saturate(600%)
+    hue-rotate(350deg) brightness(105%) contrast(95%);
+}
+
+/* Overline: THE NEXT CHAPTER IS BEING WRITTEN */
+.reference-overline {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  color: #c9b48c;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+}
+
+/* Flagship Title: TECHNIKA '27 — Styled with HarryP font & spacing */
+.reference-title {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--font-harryp), 'Cinzel Decorative', serif;
+  font-weight: normal;
+  font-size: clamp(74px, 13.5vw, 156px);
+  line-height: 0.98;
+  letter-spacing: 0.12em;
+  text-transform: capitalize;
+}
+
+.reference-title-word {
+  font-family: var(--font-harryp), 'Cinzel Decorative', serif;
+  letter-spacing: 0.12em;
+  background: linear-gradient(
+    180deg,
+    #fff7df 0%,
+    #fad88b 38%,
+    #dfab41 72%,
+    #855919 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 28px rgba(220, 165, 50, 0.4));
+}
+
+.reference-title-year {
+  font-family: var(--font-harryp), 'Cinzel Decorative', serif;
+  font-weight: normal;
+  font-size: 0.82em;
+  margin-left: 14px;
+  letter-spacing: 0.08em;
+  background: linear-gradient(
+    180deg,
+    #fff7df 0%,
+    #fad88b 38%,
+    #dfab41 72%,
+    #855919 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 28px rgba(220, 165, 50, 0.4));
+}
+
+/* Curvie Golden Display: COMING SOON */
+.reference-coming-soon {
+  margin-top: 14px;
+  margin-bottom: 22px;
+}
+
+.reference-coming-soon span {
+  font-family: var(--font-garamond), Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(26px, 4.5vw, 44px);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  background: linear-gradient(
+    180deg,
+    #fff8e2 0%,
+    #fae0a2 40%,
+    #e0b457 78%,
+    #9a6d21 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 16px rgba(255, 215, 120, 0.45))
+    drop-shadow(0 2px 8px rgba(0, 0, 0, 0.9));
+  display: inline-block;
+}
+
+/* Description Sentence */
+.reference-description {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: clamp(13px, 1.8vw, 15px);
+  color: #dfd3c3;
+  margin: 0 auto 34px;
+  max-width: 620px;
+  line-height: 1.6;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9);
+}
+
+/* Dual Column Status Box at Bottom */
+.reference-status-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 520px;
+  padding: 22px 28px;
+  border-radius: 12px;
+  background: rgba(18, 14, 28, 0.72);
+  border: 1px solid rgba(212, 175, 91, 0.24);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 12px 35px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 230, 160, 0.08);
+}
+
+.status-col {
+  flex: 1;
+}
+
+.status-col.left-col {
+  text-align: left;
+  padding-right: 20px;
+}
+
+.status-label {
+  display: block;
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: #ad9a82;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.status-headline {
+  margin: 0 0 8px 0;
+  font-family: var(--font-garamond), Georgia, serif;
+  font-weight: 500;
+  font-size: 24px;
+  color: #f7e4be;
+  line-height: 1.15;
+}
+
+.status-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: #a8947a;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color 0.25s ease, transform 0.25s ease, filter 0.25s ease;
+  width: fit-content;
+}
+
+.status-location:hover {
+  color: #ffd893;
+  transform: translateY(-1px);
+  filter: drop-shadow(0 0 6px rgba(255, 216, 147, 0.45));
+}
+
+.status-location .loc-pin {
+  color: #e5bd68;
+  transition: transform 0.25s ease;
+}
+
+.status-location:hover .loc-pin {
+  transform: scale(1.18);
+  color: #ffd893;
+}
+
+/* Vertical Golden Divider */
+.status-divider {
+  width: 1px;
+  height: 52px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(212, 175, 91, 0.35),
+    transparent
+  );
+}
+
+.status-col.right-col {
+  text-align: left;
+  padding-left: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.status-instagram-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.25s ease, filter 0.25s ease;
+  width: 100%;
+}
+
+.status-instagram-link:hover {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 0 10px rgba(255, 216, 147, 0.45));
+}
+
+.instagram-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(255, 216, 147, 0.08);
+  border: 1px solid rgba(212, 175, 91, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.status-instagram-link:hover .instagram-icon-box {
+  background: rgba(255, 216, 147, 0.16);
+  border-color: #ffd893;
+}
+
+.instagram-glyph {
+  color: #ffd893;
+  filter: drop-shadow(0 0 6px rgba(255, 216, 147, 0.6));
+}
+
+.instagram-text-wrap {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.instagram-label {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: #ad9a82;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+.instagram-handle {
+  font-family: var(--font-garamond), Georgia, serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #f7e4be;
+  background: linear-gradient(180deg, #fff7df 0%, #fad88b 45%, #e0ad42 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 12px rgba(255, 216, 147, 0.25);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 640px) {
+  .reference-portal-stage {
+    padding: 32px 16px;
+  }
+  .reference-frame {
+    inset: 10px;
+  }
+  .reference-presents .presents-text {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+  }
+  .reference-title {
+    font-size: 48px;
+  }
+  .reference-coming-soon span {
+    font-size: 22px;
+    letter-spacing: 0.2em;
+  }
+  .reference-status-card {
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px 18px;
+    text-align: center;
+  }
+  .status-col.left-col {
+    text-align: center;
+    padding-right: 0;
+  }
+  .status-location {
+    justify-content: center;
+  }
+  .status-divider {
+    width: 60%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(212, 175, 91, 0.35),
+      transparent
+    );
+  }
+  .status-col.right-col {
+    padding-left: 0;
+    justify-content: center;
+  }
+  .status-instagram-link {
+    justify-content: center;
+  }
+}

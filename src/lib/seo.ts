@@ -8,8 +8,8 @@ export const indexable = process.env.VERCEL_ENV !== "preview";
 
 export const pageSeo = {
   "/": {
-    title: "Technika ’27 — BIT Patna Techno-Cultural Fest",
-    description: "Discover Technika ’27, BIT Patna’s Wizarding World–inspired techno-cultural festival. Explore robotics, hackathons, creative challenges, and a provisional January 8–10, 2027 programme.",
+    title: "Technika 2k27 — BIT Patna Techno-Cultural Fest",
+    description: "Welcome to Technika 2k27 (Technika ’27), BIT Patna’s Wizarding World–inspired techno-cultural festival. Explore robotics coliseum, hackathons, coding duels, gaming, and cultural nights. January 8–10, 2027.",
     label: "Home",
   },
   "/registrations": {

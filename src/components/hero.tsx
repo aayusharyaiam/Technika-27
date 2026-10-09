@@ -133,7 +133,7 @@ export function Hero() {
       <div className="hero-presents"><span />BIRLA INSTITUTE OF TECHNOLOGY, PATNA PRESENTS<span /></div>
       <div className="hero-heading">
         <span className="hero-edition"><Sparkles size={12} /> The wizarding edition <Sparkles size={12} /></span>
-        <h1 id="hero-title" aria-label="Technika ’27"><span aria-hidden="true">{"TECHNIKA".split("").map((letter, i) => <span className="title-letter" key={i}>{letter}</span>)}<span className="title-letter title-apostrophe">’</span><span className="title-letter title-year">2</span><span className="title-letter title-year">7</span></span></h1>
+        <h1 id="hero-title" aria-label="Technika 2k27"><span aria-hidden="true">{"TECHNIKA".split("").map((letter, i) => <span className="title-letter" key={i}>{letter}</span>)}<span className="title-letter title-apostrophe">’</span><span className="title-letter title-year">2</span><span className="title-letter title-year">7</span></span></h1>
         <p className="hero-subtitle">The Triwizard Tech Odyssey</p>
       </div>
       <div className="hero-details">

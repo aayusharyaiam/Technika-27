@@ -529,3 +529,534 @@ html[data-magic="off"] { scroll-behavior: auto; }
   html:not([data-magic="on"]) *, html:not([data-magic="on"]) *::before, html:not([data-magic="on"]) *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .hero-castle, .hero-mist { will-change: auto; }
 }
+
+/* =========================================================================
+   HARRY POTTER THEMED ENCHANTED NIGHT SKY & COMING SOON PORTAL
+   ========================================================================= */
+.hp-coming-soon-stage {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: radial-gradient(ellipse at 50% 20%, #171026 0%, #0d0917 50%, #05040a 100%);
+  color: var(--text);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Atmospheric Night Sky & Hogwarts Silhouette */
+.hp-night-sky {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hp-moon {
+  position: absolute;
+  top: 6%;
+  right: 14%;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #fffaea 0%, #fae6b8 50%, #d8ba78 80%, transparent 100%);
+  box-shadow: 0 0 50px 15px rgba(255, 230, 160, 0.35), 0 0 120px 40px rgba(220, 175, 80, 0.18);
+  filter: drop-shadow(0 0 30px rgba(255, 225, 140, 0.4));
+  animation: moon-drift 24s ease-in-out infinite alternate;
+}
+
+.hp-moon-clouds {
+  position: absolute;
+  top: 3%;
+  right: 8%;
+  width: 320px;
+  height: 220px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(20, 14, 34, 0.65) 0%, transparent 70%);
+  filter: blur(25px);
+  pointer-events: none;
+}
+
+/* Dark Hogwarts Castle Ridge Silhouette */
+.hp-castle-silhouette {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 340px;
+  background-image: 
+    radial-gradient(ellipse at 50% 100%, rgba(13, 10, 24, 0.95) 0%, #05040a 80%),
+    linear-gradient(to top, #040308 0%, #080612 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse at 50% 120%, black 60%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 120%, black 60%, transparent 100%);
+}
+
+.hp-castle-silhouette::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 260px;
+  opacity: 0.35;
+  background-image: url("/images/hogwarts.webp");
+  background-size: cover;
+  background-position: center bottom;
+  filter: brightness(0.4) contrast(1.6) saturate(0.8);
+  mix-blend-mode: luminosity;
+}
+
+/* Rolling Mystic Fog Layers */
+.hp-mist-layer {
+  position: absolute;
+  inset: auto -30% 0;
+  height: 280px;
+  pointer-events: none;
+}
+
+.hp-mist-1 {
+  background: radial-gradient(ellipse at 40% 80%, rgba(160, 130, 200, 0.12) 0%, transparent 70%),
+              radial-gradient(ellipse at 80% 60%, rgba(255, 215, 130, 0.08) 0%, transparent 65%);
+  filter: blur(35px);
+  animation: mist-float 18s ease-in-out infinite alternate;
+}
+
+.hp-mist-2 {
+  background: radial-gradient(ellipse at 60% 70%, rgba(120, 90, 180, 0.14) 0%, transparent 70%),
+              radial-gradient(ellipse at 20% 90%, rgba(255, 200, 100, 0.07) 0%, transparent 60%);
+  filter: blur(45px);
+  animation: mist-float 24s ease-in-out infinite alternate-reverse;
+}
+
+/* Great Hall Floating Golden Candles */
+.hp-floating-candle {
+  position: absolute;
+  width: 4px;
+  height: 28px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #fcedc5 0%, #b89868 60%, #5e4726 100%);
+  box-shadow: 0 0 10px rgba(255, 210, 110, 0.5);
+  animation: candle-bob 5s ease-in-out infinite;
+}
+
+.candle-wick {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 10px;
+}
+
+.candle-flame {
+  display: block;
+  width: 6px;
+  height: 10px;
+  border-radius: 50% 50% 35% 35%;
+  background: radial-gradient(circle at 50% 80%, #ffffff 0%, #fff2a8 30%, #ffaa2b 75%, rgba(255, 100, 0, 0) 100%);
+  box-shadow: 0 0 8px #ffcc44, 0 0 20px 4px rgba(255, 180, 50, 0.45);
+  animation: flame-flicker 1.8s ease-in-out infinite alternate;
+}
+
+/* Ambient Starlight & Spell Dust */
+.hp-spark-dot {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #ffecb3;
+  box-shadow: 0 0 6px 1px #ffd269;
+  animation: star-sparkle 4s ease-in-out infinite;
+}
+
+/* Main Content Core */
+.hp-content-core {
+  position: relative;
+  z-index: 10;
+  max-width: 860px;
+  width: 100%;
+  text-align: center;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Institution Crest Banner */
+.hp-institution-ribbon {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.hp-institution-ribbon .hp-ribbon-wing {
+  width: 40px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #cda75b, transparent);
+}
+
+.hp-institution-text {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: clamp(10px, 1.4vw, 13px);
+  letter-spacing: 0.32em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #eeddbb;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+/* Main Title Section */
+.hp-title-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+
+.hp-title-whisper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  font-family: var(--font-garamond), Georgia, serif;
+  font-style: italic;
+  font-size: clamp(14px, 2vw, 19px);
+  color: #f7dca6;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+  text-shadow: 0 0 12px rgba(255, 215, 120, 0.4);
+}
+
+.hp-spark-icon {
+  color: #ffd893;
+  animation: spin-pulse 6s linear infinite;
+}
+
+/* Harry Potter Styled Big Technika Title */
+.hp-main-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  margin: 0 auto;
+  font-family: 'Cinzel Decorative', 'MedievalSharp', var(--font-garamond), serif;
+  font-weight: 900;
+  font-size: clamp(56px, 12vw, 124px);
+  line-height: 0.98;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  position: relative;
+  width: 100%;
+}
+
+.hp-lightning-glyph {
+  font-size: 0.85em;
+  color: #ffe59e;
+  filter: drop-shadow(0 0 16px rgba(255, 215, 60, 0.9)) drop-shadow(0 0 35px rgba(255, 160, 0, 0.7));
+  animation: lightning-glow 2.5s ease-in-out infinite alternate;
+  display: inline-block;
+  transform: translateY(-4px);
+}
+
+.hp-word {
+  background: linear-gradient(180deg, #fffbee 0%, #fde4a0 32%, #e5b955 68%, #8a601e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 25px rgba(220, 165, 50, 0.45));
+}
+
+.hp-year-badge {
+  font-family: 'MedievalSharp', var(--font-garamond), serif;
+  font-size: 0.38em;
+  vertical-align: super;
+  align-self: flex-start;
+  margin-top: 14px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(45, 32, 60, 0.65);
+  border: 1px solid rgba(255, 216, 147, 0.45);
+  color: #ffe4a0;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 15px rgba(245, 183, 49, 0.25);
+  -webkit-text-fill-color: #ffe4a0;
+}
+
+/* Magic Wand Separator */
+.hp-wand-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  width: min(460px, 85%);
+  margin: 18px auto 26px;
+}
+
+.hp-wand-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #cda75b, transparent);
+}
+
+.hp-wand-gem {
+  color: #ffd893;
+  filter: drop-shadow(0 0 10px #f5b731);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(45deg);
+  animation: gem-float 3s ease-in-out infinite alternate;
+}
+
+/* Harry Potter Curvie Font "Coming Soon" */
+.hp-coming-soon-banner {
+  margin: 4px auto 28px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+
+.hp-curvie-text {
+  /* Using curvy magical fonts: Henny Penny, Caveat/Handwriting, or MedievalSharp */
+  font-family: 'Henny Penny', var(--font-handwriting), 'Cinzel Decorative', cursive;
+  font-size: clamp(48px, 9.5vw, 98px);
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  margin: 0 auto;
+  text-align: center;
+  color: #fff1c7;
+  background: linear-gradient(180deg, #ffffff 0%, #fff3ce 35%, #f6ca68 75%, #b58129 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 22px rgba(255, 205, 90, 0.65)) drop-shadow(0 6px 14px rgba(0, 0, 0, 0.95));
+  animation: curvie-sway 4.5s ease-in-out infinite alternate;
+  padding: 0 12px;
+}
+
+/* Parchment / Story Lore Card */
+.hp-subtext-scroll {
+  max-width: 620px;
+  padding: 24px 30px;
+  border-radius: 14px;
+  background: rgba(22, 16, 34, 0.72);
+  border: 1px solid rgba(212, 175, 91, 0.28);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 230, 160, 0.12);
+  margin-bottom: 30px;
+}
+
+/* Wandering Golden Snitch Realm */
+.hp-snitch-realm {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hp-wandering-snitch {
+  position: absolute;
+  width: 130px;
+  height: 62px;
+  left: -65px;
+  top: -31px;
+  will-change: transform;
+  filter: drop-shadow(0 0 12px #ffca53cc) drop-shadow(0 0 25px rgba(255, 185, 40, 0.45));
+  transition: transform 0.08s linear;
+}
+
+.hp-wandering-snitch svg {
+  width: 100%;
+  height: auto;
+  position: relative;
+  z-index: 2;
+}
+
+/* Local Asset HarryP Brand Typography */
+.hp-harryp-brand {
+  font-family: var(--font-harryp), 'Cinzel Decorative', serif !important;
+  font-weight: normal;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.hp-harryp-brand .title-letter {
+  font-family: var(--font-harryp), 'Cinzel Decorative', serif !important;
+  display: inline-block;
+  line-height: 1;
+  text-align: center;
+}
+
+/* Glowing Deathly Hallows Emblem */
+.hp-hallows-emblem-wrap {
+  position: relative;
+  width: min(220px, 65vw);
+  margin: 10px auto 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.hp-hallows-aura {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 216, 147, 0.16) 0%, rgba(245, 183, 49, 0.05) 50%, transparent 75%);
+  filter: blur(12px);
+  animation: pulse-glow 3.5s ease-in-out infinite alternate;
+}
+
+.hp-hallows-svg {
+  width: 100%;
+  max-width: 170px;
+  height: auto;
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+  filter: drop-shadow(0 0 14px rgba(255, 216, 147, 0.55)) drop-shadow(0 0 30px rgba(239, 188, 85, 0.3));
+}
+
+.hp-hallow-line {
+  stroke: #ffdf9b;
+  transition: stroke 0.4s;
+}
+
+.hp-hallow-cloak {
+  stroke: #ffd893;
+  animation: hallow-glow 3s ease-in-out infinite alternate;
+}
+
+.hp-hallow-stone {
+  stroke: #ffe5a8;
+  animation: hallow-glow 3s ease-in-out infinite alternate 0.8s;
+}
+
+.hp-hallow-wand {
+  stroke: #ffffff;
+  animation: hallow-glow 3s ease-in-out infinite alternate 1.6s;
+}
+
+.hp-hallows-caption {
+  margin-top: 14px;
+  font-family: var(--font-garamond), Georgia, serif;
+  font-size: clamp(9px, 1.3vw, 11px);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #cca862;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.hp-hallows-caption i {
+  font-style: normal;
+  color: var(--gold);
+}
+
+.hp-footer-note {
+  color: #8c7e96;
+}
+
+.hp-footer-note small {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* Atmospheric Animations */
+@keyframes moon-drift {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(12px) scale(1.03); }
+}
+
+@keyframes mist-float {
+  0% { transform: translateX(-40px); }
+  100% { transform: translateX(40px); }
+}
+
+@keyframes candle-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes flame-flicker {
+  0% { transform: scale(0.92) skewX(-2deg); opacity: 0.85; }
+  100% { transform: scale(1.1) skewX(2deg); opacity: 1; }
+}
+
+@keyframes star-sparkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 0.95; transform: scale(1.4); }
+}
+
+@keyframes lightning-glow {
+  0% { filter: drop-shadow(0 0 10px rgba(255, 215, 60, 0.6)); }
+  100% { filter: drop-shadow(0 0 25px rgba(255, 220, 80, 1)) drop-shadow(0 0 45px rgba(255, 170, 0, 0.8)); }
+}
+
+@keyframes gem-float {
+  0% { transform: rotate(45deg) scale(0.95); }
+  100% { transform: rotate(45deg) scale(1.1); }
+}
+
+@keyframes curvie-sway {
+  0% { transform: rotate(-2.5deg) translateY(0); }
+  100% { transform: rotate(-0.5deg) translateY(-5px); }
+}
+
+@keyframes spin-pulse {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.15); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes hallow-glow {
+  0% { filter: drop-shadow(0 0 4px rgba(255, 216, 147, 0.4)); stroke-width: 2.8px; }
+  100% { filter: drop-shadow(0 0 14px rgba(255, 224, 150, 0.9)); stroke-width: 3.6px; }
+}
+
+/* Full Responsive Queries for mobile, tablet and desktop */
+@media (max-width: 768px) {
+  .hp-coming-soon-stage { padding: 36px 16px; }
+  .hp-main-title { font-size: clamp(48px, 13vw, 88px); }
+  .hp-curvie-text { font-size: clamp(40px, 10vw, 72px); }
+  .hp-wandering-snitch { width: 100px; height: 48px; }
+}
+
+@media (max-width: 480px) {
+  .hp-coming-soon-stage { padding: 28px 12px; }
+  .hp-institution-ribbon .hp-ribbon-wing { width: 18px; }
+  .hp-institution-text { font-size: 9px; letter-spacing: 0.18em; }
+  .hp-title-whisper { font-size: 13px; }
+  .hp-main-title { font-size: 42px; gap: 4px; }
+  .hp-lightning-glyph { font-size: 0.7em; }
+  .hp-curvie-text { font-size: 38px; }
+  .hp-wand-separator { width: 90%; margin: 12px auto 18px; }
+  .hp-hallows-emblem-wrap { width: 140px; margin: 8px auto 20px; }
+  .hp-hallows-caption { font-size: 8px; letter-spacing: 0.14em; }
+  .hp-moon { width: 90px; height: 90px; top: 3%; right: 4%; }
+}
+
+

@@ -1,5 +1,5 @@
 export const festival = {
-  name: "Technika ’27",
+  name: "Technika 2k27",
   dateLabel: "08 — 10 January 2027",
   start: "2027-01-08T09:00:00+05:30",
   location: "BIT Patna, Bihar",
