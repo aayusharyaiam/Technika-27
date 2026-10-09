@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
 import { Experience } from "@/components/experience";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
@@ -46,7 +47,7 @@ export const viewport: Viewport = { themeColor: "#0f0c19", colorScheme: "dark" }
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en" className={`${garamond.variable} ${outfit.variable} ${handwriting.variable}`} suppressHydrationWarning><head><script id="restore-house-theme" dangerouslySetInnerHTML={{ __html: houseBootScript }}/></head><body>
     <a className="skip-link" href="#main-content">Skip to content</a>
-    <SiteSchema />
+    <SiteSchema /><Analytics />
     <HouseProvider><AuthProvider><Experience><Header /><main id="main-content" tabIndex={-1}><PageTransition>{children}</PageTransition></main><Footer /></Experience></AuthProvider></HouseProvider>
   </body></html>;
 }
