@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
 import { SiteSchema } from "@/components/structured-data";
 import { SiteShell } from "@/components/site-shell";
 import { indexable, siteUrl } from "@/lib/seo";
@@ -40,5 +41,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <a className="skip-link" href="#main-content">Skip to content</a>
     <SiteSchema />
     <HouseProvider><AuthProvider><SiteShell>{children}</SiteShell></AuthProvider></HouseProvider>
+    <Analytics />
   </body></html>;
 }
