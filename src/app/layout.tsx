@@ -1,10 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { Experience } from "@/components/experience";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { PageTransition } from "@/components/page-transition";
 import { SiteSchema } from "@/components/structured-data";
+import { SiteShell } from "@/components/site-shell";
 import { indexable, siteUrl } from "@/lib/seo";
 import { HouseProvider } from "@/components/house-provider";
 import { AuthProvider } from "@/components/auth-provider";
@@ -42,6 +39,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return <html lang="en" className={`${garamond.variable} ${outfit.variable} ${handwriting.variable}`} suppressHydrationWarning><head><script id="restore-house-theme" dangerouslySetInnerHTML={{ __html: houseBootScript }}/></head><body>
     <a className="skip-link" href="#main-content">Skip to content</a>
     <SiteSchema />
-    <HouseProvider><AuthProvider><Experience><Header /><main id="main-content" tabIndex={-1}><PageTransition>{children}</PageTransition></main><Footer /></Experience></AuthProvider></HouseProvider>
+    <HouseProvider><AuthProvider><SiteShell>{children}</SiteShell></AuthProvider></HouseProvider>
   </body></html>;
 }

@@ -123,7 +123,7 @@ export function Hero() {
   }, [enabled, ready]);
 
   return <section ref={ref} className="hero" aria-labelledby="hero-title">
-    <div className="hero-castle"><Image src="/images/hogwarts.webp" alt="Moonlit Hogwarts castle above the misty Black Lake, with floating golden candles" fill priority sizes="100vw" quality={90} /></div>
+    <div className="hero-castle"><Image src="/images/hogwarts.webp" alt="Moonlit Hogwarts castle above the misty Black Lake, with floating golden candles" fill priority sizes="100vw" quality={75} /></div>
     <div className="hero-shade" /><div className="hero-moon-aura" aria-hidden="true" />
     <div className="castle-house-light" aria-hidden="true"/><HouseBanners/>
     <AmbientParticles count={46} />

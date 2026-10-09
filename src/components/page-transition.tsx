@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useMagic } from "./experience";
 
-export function PageTransition({ children }: { children: React.ReactNode }) {
+export function PageTransition({ children, minimal = false }: { children: React.ReactNode; minimal?: boolean }) {
   const pathname = usePathname();
   const ref = useRef<HTMLDivElement>(null);
   const veil = useRef<HTMLDivElement>(null);
@@ -13,7 +13,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   const { enabled, ready } = useMagic();
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || minimal) return;
     const changed = previous.current !== pathname;
     previous.current = pathname;
     const ctx = gsap.context(() => {
@@ -24,7 +24,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
       }
     });
     return () => ctx.revert();
-  }, [pathname, enabled, ready]);
+  }, [pathname, enabled, ready, minimal]);
 
-  return <><div className="route-spell-veil" ref={veil} aria-hidden="true"><span>✦</span></div><div ref={ref} className="page-transition">{children}</div></>;
+  return <>{!minimal && <div className="route-spell-veil" ref={veil} aria-hidden="true"><span>✦</span></div>}<div ref={ref} className="page-transition">{children}</div></>;
 }

@@ -135,8 +135,8 @@ function LoadingScreen({ dismiss }: { dismiss: () => void }) {
   </motion.div>;
 }
 
-export function Experience({ children }: { children: React.ReactNode }) {
-  const [loading, setLoading] = useState(true);
+export function Experience({ children, skipLoading = false, minimal = false }: { children: React.ReactNode; skipLoading?: boolean; minimal?: boolean }) {
+  const [loading, setLoading] = useState(!skipLoading);
   const [preference, setPreference] = useState<"system" | "on" | "off">("system");
   const reducedMotion = useReducedMotion();
   const enabled = preference === "on" || (preference === "system" && !reducedMotion);
@@ -151,21 +151,18 @@ export function Experience({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     document.documentElement.dataset.magic = enabled ? "on" : "off";
-    if (!enabled || loading) return;
+    if (!enabled || loading || minimal) return;
     const lenis = new Lenis({ duration: 1.3, smoothWheel: true, syncTouch: false, anchors: { offset: -105 } });
     const tick = (time: number) => lenis.raf(time * 1000);
     lenis.on("scroll", ScrollTrigger.update);
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
     return () => { lenis.off("scroll", ScrollTrigger.update); gsap.ticker.remove(tick); lenis.destroy(); };
-  }, [enabled, loading]);
+  }, [enabled, loading, minimal]);
 
   return <MotionConfig reducedMotion={enabled ? "never" : "always"}><MagicContext.Provider value={{ enabled, ready: !loading }}>
     <div className="experience-content" inert={loading || undefined}>{children}</div>
     <AnimatePresence>{loading && <LoadingScreen dismiss={dismiss} />}</AnimatePresence>
-    <WandSparks enabled={enabled} />
-    <WandCursor/>
-    <MagicInteractions />
-    {!loading && <><div className="scroll-progress" aria-hidden="true" /><button className={`magic-toggle ${enabled ? "" : "magic-disabled"}`} aria-label={enabled ? "Pause magical effects" : "Enable magical effects"} aria-pressed={enabled} onClick={() => setPreference(enabled ? "off" : "on")} title={enabled ? "Pause magical effects" : "Enable magical effects"}>{enabled ? <WandSparkles size={17} /> : <Sparkles size={17} />}<span>{enabled ? "Magic on" : "Enable magic"}</span></button></>}
+    {!minimal && <><WandSparks enabled={enabled} /><WandCursor/><MagicInteractions />{!loading && <><div className="scroll-progress" aria-hidden="true" /><button className={`magic-toggle ${enabled ? "" : "magic-disabled"}`} aria-label={enabled ? "Pause magical effects" : "Enable magical effects"} aria-pressed={enabled} onClick={() => setPreference(enabled ? "off" : "on")} title={enabled ? "Pause magical effects" : "Enable magic"}>{enabled ? <WandSparkles size={17} /> : <Sparkles size={17} />}<span>{enabled ? "Magic on" : "Enable magic"}</span></button></>}</>}
   </MagicContext.Provider></MotionConfig>;
 }
