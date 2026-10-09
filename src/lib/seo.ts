@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 export const siteName = "Technika ’27";
 export const siteDescription = "Technika ’27 is the techno-cultural festival of Birla Institute of Technology, Patna — where technology, creativity, and extraordinary possibilities meet.";
 export const socialImage = "/images/social-card.jpg";
+export const googleSiteVerification = "o2R9wl2JjVxm9frnLSPwNKWtry-DVPyp9IsaI4pdgjU";
 
 function normalizeOrigin(value?: string) {
   if (!value) return undefined;

@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import { SiteSchema } from "@/components/structured-data";
 import { SiteShell } from "@/components/site-shell";
-import { absoluteUrl, indexable, siteDescription, siteName, siteUrl, socialImage } from "@/lib/seo";
+import { absoluteUrl, googleSiteVerification, indexable, siteDescription, siteName, siteUrl, socialImage } from "@/lib/seo";
 import { HouseProvider } from "@/components/house-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import { houseBootScript } from "@/lib/houses";
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   alternates: { canonical: absoluteUrl("/") },
   icons: { icon: "/icon.svg", apple: "/apple-icon.png" },
   robots: { index: indexable, follow: indexable, googleBot: { index: indexable, follow: indexable, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } },
-  verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
+  verification: { google: googleSiteVerification },
   openGraph: { title: "Technika ’27 | BIT Patna Techno-Cultural Festival", description: siteDescription, url: absoluteUrl("/"), type: "website", locale: "en_IN", siteName, images: [{ url: absoluteUrl(socialImage), width: 1200, height: 630, alt: "Technika ’27 — BIT Patna techno-cultural festival" }] },
   twitter: { card: "summary_large_image", title: "Technika ’27 | BIT Patna Techno-Cultural Festival", description: siteDescription, images: [absoluteUrl(socialImage)] },
 };
