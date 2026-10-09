@@ -5,7 +5,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { PageTransition } from "@/components/page-transition";
 import { SiteSchema } from "@/components/structured-data";
-import { indexable, siteUrl } from "@/lib/seo";
+import { absoluteUrl, indexable, siteDescription, siteName, siteUrl, socialImage } from "@/lib/seo";
 import { HouseProvider } from "@/components/house-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import { houseBootScript } from "@/lib/houses";
@@ -22,18 +22,23 @@ const handwriting = localFont({ src: "../../public/fonts/caveat.woff2", variable
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: { default: "Technika ’27 — Where Technology Meets Magic", template: "%s | Technika ’27" },
-  description: "Step into the wizarding world of Technika ’27, the techno-cultural festival of BIT Patna. Three days of technology, creativity, and extraordinary possibilities. January 8–10, 2027.",
-  applicationName: "Technika ’27",
-  keywords: ["Technika 27", "Technika 2027", "BIT Patna fest", "BIT Patna techno cultural festival", "college fest Bihar", "Triwizard Tech Odyssey", "BIT Patna hackathon", "robotics festival Patna"],
-  authors: [{ name: "Technika — BIT Patna" }],
+  title: { default: "Technika ’27 | BIT Patna Techno-Cultural Festival", template: "%s | Technika ’27" },
+  description: siteDescription,
+  applicationName: siteName,
+  keywords: ["Technika 27", "Technika 2027", "BIT Patna fest", "BIT Patna techno-cultural festival", "college fest Bihar", "tech fest Patna", "hackathon Patna", "robotics festival Patna"],
+  authors: [{ name: "Technika — BIT Patna", url: absoluteUrl("/") }],
   creator: "Technika — BIT Patna",
+  publisher: "Birla Institute of Technology, Patna",
   category: "education",
+  classification: "Technology and cultural festival",
+  referrer: "origin-when-cross-origin",
+  formatDetection: { email: false, address: false, telephone: false },
+  alternates: { canonical: absoluteUrl("/") },
   icons: { icon: "/icon.svg", apple: "/apple-icon.png" },
   robots: { index: indexable, follow: indexable, googleBot: { index: indexable, follow: indexable, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } },
-  verification: { google: process.env.GOOGLE_SITE_VERIFICATION },
-  openGraph: { title: "Technika ’27 — The Triwizard Tech Odyssey", description: "Technology, creativity, and a little magic at BIT Patna.", type: "website", locale: "en_IN", siteName: "Technika ’27 — BIT Patna", images: [{ url: "/images/social-card.jpg", width: 1200, height: 630, alt: "Technika 27 — The Triwizard Tech Odyssey" }] },
-  twitter: { card: "summary_large_image", images: ["/images/social-card.jpg"] },
+  verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
+  openGraph: { title: "Technika ’27 | BIT Patna Techno-Cultural Festival", description: siteDescription, url: absoluteUrl("/"), type: "website", locale: "en_IN", siteName, images: [{ url: absoluteUrl(socialImage), width: 1200, height: 630, alt: "Technika ’27 — BIT Patna techno-cultural festival" }] },
+  twitter: { card: "summary_large_image", title: "Technika ’27 | BIT Patna Techno-Cultural Festival", description: siteDescription, images: [absoluteUrl(socialImage)] },
 };
 
 export const viewport: Viewport = { themeColor: "#0f0c19", colorScheme: "dark" };
