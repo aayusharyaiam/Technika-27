@@ -123,7 +123,7 @@ export function Hero() {
   }, [enabled, ready]);
 
   return <section ref={ref} className="hero" aria-labelledby="hero-title">
-    <div className="hero-castle"><Image src="/images/hogwarts.webp" alt="Moonlit Hogwarts castle above the misty Black Lake, with floating golden candles" fill priority sizes="100vw" quality={90} /></div>
+    <div className="hero-castle"><Image src="/images/hogwarts.webp" alt="Moonlit Hogwarts castle above the misty Black Lake, with floating golden candles" fill priority sizes="100vw" quality={75} /></div>
     <div className="hero-shade" /><div className="hero-moon-aura" aria-hidden="true" />
     <div className="castle-house-light" aria-hidden="true"/><HouseBanners/>
     <AmbientParticles count={46} />
@@ -134,11 +134,11 @@ export function Hero() {
       <div className="hero-heading">
         <span className="hero-edition"><Sparkles size={12} /> The wizarding edition <Sparkles size={12} /></span>
         <h1 id="hero-title" aria-label="Technika ’27"><span aria-hidden="true">{"TECHNIKA".split("").map((letter, i) => <span className="title-letter" key={i}>{letter}</span>)}<span className="title-letter title-apostrophe">’</span><span className="title-letter title-year">2</span><span className="title-letter title-year">7</span></span></h1>
-        <p className="hero-subtitle">The Triwizard Tech Odyssey</p>
+        <p className="hero-subtitle">BIT Patna’s Triwizard Tech Odyssey</p>
       </div>
       <div className="hero-details">
         <div className="hero-date"><span /><p>08 <i>—</i> 10 JANUARY, 2027</p><span /></div>
-        <p className="hero-description">Beyond the ordinary. Into the extraordinary.<br />Three days of innovation, wonder, and a little mischief.</p>
+        <p className="hero-description">Robotics, hackathons, creative challenges, and a little mischief.<br />A techno-cultural festival for curious minds at BIT Patna.</p>
         <div className="hero-actions"><Link href="/registrations" className="button button-gold">Enter the tournament <ArrowUpRight size={17} /></Link><a href="#about" className="button button-glass">Explore the chronicles <BookOpen size={16} /></a></div>
         <span className="hero-place"><MapPin size={12} />BIT PATNA · INDIA</span>
       </div>
