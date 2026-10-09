@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { ArrowDown, ArrowUpRight, MapPin, Sparkles } from "lucide-react";
+import { MapPin, Sparkles } from "lucide-react";
 
 export function ComingSoonHero() {
   return <section className="coming-soon-hero" aria-labelledby="coming-soon-title">
@@ -25,10 +24,6 @@ export function ComingSoonHero() {
         <div className="coming-launch-heading"><span>The gates are preparing</span><strong>Opening soon</strong><small><MapPin size={11} /> BIT PATNA · INDIA</small></div>
         <p className="coming-watch-note"><Sparkles size={14} /> Keep watch for the official announcement.</p>
       </div>
-
-      <div className="coming-actions"><Link href="/registrations" className="button button-gold">Enter the story <ArrowUpRight size={15} /></Link></div>
     </div>
-
-    <div className="coming-hero-bottom"><span>VOL. XVII <i>✦</i> A NEW CHAPTER</span><span className="coming-scroll-cue"><span>Stay enchanted</span><ArrowDown size={14} /></span><span>TECHNIKA ’27 · BIT PATNA</span></div>
   </section>;
 }

@@ -169,7 +169,7 @@ html[data-house]:not([data-house="default"]) .hero-castle img { filter:hue-rotat
 @media (max-width:360px) { .nav-account { display:none; }.decree-paper > h3 { font-size:17px; }.decree-paper .portrait-copy p { font-size:11px; }.decree-paper .portrait-copy small { font-size:4px; }.hallows-tabs button { font-size:8px; padding-inline:7px; }.auth-form-panel { padding-inline:19px; }.house-selector-label { flex-wrap:wrap; gap:5px; } }
 
 /* The landing page seals the next chapter behind a cinematic, gold-lit veil. */
-.coming-soon-hero { position:relative; isolation:isolate; min-height:100svh; overflow:hidden; display:flex; align-items:center; justify-content:center; padding:128px 48px 92px; background:#080914; text-align:center; }
+.coming-soon-hero { position:relative; isolation:isolate; width:100%; height:100svh; min-height:0; overflow:hidden; display:flex; align-items:center; justify-content:center; padding:84px 48px 54px; background:#080914; text-align:center; }
 .coming-hero-backdrop { position:absolute; inset:-2%; z-index:-4; }
 .coming-hero-backdrop img { object-fit:cover; object-position:center 56%; filter:saturate(.72) contrast(1.12) brightness(.58); }
 .coming-hero-shade { position:absolute; inset:0; z-index:-3; background:linear-gradient(180deg,#0a0b16e6 0%,#0d0b187d 23%,#0b0b1859 48%,#080914b5 78%,#080914 100%),linear-gradient(90deg,#070811cc,transparent 44%,#070811bf); }
@@ -197,18 +197,15 @@ html[data-house]:not([data-house="default"]) .hero-castle img { filter:hue-rotat
 .coming-launch-heading { display:flex; flex:1; min-width:168px; flex-direction:column; gap:4px; border-right:1px solid #c4a25b3b; padding-right:23px; }.coming-launch-heading > span { color:#b89b69; font-size:8px; letter-spacing:.2em; text-transform:uppercase; }.coming-launch-heading > strong { color:#eed19a; font-family:var(--font-garamond),Georgia,serif; font-size:23px; font-weight:500; white-space:nowrap; }.coming-launch-heading > small { display:flex; align-items:center; gap:5px; color:#a99b91; font-size:8px; letter-spacing:.16em; margin-top:3px; }
 .coming-launch-card--simple { justify-content:center; }.coming-launch-card--simple .coming-launch-heading { flex:0 1 auto; }.coming-watch-note { display:flex; align-items:center; gap:8px; max-width:220px; color:#c8b995; font-family:var(--font-garamond),Georgia,serif; font-size:15px; font-style:italic; line-height:1.35; }.coming-watch-note svg { flex:none; color:#e1b65c; }
 .coming-countdown { display:grid; grid-template-columns:repeat(4,minmax(36px,1fr)); gap:10px; flex:1; }.coming-countdown-unit { text-align:center; }.coming-countdown-unit strong { display:block; color:#f2d28d; font-family:var(--font-garamond),Georgia,serif; font-size:26px; font-weight:500; line-height:1; font-variant-numeric:tabular-nums; }.coming-countdown-unit span { display:block; margin-top:5px; color:#9e9188; font-size:7px; letter-spacing:.11em; text-transform:uppercase; }
-.coming-actions { display:flex; align-items:center; justify-content:center; gap:13px; margin-top:25px; }.coming-actions .button { min-height:43px; padding-inline:20px; font-size:9px; }.coming-actions .button-gold { color:#2a1c0c; }
-.coming-hero-bottom { position:absolute; z-index:8; bottom:28px; left:48px; right:48px; display:flex; align-items:flex-end; justify-content:space-between; color:#a99b8b; font-size:8px; letter-spacing:.17em; }.coming-hero-bottom i { color:#cfae69; font-style:normal; padding-inline:7px; }.coming-scroll-cue { display:flex; flex-direction:column; align-items:center; gap:9px; color:#c8ad76; }.coming-scroll-cue span { text-transform:uppercase; }
-
 @keyframes coming-title-reveal { from { opacity:0; transform:translateY(18px) scale(.97); filter:blur(6px); } to { opacity:1; transform:translateY(0) scale(1); filter:blur(0); } }
 
 @media (max-width:640px) {
-  .coming-soon-hero { min-height:100svh; padding:115px 22px 80px; }
+  .coming-soon-hero { height:100svh; padding:70px 22px 38px; }
   .coming-hero-frame { inset:18px; }.coming-hero-frame::before,.coming-hero-frame::after { width:32px; height:32px; }
   .coming-presents { gap:8px; font-size:7px; letter-spacing:.22em; }.coming-presents > span:first-child,.coming-presents > span:last-child { width:22px; }.coming-presents-mark { gap:5px; }
   .coming-crest { width:72px; height:72px; margin:18px auto 13px; }.coming-crest > img { width:62px; height:62px; }.coming-kicker { font-size:7px; letter-spacing:.23em; }.coming-title { font-size:clamp(43px,13vw,71px); letter-spacing:-.08em; }.coming-soon-label { margin-top:17px; font-size:25px; letter-spacing:.15em; }.coming-divider { margin-block:18px 14px; }.coming-divider span { width:42px; }.coming-description { max-width:290px; font-size:11px; line-height:1.65; }
   .coming-launch-card { flex-direction:column; gap:16px; width:min(100%,330px); margin-top:22px; padding:15px; text-align:center; }.coming-launch-heading { align-items:center; width:100%; min-width:0; border-right:0; border-bottom:1px solid #c4a25b3b; padding:0 0 13px; }.coming-launch-heading > strong { font-size:20px; }.coming-watch-note { justify-content:center; max-width:240px; font-size:14px; }
-  .coming-actions { flex-direction:column; gap:9px; margin-top:18px; }.coming-actions .button { width:220px; }.coming-hero-bottom { bottom:17px; left:27px; right:27px; font-size:6px; letter-spacing:.1em; }.coming-hero-bottom > span:first-child { display:none; }.coming-scroll-cue { gap:5px; }.coming-moon { width:92px; top:13%; right:2%; opacity:.48; }
+  .coming-moon { width:92px; top:13%; right:2%; opacity:.48; }
 }
 
 @media (prefers-reduced-motion:reduce) { .coming-title > span,.coming-title > b,.coming-soon-label { animation:none; } }
