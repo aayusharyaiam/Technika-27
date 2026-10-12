@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const apply = (value: User | null) => {
       if (!active) return;
       setUser(value); setLoading(false);
-      if (isHouse(value?.user_metadata?.house)) setHouse(value.user_metadata.house);
+      setHouse(isHouse(value?.user_metadata?.house) ? value.user_metadata.house : "default");
     };
     if (!client) { const timer = window.setTimeout(() => apply(null), 0); return () => window.clearTimeout(timer); }
     const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => apply(session?.user || null));

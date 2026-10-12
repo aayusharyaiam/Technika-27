@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "motion/react";
 import Lenis from "lenis";
 import { Sparkles, WandSparkles } from "lucide-react";
@@ -10,6 +11,7 @@ import { WandCursor } from "./wand-cursor";
 
 const MagicContext = createContext({ enabled: true, ready: false });
 export const useMagic = () => useContext(MagicContext);
+const subscribeHydration = () => () => {};
 
 type Spark = { x: number; y: number; vx: number; vy: number; age: number; life: number; size: number; blue: boolean };
 
@@ -154,36 +156,42 @@ function LoadingScreen({ dismiss }: { dismiss: () => void }) {
 }
 
 export function Experience({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const authExperience = ["/login", "/signup", "/reset-password", "/sorting", "/account"].includes(pathname);
   const [loading, setLoading] = useState(true);
+  // Auth/ceremony routes use the supplied hat artwork and open immediately, without the film loader.
+  const showLoader = loading && !authExperience;
   const [preference, setPreference] = useState<"system" | "on" | "off">("system");
   const reducedMotion = useReducedMotion();
-  const enabled = preference === "on" || (preference === "system" && !reducedMotion);
+  // Keep the first client render identical to SSR, then apply the system preference.
+  const hydrated = useSyncExternalStore(subscribeHydration, () => true, () => false);
+  const enabled = preference === "on" || (preference === "system" && (!hydrated || !reducedMotion));
   const dismiss = useCallback(() => setLoading(false), []);
 
   useEffect(() => {
-    if (!loading) return;
+    if (!showLoader) return;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = overflow; };
-  }, [loading]);
+  }, [showLoader]);
 
   useEffect(() => {
     document.documentElement.dataset.magic = enabled ? "on" : "off";
-    if (!enabled || loading) return;
+    if (!enabled || showLoader) return;
     const lenis = new Lenis({ duration: 1.3, smoothWheel: true, syncTouch: false, anchors: { offset: -105 } });
     const tick = (time: number) => lenis.raf(time * 1000);
     lenis.on("scroll", ScrollTrigger.update);
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
     return () => { lenis.off("scroll", ScrollTrigger.update); gsap.ticker.remove(tick); lenis.destroy(); };
-  }, [enabled, loading]);
+  }, [enabled, showLoader]);
 
-  return <MotionConfig reducedMotion={enabled ? "never" : "always"}><MagicContext.Provider value={{ enabled, ready: !loading }}>
-    <div className="experience-content" inert={loading || undefined}>{children}</div>
-    <AnimatePresence>{loading && <LoadingScreen dismiss={dismiss} />}</AnimatePresence>
+  return <MotionConfig reducedMotion={enabled ? "never" : "always"}><MagicContext.Provider value={{ enabled, ready: !showLoader }}>
+    <div className="experience-content" inert={showLoader || undefined}>{children}</div>
+    <AnimatePresence>{showLoader && <LoadingScreen dismiss={dismiss} />}</AnimatePresence>
     <WandSparks enabled={enabled} />
     <WandCursor/>
     <MagicInteractions />
-    {!loading && <><div className="scroll-progress" aria-hidden="true" /><button className={`magic-toggle ${enabled ? "" : "magic-disabled"}`} aria-label={enabled ? "Pause magical effects" : "Enable magical effects"} aria-pressed={enabled} onClick={() => setPreference(enabled ? "off" : "on")} title={enabled ? "Pause magical effects" : "Enable magical effects"}>{enabled ? <WandSparkles size={17} /> : <Sparkles size={17} />}<span>{enabled ? "Magic on" : "Enable magic"}</span></button></>}
+    {!showLoader && <><div className="scroll-progress" aria-hidden="true" /><button className={`magic-toggle ${enabled ? "" : "magic-disabled"}`} aria-label={enabled ? "Pause magical effects" : "Enable magical effects"} aria-pressed={enabled} onClick={() => setPreference(enabled ? "off" : "on")} title={enabled ? "Pause magical effects" : "Enable magical effects"}>{enabled ? <WandSparkles size={17} /> : <Sparkles size={17} />}<span>{enabled ? "Magic on" : "Enable magic"}</span></button></>}
   </MagicContext.Provider></MotionConfig>;
 }

@@ -31,9 +31,10 @@ npm start
 | `/delegate` | Triwizard crest, three academy paths, contingent preview |
 | `/alumni` | Hall of Legacies, Pensieve memory vials, ancient ledger |
 | `/contact` | Owl Post letter, wax seal, celestial owlery, campus directions |
-| `/login` | Email/password sign-in, house selection, and password-reset request |
-| `/signup` | Account creation with name, strong password, and house selection |
-| `/account` | Server-protected common room, saved profile house, and sign-out |
+| `/login` | Illustrated Sorting Hat sign-in, saved-house greeting, and password-reset request |
+| `/signup` | Full name, college, phone, email, password → same-page Sorting Hat ceremony and reveal |
+| `/sorting` | Sign-in-protected compatibility redirect to the ceremony step inside `/signup` |
+| `/account` | Server-protected common room, read-only profile house, and sign-out |
 | `/reset-password` | Password change after opening a verified recovery link |
 | `/auth/callback` | PKCE email-confirmation/recovery callback with allowlisted redirects |
 
@@ -54,7 +55,8 @@ The five festival portals intentionally announce **coming soon**. Account flows 
 
 ## The Wizarding World components
 
-- **House themes:** Gryffindor scarlet, Slytherin emerald/silver, Ravenclaw blue/bronze, and Hufflepuff yellow/black. The original gold theme remains the default. Choose a house on the login/sign-up page; the accent colours, castle tint/window light, cloth banners, buttons, navigation, particles, and scrollbars update across every page. A validated local preference persists between visits. Signed-in users can save the same choice to Supabase user metadata from `/account`.
+- **House themes:** Gryffindor scarlet, Slytherin emerald/silver, Ravenclaw blue/bronze, and Hufflepuff yellow/black. Existing profile houses drive the theme; the original gold remains the default for unsorted visitors. Auth screens display all four original crests without allowing house choice.
+- **Sorting Hat frontend:** A cinematic, single-page signup journey: create an account, meet the Hat, and see the reveal within `/signup`. The ceremony requires sign-in, including direct `/sorting` and `/signup?step=ceremony` links; login/signup offer no public preview link. For users without a saved house, reveals are explicitly labelled previews, stored only in sessionStorage, and never written as membership. Strict server-side balancing was deferred in the frontend-only scope. See [`docs/ceremony-frontend.md`](docs/ceremony-frontend.md) for the integration boundary and checks.
 - **Goblet of Fire:** a reusable layered tower scene, house-coloured windows/banner, carved bronze chalice, animated blue fire, drifting embers, and scroll parallax (`src/components/goblet-tower.tsx`).
 - **Deathly Hallows:** the wand line, stone circle, and cloak triangle illuminate one at a time, with an accompanying original story. Visitors can choose a relic, use arrow keys, or pause the automatic rotation (`src/components/deathly-hallows.tsx`).
 - **Ministry notice wall:** the members page uses Umbridge-inspired wooden/gilt Educational Decree frames. Chamber filters still work; each decree opens a keyboard-accessible dialog. The member identities remain placeholders until the actual roster is provided.
@@ -86,12 +88,12 @@ The supplied local configuration is stored in ignored `.env.local`. No live keys
 
 - Supabase handles passwords and account sessions; the app does not put passwords in local storage or run a custom password database.
 - Registration/new-password forms require at least 12 characters, a letter, and a number, and matching confirmation. Existing-password login is not restricted by that new-password rule.
-- `src/proxy.ts` is the **Next.js 16** equivalent of middleware. It refreshes sessions on account/auth routes, uses `getClaims()` to verify signed tokens, preserves refreshed cookies, and uses private/no-store responses. Production cookies are Secure and SameSite=Lax.
+- `src/proxy.ts` is the **Next.js 16** equivalent of middleware. It refreshes sessions on account/auth/ceremony routes, uses `getClaims()` to verify signed tokens, redirects unsigned visits to protected ceremony links, preserves refreshed cookies, and uses private/no-store responses. Production cookies are Secure and SameSite=Lax.
 - `/account` independently calls server-side `getUser()` before rendering user data. Forged, expired, or missing sessions redirect to `/login`. Public festival pages stay publicly accessible.
 - Email confirmation and recovery use a PKCE code exchange. The callback only redirects to `/account` or `/reset-password`; arbitrary external redirect URLs are ignored.
 - Password recovery changes require a verified Supabase user. Sign-out uses Supabase and returns to the login page.
-- User metadata stores `display_name` and the validated `house` preference. It is cosmetic profile information and is never used to grant admin/core-member permissions. No custom database tables are required for these flows. If event-registration tables are added later, enforce their permissions with Supabase Row Level Security.
-- With no Supabase configuration, account submission reports that setup is needed; it never displays a simulated successful login.
+- Signup stores `display_name`, `college`, and normalized contact `phone` in user metadata. Legacy cosmetic `house` preferences are read but never assigned or edited by the new frontend. User metadata is browser-editable at the provider level and must never grant permissions or serve as an authoritative balanced assignment ledger. No custom database tables are required for these frontend changes.
+- With no Supabase configuration, account submission reports unavailability; it never displays a simulated successful login. The ceremony stays gated until a session is available.
 
 ## Content & assets
 
@@ -126,7 +128,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The Playwright suite checks desktop/mobile routes, overflow, image loading, navigation, schedule tabs, filters/decree dialogs, calendar downloads, FAQs, 0–100 loading, actual parallax, autonomous snitch depth changes, hover interactions, reduced-motion overrides, house persistence, Hallows controls, authentication validation/protected-route redirects, and server-rendered SEO/robots/sitemap output. Screenshots are generated under ignored `test-results/`. Automated checks do not create real Supabase accounts or send real signup/recovery email.
+The Playwright suite checks desktop/mobile routes, overflow, image loading, navigation, schedule tabs, filters/decree dialogs, calendar downloads, FAQs, 0–100 loading, actual parallax, autonomous snitch depth changes, hover interactions, reduced-motion overrides, Hallows controls, authentication validation/protected-route redirects, ceremony preview recovery/no profile writes, and server-rendered SEO/robots/sitemap output. Screenshots are generated under ignored `test-results/`. Automated checks do not create real Supabase accounts or send real signup/recovery email.
 
 Browser tests use the production build, so run `npm run build` first. They start the server automatically on port 3000. To use a different port on macOS/Linux/WSL:
 
@@ -134,7 +136,7 @@ Browser tests use the production build, so run `npm run build` first. They start
 PLAYWRIGHT_PORT=3100 npm run test:e2e
 ```
 
-For an end-to-end email check against your configured Supabase project, create a test account, open its confirmation link in the same browser, sign in, save a house from `/account`, sign out, and follow a password-reset email to set a new password. PKCE confirmation/recovery links need the browser that initiated the request.
+For an end-to-end email check against your configured Supabase project, create a test account, open its confirmation link in the same browser, explore the ceremony preview from `/account`, sign out, and follow a password-reset email to set a new password. PKCE confirmation/recovery links need the browser that initiated the request. Preview reveals do not assign official membership.
 
 ## Deployment
 

@@ -2,36 +2,23 @@ import { expect, test, type Page } from "@playwright/test";
 
 async function open(page: Page, path = "/") {
   await page.goto(path, { waitUntil: "domcontentloaded" });
-  await page.keyboard.press("Enter");
-  await expect(page.getByRole("dialog", { name: /solemnly swear/ })).toHaveCount(0, { timeout: 20000 });
+  await expect(page.getByRole("dialog", { name: "Entering the wizarding world" })).toHaveCount(0, { timeout: 35000 });
 }
 
-test("house choices recolour the entire site and survive navigation and reload", async ({ page }) => {
+test("auth pages display all houses without allowing house selection", async ({ page }) => {
   await open(page, "/login");
-  await page.getByRole("button", { name: /Slytherin Ambition/ }).click();
-  await expect(page.locator("html")).toHaveAttribute("data-house", "slytherin");
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--gold").trim())).toBe("#98d8b4");
-  await page.goto("/");
-  await expect(page.locator("html")).toHaveAttribute("data-house", "slytherin");
-  await expect(page.locator(".hero .house-banners")).toHaveAttribute("data-selected-house", "slytherin");
-  await page.reload();
-  await expect(page.locator("html")).toHaveAttribute("data-house", "slytherin");
-  await page.goto("/signup");
-  await expect(page.getByRole("button", { name: /Slytherin Ambition/ })).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "Keep the original enchanted gold" }).click();
-  await expect(page.locator("html")).toHaveAttribute("data-house", "default");
+  await expect(page.locator(".auth-house-gallery > div")).toHaveCount(4);
+  await expect(page.locator(".house-selector")).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("The Hat Remembers You");
+  await page.getByRole("link", { name: "Let the Hat discover you." }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("The Hat Awaits");
+  await expect(page.locator(".house-selector")).toHaveCount(0);
 });
 
-test("all four house palettes and banners are distinct", async ({ page }) => {
+test("all four original house crests have distinct colours", async ({ page }) => {
   await open(page, "/signup");
-  const colours = new Set<string>();
-  for (const [name, slug] of [["Gryffindor", "gryffindor"], ["Slytherin", "slytherin"], ["Ravenclaw", "ravenclaw"], ["Hufflepuff", "hufflepuff"]]) {
-    await page.getByRole("button", { name: new RegExp(name) }).click();
-    await expect(page.locator("html")).toHaveAttribute("data-house", slug);
-    await expect(page.locator(".auth-house-banners")).toHaveAttribute("data-selected-house", slug);
-    colours.add(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--gold").trim()));
-  }
-  expect(colours.size).toBe(4);
+  const colours = await page.locator(".auth-house-gallery .ceremony-crest").evaluateAll((crests) => crests.map((crest) => getComputedStyle(crest).getPropertyValue("--crest-accent")));
+  expect(new Set(colours).size).toBe(4);
 });
 
 test("Hallows illuminate one relic at a time with matching stories", async ({ page }) => {
@@ -58,20 +45,25 @@ test("Ministry notices open and close accessible decree dialogs", async ({ page 
   await expect(page.getByRole("button", { name: "Read decree for Supreme Mugwump" })).toBeFocused();
 });
 
-test("signup validates strong passwords without contacting the auth service", async ({ page }) => {
+test("signup validates passwords, college and phone without contacting the auth service", async ({ page }) => {
   let calls = 0;
   await page.route("**/auth/v1/signup**", async (route) => { calls++; await route.abort(); });
   await open(page, "/signup");
-  await page.getByLabel("Your name", { exact: true }).fill("Test Wizard");
+  await page.getByLabel("Full name", { exact: true }).fill("Test Wizard");
+  await page.getByLabel("College", { exact: true }).fill("BIT Patna");
+  await page.getByLabel("Phone number", { exact: true }).fill("9876543210");
   await page.getByLabel("Email address", { exact: true }).fill("wizard@example.invalid");
   await page.getByLabel("Password", { exact: true }).fill("abcdefghijklmnop");
-  await page.getByLabel("Confirm password", { exact: true }).fill("abcdefghijklmnop");
-  await page.getByRole("button", { name: "Write my first chapter" }).click();
+  await page.getByRole("button", { name: "BEGIN YOUR CEREMONY" }).click();
   await expect(page.locator(".auth-form-panel").getByRole("alert")).toContainText("a letter and a number");
   await page.getByLabel("Password", { exact: true }).fill("Astrongpassword27");
-  await page.getByLabel("Confirm password", { exact: true }).fill("Anotherpassword27");
-  await page.getByRole("button", { name: "Write my first chapter" }).click();
-  await expect(page.locator(".auth-form-panel").getByRole("alert")).toContainText("do not match");
+  await page.getByLabel("Phone number", { exact: true }).fill("12345");
+  await page.getByRole("button", { name: "BEGIN YOUR CEREMONY" }).click();
+  await expect(page.locator(".auth-form-panel").getByRole("alert")).toContainText("10–15 digits");
+  await page.getByLabel("Phone number", { exact: true }).fill("+91 (98765) 43210");
+  await page.getByLabel("College", { exact: true }).fill("   ");
+  await page.getByRole("button", { name: "BEGIN YOUR CEREMONY" }).click();
+  await expect(page.locator(".auth-form-panel").getByRole("alert")).toContainText("college or university");
   expect(calls).toBe(0);
 });
 
@@ -80,7 +72,7 @@ test("login displays real auth failures instead of a simulated success", async (
   await open(page, "/login");
   await page.getByLabel("Email address", { exact: true }).fill("wizard@example.invalid");
   await page.getByLabel("Password", { exact: true }).fill("Astrongpassword27");
-  await page.getByRole("button", { name: "Enter the common room" }).click();
+  await page.getByRole("button", { name: "RETURN TO YOUR HOUSE" }).click();
   await expect(page.locator(".auth-form-panel").getByRole("alert")).toContainText("email and password do not match");
   await expect(page).toHaveURL(/\/login$/);
   await page.getByRole("button", { name: "Forgot your password?" }).click();

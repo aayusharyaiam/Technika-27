@@ -2,41 +2,70 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowRight, CheckCircle2, Eye, EyeOff, KeyRound, LoaderCircle, Mail } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
+import { houseThemes } from "@/lib/houses";
+import { savedProfileHouse } from "@/lib/ceremony-preview";
 import { useHouse } from "./house-provider";
-import { HouseSelector } from "./house-selector";
 import { useAuth } from "./auth-provider";
+import { useMagic } from "./experience";
 
 type Mode = "login" | "signup" | "forgot" | "reset";
 
-export function AuthForm({ mode: initialMode, callbackError = false }: { mode: Mode; callbackError?: boolean }) {
+function authError(caught: unknown) {
+  const message = caught instanceof Error ? caught.message : "The Owlery could not complete that request. Please try again.";
+  if (/invalid login credentials/i.test(message)) return "That email and password do not match. Please try again or reset your password.";
+  if (/already registered|already exists/i.test(message)) return "An account already exists for that email. Return to the Hall to sign in, or reset your password.";
+  if (/email not confirmed/i.test(message)) return "Please open the confirmation letter in your inbox before signing in.";
+  if (/fetch|network|timeout/i.test(message)) return "We could not reach the account service. Check your connection and try again.";
+  if (/rate limit|too many/i.test(message)) return "Too many requests reached the Owlery. Please wait a moment before trying again.";
+  return message;
+}
+
+export function AuthForm({ mode: initialMode, callbackError = false, onSignupSuccess }: { mode: Mode; callbackError?: boolean; onSignupSuccess?: () => void }) {
   const [mode, setMode] = useState(initialMode);
   const [busy, setBusy] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState(callbackError ? "That confirmation link has expired or could not be verified. Request a new email below." : "");
   const [message, setMessage] = useState("");
-  const { house, theme } = useHouse();
+  const { setHouse } = useHouse();
   const { user } = useAuth();
+  const { enabled } = useMagic();
   const router = useRouter();
+  const lock = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const alert = useRef<HTMLParagraphElement>(null);
   const signup = mode === "signup";
-  const passwordMode = mode !== "forgot";
+  const newPassword = signup || mode === "reset";
+  const disabled = busy || leaving;
+
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  useEffect(() => { if (error) alert.current?.focus(); }, [error]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (lock.current || leaving) return;
     setError(""); setMessage("");
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email") || "").trim();
+    const name = String(form.get("name") || "").trim();
+    const college = String(form.get("college") || "").trim();
+    const phone = String(form.get("phone") || "").trim().replace(/[\s().-]/g, "");
     const password = String(form.get("password") || "");
-    if ((signup || mode === "reset") && (password.length < 12 || !/[a-z]/i.test(password) || !/\d/.test(password))) {
+    if (signup && name.length < 2) { setError("Please enter your full name, using at least two characters."); return; }
+    if (signup && college.length < 2) { setError("Please enter your college or university name."); return; }
+    if (signup && !/^\+?\d{10,15}$/.test(phone)) { setError("Enter a valid phone number with 10–15 digits. You can include a country code, such as +91."); return; }
+    if (newPassword && (password.length < 12 || !/[a-z]/i.test(password) || !/\d/.test(password))) {
       setError("Choose a password with at least 12 characters, including a letter and a number."); return;
     }
-    if ((signup || mode === "reset") && password !== String(form.get("confirmPassword") || "")) {
+    if (mode === "reset" && password !== String(form.get("confirmPassword") || "")) {
       setError("Your passwords do not match. Please check both fields."); return;
     }
     const client = getSupabase();
-    if (!client) { setError("Account services need to be connected. Set the Supabase URL and publishable key in the site environment; your house selection is already saved on this device."); return; }
+    if (!client) { setError("Account services are temporarily unavailable. Please try again when the Owlery is connected."); return; }
+    lock.current = true;
     setBusy(true);
     try {
       if (mode === "forgot") {
@@ -44,10 +73,20 @@ export function AuthForm({ mode: initialMode, callbackError = false }: { mode: M
         if (error) throw error;
         setMessage("If an account exists for that email, a password reset letter is on its way. Check your inbox and spam folder.");
       } else if (signup) {
-        const { data, error } = await client.auth.signUp({ email, password, options: { data: { display_name: String(form.get("name") || "").trim(), house }, emailRedirectTo: `${window.location.origin}/auth/callback?next=/account` } });
+        const { data, error } = await client.auth.signUp({ email, password, options: { data: { display_name: name, college, phone }, emailRedirectTo: `${window.location.origin}/auth/callback?next=/account` } });
         if (error) throw error;
-        if (data.session) { router.push("/account"); router.refresh(); }
-        else setMessage("Check your inbox to confirm your email before entering the common room. If you already have an account, sign in or reset your password.");
+        if (data.session) {
+          setLeaving(true);
+          if (savedProfileHouse(data.user?.user_metadata?.house)) {
+            router.push("/account"); router.refresh();
+          } else if (onSignupSuccess) {
+            // The signup container swaps the form for the ceremony without navigating away.
+            onSignupSuccess();
+          } else router.replace("/signup?step=ceremony");
+        } else {
+          // Supabase can deliberately obscure duplicate emails; don't assert that a new account was created.
+          setMessage("Check your inbox for a confirmation letter, then return to this signup page to continue with the Hat. If you already have an account, return to the Hall to sign in or reset your password.");
+        }
       } else if (mode === "reset") {
         const { data: verified, error: verificationError } = await client.auth.getUser();
         if (verificationError || !verified.user) { setError("Open the verified password reset link from your email first."); return; }
@@ -55,35 +94,38 @@ export function AuthForm({ mode: initialMode, callbackError = false }: { mode: M
         if (error) throw error;
         setMessage("Your password has been changed. Your common room is ready.");
       } else {
-        const { error } = await client.auth.signInWithPassword({ email, password });
+        const { data, error } = await client.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        const { error: preferenceError } = await client.auth.updateUser({ data: { house } });
-        if (preferenceError) setMessage("Signed in. Your house is saved on this device; the profile update could not be completed.");
-        router.push("/account"); router.refresh();
+        const savedHouse = savedProfileHouse(data.user?.user_metadata?.house);
+        setLeaving(true);
+        if (savedHouse) {
+          setHouse(savedHouse);
+          setMessage(`${houseThemes[savedHouse].name} welcomes you back. ${houseThemes[savedHouse].motto}`);
+          timer.current = setTimeout(() => { router.push("/account"); router.refresh(); }, enabled ? 1000 : 0);
+        } else { router.push("/signup?step=ceremony"); router.refresh(); }
       }
-    } catch (caught) {
-      const text = caught instanceof Error ? caught.message : "The Owlery could not complete that request. Please try again.";
-      setError(text === "Invalid login credentials" ? "That email and password do not match. Please try again or reset your password." : text);
-    } finally { setBusy(false); }
+    } catch (caught) { setError(authError(caught)); }
+    finally { lock.current = false; setBusy(false); }
   };
 
   return <div className="auth-form-panel">
     <span className="auth-chapter">{signup ? "CHAPTER I · YOUR LETTER HAS ARRIVED" : mode === "forgot" ? "A LOST KEY CAN BE FOUND" : mode === "reset" ? "A NEW KEY TO THE CASTLE" : "WELCOME BACK TO THE COMMON ROOM"}</span>
-    <h1>{signup ? <>Every wizard<br />starts with <em>a name.</em></> : mode === "forgot" ? <>Recover your<br /><em>castle key.</em></> : mode === "reset" ? <>A fresh start.<br /><em>A stronger spell.</em></> : <>The castle<br /><em>remembers you.</em></>}</h1>
-    <p className="auth-intro">{signup ? "Create your Technika account. Choose your colours. Begin your story." : mode === "forgot" ? "We’ll send a verified reset link to your email." : mode === "reset" ? "Choose a new password for your Technika account." : "Sign in, choose your house, and make yourself at home."}</p>
-    {user && mode !== "reset" && <p className="auth-already">You are already signed in. <Link href="/account">Open your common room →</Link></p>}
-    <form onSubmit={submit} className="wizard-auth-form">
-      {signup && <label htmlFor="auth-name">Your name<input id="auth-name" name="name" autoComplete="name" maxLength={80} minLength={2} placeholder="The name on your Hogwarts letter" required/></label>}
-      {mode !== "reset" && <label htmlFor="auth-email">Email address<div className="auth-input-wrap"><Mail size={15}/><input id="auth-email" name="email" type="email" autoComplete="email" maxLength={254} placeholder="you@your-college.ac.in" required/></div></label>}
-      {passwordMode && <label htmlFor="auth-password"><span id="auth-password-label">{mode === "reset" ? "New password" : "Password"}</span><div className="auth-input-wrap"><KeyRound size={15}/><input id="auth-password" name="password" aria-labelledby="auth-password-label" type={visible ? "text" : "password"} autoComplete={signup || mode === "reset" ? "new-password" : "current-password"} minLength={signup || mode === "reset" ? 12 : 1} maxLength={128} placeholder={signup || mode === "reset" ? "12+ characters, a letter and a number" : "Your key to the castle"} required/><button type="button" className="password-visibility" aria-label={visible ? "Hide password" : "Show password"} onClick={() => setVisible(!visible)}>{visible ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></label>}
-      {(signup || mode === "reset") && <label htmlFor="auth-confirm">Confirm password<input id="auth-confirm" name="confirmPassword" type={visible ? "text" : "password"} autoComplete="new-password" minLength={12} maxLength={128} placeholder="Repeat your password" required/></label>}
-      {(signup || mode === "login") && <HouseSelector compact/>}
-      {mode === "login" && <button type="button" className="forgot-password" onClick={() => { setMode("forgot"); setError(""); setMessage(""); }}>Forgot your password?</button>}
-      {error && <p className="auth-feedback auth-error" role="alert">{error}</p>}
+    <h1>{signup ? <>The Hat <em>Awaits</em></> : mode === "forgot" ? <>Recover your <em>castle key.</em></> : mode === "reset" ? <>A fresh start. <em>A stronger spell.</em></> : <>The Hat <em>Remembers You</em></>}</h1>
+    <p className="auth-intro">{signup ? "Every great journey begins with a choice. Your story begins here." : mode === "forgot" ? "We’ll send a verified reset link to your email." : mode === "reset" ? "Choose a new password for your Technika account." : "Ahh… welcome back. Your place in the wizarding world awaits."}</p>
+    {user && mode !== "reset" && !leaving && <p className="auth-already">You are already signed in. <Link href="/account">Open your common room →</Link></p>}
+    <form onSubmit={submit} className="wizard-auth-form" aria-busy={disabled}>
+      {signup && <label htmlFor="auth-name">Full name<input id="auth-name" name="name" autoComplete="name" maxLength={80} minLength={2} placeholder="The name on your letter" disabled={disabled} required/></label>}
+      {signup && <label htmlFor="auth-college">College<input id="auth-college" name="college" autoComplete="organization" maxLength={160} minLength={2} placeholder="Your college or university" disabled={disabled} required/></label>}
+      {signup && <label htmlFor="auth-phone"><span id="auth-phone-label">Phone number</span><input id="auth-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength={25} aria-labelledby="auth-phone-label" aria-describedby="phone-hint" placeholder="e.g. +91 98765 43210" disabled={disabled} required/><small id="phone-hint">Include your country code for international numbers.</small></label>}
+      {mode !== "reset" && <label htmlFor="auth-email">Email address<div className="auth-input-wrap"><Mail size={15} aria-hidden="true"/><input id="auth-email" name="email" type="email" autoComplete="email" maxLength={254} placeholder="you@your-college.ac.in" disabled={disabled} required/></div></label>}
+      {mode !== "forgot" && <label htmlFor="auth-password"><span id="auth-password-label">{mode === "reset" ? "New password" : "Password"}</span><div className="auth-input-wrap"><KeyRound size={15} aria-hidden="true"/><input id="auth-password" name="password" aria-labelledby="auth-password-label" aria-describedby={newPassword ? "password-hint" : undefined} type={visible ? "text" : "password"} autoComplete={newPassword ? "new-password" : "current-password"} minLength={newPassword ? 12 : 1} maxLength={128} placeholder="Your key to the castle" disabled={disabled} required/><button type="button" className="password-visibility" aria-label={visible ? "Hide password" : "Show password"} aria-pressed={visible} disabled={disabled} onClick={() => setVisible(!visible)}>{visible ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div>{newPassword && <small id="password-hint">12+ characters, including a letter and a number.</small>}</label>}
+      {mode === "reset" && <label htmlFor="auth-confirm">Confirm password<input id="auth-confirm" name="confirmPassword" type={visible ? "text" : "password"} autoComplete="new-password" minLength={12} maxLength={128} placeholder="Repeat your password" disabled={disabled} required/></label>}
+      {mode === "login" && <button type="button" className="forgot-password" disabled={disabled} onClick={() => { setMode("forgot"); setError(""); setMessage(""); }}>Forgot your password?</button>}
+      {error && <p ref={alert} tabIndex={-1} className="auth-feedback auth-error" role="alert">{error}</p>}
       {message && <p className="auth-feedback auth-success" role="status"><CheckCircle2 size={17}/>{message}</p>}
-      <button type="submit" className="button button-gold auth-submit" disabled={busy}>{busy ? <><LoaderCircle size={15} className="spin"/>Contacting the Owlery…</> : <>{signup ? "Write my first chapter" : mode === "forgot" ? "Send my reset letter" : mode === "reset" ? "Save my new password" : "Enter the common room"}<ArrowRight size={16}/></>}</button>
-      <span className="auth-house-note">{house === "default" ? "Original enchanted gold" : `${theme.name} colours`} · saved on this device</span>
+      <button type="submit" className="button button-gold auth-submit" disabled={disabled}>{disabled ? <><LoaderCircle size={15} className="spin"/>{leaving ? "Opening the Hall…" : "Contacting the Owlery…"}</> : <>{signup ? "BEGIN YOUR CEREMONY" : mode === "forgot" ? "Send my reset letter" : mode === "reset" ? "Save my new password" : "RETURN TO YOUR HOUSE"}<ArrowRight size={16}/></>}</button>
+      {signup && <span className="auth-house-note">Four houses. Equal belonging. No house selection required.</span>}
     </form>
-    <div className="auth-switch">{signup ? <>Already received your letter? <Link href="/login">Sign in</Link></> : mode === "forgot" ? <button type="button" onClick={() => { setMode("login"); setError(""); setMessage(""); }}>← Return to sign in</button> : mode === "reset" ? <Link href="/account">Return to your common room →</Link> : <>Your first visit? <Link href="/signup">Create an account</Link></>}</div>
+    <div className="auth-switch">{signup ? <>Already have an account? <Link href="/login">Return to the Hall.</Link></> : mode === "forgot" ? <button type="button" disabled={disabled} onClick={() => { setMode("login"); setError(""); setMessage(""); }}>← Return to sign in</button> : mode === "reset" ? <Link href="/account">Return to your common room →</Link> : <>New to the ceremony? <Link href="/signup">Let the Hat discover you.</Link></>}</div>
   </div>;
 }
