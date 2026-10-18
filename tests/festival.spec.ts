@@ -95,6 +95,17 @@ test("snitch is autonomous, and motion can be paused", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("data-magic", "on");
 });
 
+test("scroll snake is visible and grows down the page", async ({ page }) => {
+  await arrive(page);
+  const snake = page.getByTestId("scroll-snake");
+  await expect(snake).toBeVisible();
+  const startLength = Number(await snake.getAttribute("data-snake-length"));
+
+  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
+  await expect.poll(async () => Number(await snake.getAttribute("data-snake-length"))).toBeGreaterThan(startLength);
+  await expect(snake).toHaveAttribute("data-scroll-progress", "100");
+});
+
 test("reduced motion and narrow phone screens remain usable", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 320, height: 740 });

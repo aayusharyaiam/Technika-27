@@ -13,7 +13,6 @@ export function ScrollSnake() {
   const frameRef = useRef<number | null>(null);
   const pathLengthRef = useRef(0);
   const [progress, setProgress] = useState(0);
-  const [scrollable, setScrollable] = useState(false);
   const [head, setHead] = useState<HeadPosition>({ x: 50, y: 45, angle: 0 });
 
   useEffect(() => {
@@ -24,7 +23,6 @@ export function ScrollSnake() {
       const maxScroll = Math.max(1, root.scrollHeight - window.innerHeight);
       const nextProgress = clamp(window.scrollY / maxScroll, 0, 1);
       setProgress((current) => Math.abs(current - nextProgress) < 0.001 ? current : nextProgress);
-      setScrollable(root.scrollHeight > window.innerHeight + 8);
 
       const path = pathRef.current;
       if (!path) return;
@@ -58,9 +56,7 @@ export function ScrollSnake() {
     };
   }, []);
 
-  if (!scrollable) return null;
-
-  const snakeLength = (4.5 + progress * 95.5).toFixed(2);
+  const snakeLength = (8 + progress * 92).toFixed(2);
 
   return (
     <aside className="scroll-snake" data-testid="scroll-snake" data-scroll-progress={Math.round(progress * 100)} data-snake-length={snakeLength} aria-hidden="true">
