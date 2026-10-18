@@ -4,9 +4,10 @@ A cinematic, dark Wizarding World–inspired festival website built from the sup
 
 ## Run locally
 
-Requires **Node.js 22 or newer** (Node 24 recommended). The installed Supabase SDK requires Node 22+, even though Next.js itself supports Node 20.9+.
+Requires **Node.js 22.20.0**, pinned in [`.nvmrc`](.nvmrc). The installed Supabase SDK requires Node 22+, even though Next.js itself supports Node 20.9+.
 
 ```bash
+nvm use
 npm ci
 cp .env.example .env.local
 npm run dev
@@ -20,6 +21,15 @@ Open **http://localhost:3000**. For a production preview:
 npm run build
 npm start
 ```
+
+To run the same production build in Docker:
+
+```bash
+docker build -t technika-27 .
+docker run --rm --publish 3000:3000 technika-27
+```
+
+Open **http://localhost:3000** after either run command.
 
 ## Pages
 
@@ -120,6 +130,16 @@ The original references are preserved in `image refs/`. Optimised versions of th
 
 ## Checks
 
+The offline smoke test is a single command and performs the lint plus production build. It works on Windows, macOS, and Linux:
+
+```bash
+npm test
+```
+
+On systems with `make`, `make test` is an equivalent alias.
+
+The individual checks are also available when needed:
+
 ```bash
 npm run lint
 npm run typecheck
@@ -140,4 +160,6 @@ For an end-to-end email check against your configured Supabase project, create a
 
 ## Deployment
 
-Import the repository into Vercel with the **Next.js** preset, select **Node.js 22 or 24**, set the Supabase environment variables above, configure the production auth callback URLs, and redeploy. The production command is `npm run build`; other Node hosts can serve it with `npm start`. Social image URLs use Vercel’s production URL automatically; set `NEXT_PUBLIC_SITE_URL` to your final public/custom-domain origin for canonical URLs and sharing cards.
+Import the repository into Vercel with the **Next.js** preset, select **Node.js 22.20.0** to match [`.nvmrc`](.nvmrc), set the Supabase environment variables above, configure the production auth callback URLs, and redeploy. The production command is `npm run build`; other Node hosts can serve it with `npm start`. Social image URLs use Vercel’s production URL automatically; set `NEXT_PUBLIC_SITE_URL` to your final public/custom-domain origin for canonical URLs and sharing cards.
+
+For a container deployment, build the checked-in image with `docker build -t technika-27 .`, then run it with `docker run --rm --publish 3000:3000 technika-27`. Pass any deployment-specific environment variables with Docker’s `--env-file` or `--env` flags; no credentials are stored in the image or repository.
