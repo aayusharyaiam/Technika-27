@@ -8,6 +8,7 @@ import { Sparkles, WandSparkles } from "lucide-react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { MagicInteractions } from "./magic-interactions";
 import { WandCursor } from "./wand-cursor";
+import { ScrollSnake } from "./scroll-snake";
 
 const MagicContext = createContext({ enabled: true, ready: false });
 export const useMagic = () => useContext(MagicContext);
@@ -192,6 +193,6 @@ export function Experience({ children }: { children: React.ReactNode }) {
     <WandSparks enabled={enabled} />
     <WandCursor/>
     <MagicInteractions />
-    {!showLoader && <><div className="scroll-progress" aria-hidden="true" /><button className={`magic-toggle ${enabled ? "" : "magic-disabled"}`} aria-label={enabled ? "Pause magical effects" : "Enable magical effects"} aria-pressed={enabled} onClick={() => setPreference(enabled ? "off" : "on")} title={enabled ? "Pause magical effects" : "Enable magical effects"}>{enabled ? <WandSparkles size={17} /> : <Sparkles size={17} />}<span>{enabled ? "Magic on" : "Enable magic"}</span></button></>}
+    {!showLoader && <><div className="scroll-progress" aria-hidden="true" /><ScrollSnake /><button className={`magic-toggle ${enabled ? "" : "magic-disabled"}`} aria-label={enabled ? "Pause magical effects" : "Enable magical effects"} aria-pressed={enabled} onClick={() => setPreference(enabled ? "off" : "on")} title={enabled ? "Pause magical effects" : "Enable magical effects"}>{enabled ? <WandSparkles size={17} /> : <Sparkles size={17} />}<span>{enabled ? "Magic on" : "Enable magic"}</span></button></>}
   </MagicContext.Provider></MotionConfig>;
 }

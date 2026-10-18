@@ -225,6 +225,17 @@ html[data-magic="off"] { scroll-behavior: auto; }
 .route-spell-veil { position: fixed; inset: 0; z-index: 45; pointer-events: none; transform: scaleY(0); background: linear-gradient(150deg, #191121, #372523, #100c19); display: flex; align-items: center; justify-content: center; }
 .route-spell-veil > span { color: #d9b777; font-size: 60px; text-shadow: 0 0 35px #ffd89366; }
 .scroll-progress { position: fixed; z-index: 60; top: 0; left: 0; right: 0; height: 2px; transform: scaleX(0); transform-origin: left; background: linear-gradient(90deg, #795527, #ffd893, #f5b731); box-shadow: 0 0 10px #f5b73166; pointer-events: none; }
+.scroll-snake { position: fixed; z-index: 38; top: 50%; right: clamp(4px, 1.4vw, 22px); width: 54px; height: min(78vh, 720px); transform: translateY(-50%); pointer-events: none; filter: drop-shadow(0 0 12px #152a1f55); }
+.scroll-snake-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.scroll-snake-rail { fill: none; stroke: #d9bc7e; stroke-width: 1.15; stroke-dasharray: 1.2 8; opacity: .24; }
+.scroll-snake-body-shadow { fill: none; stroke: #070d0c; stroke-linecap: round; stroke-width: 10.5; opacity: .78; }
+.scroll-snake-body { fill: none; stroke: url(#scroll-snake-body-gradient); stroke-linecap: round; stroke-width: 6.5; filter: url(#scroll-snake-glow); }
+.scroll-snake-scales { fill: none; stroke: #fff0b44d; stroke-linecap: round; stroke-width: 1.4; stroke-dasharray: 1.2 4.2; }
+.scroll-snake-marker { fill: #f1d38e; stroke: #302411; stroke-width: 1.5; filter: drop-shadow(0 0 5px #f5c96e99); }
+.scroll-snake-head { transform-box: view-box; transform-origin: center; transition: transform .18s ease-out; }
+.scroll-snake-head-shape { fill: #315e4b; stroke: #f0ca7a; stroke-width: 1.4; }
+.scroll-snake-eye { fill: #fff0ad; stroke: #3a2116; stroke-width: .65; }
+.scroll-snake-tongue { fill: none; stroke: #d77a72; stroke-linecap: round; stroke-width: .8; }
 .hero-moon-aura { position: absolute; z-index: 2; width: 350px; height: 350px; top: 5%; left: 56%; border-radius: 50%; background: radial-gradient(circle, #c4dbff0f, #c4dbff06 45%, transparent 70%); pointer-events: none; }
 .button { position: relative; overflow: hidden; isolation: isolate; }
 .button::after { content: ""; position: absolute; inset: -60% -40%; z-index: -1; background: linear-gradient(100deg, transparent 35%, #fff4c85c 50%, transparent 65%); transform: translateX(-110%) rotate(10deg); transition: transform .75s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
@@ -509,8 +520,12 @@ html[data-magic="off"] { scroll-behavior: auto; }
   .site-footer { padding-top: 38px; }.footer-grid { grid-template-columns: 1fr 1fr; gap: 30px 24px; padding-bottom: 32px; }.footer-about { grid-column: span 2; }.footer-about .brand img { width: 46px; height: 46px; }.footer-about .brand > span { font-size: 24px; }.footer-about > p { font-size: 11px; max-width: 100%; margin-block: 16px; }.footer-grid h3 { font-size: 11px; margin-top: 0; margin-bottom: 15px; }.footer-grid > div:not(:first-child) > a { font-size: 10px; margin-bottom: 12px; }.footer-grid > div:last-child { grid-column: span 2; }.footer-address { font-size: 10px; }.footer-grid > div:last-child h3 { margin-bottom: 13px; }.footer-bottom { align-items: start; flex-direction: column; gap: 12px; padding-block: 20px 30px; font-size: 7px; }.footer-bottom > span:last-child { gap: 6px; }.footer-bottom i { font-size: 11px; }
 }
 @media (max-width: 360px) { .shell { width: calc(100% - 32px); }.brand > span { font-size: 17px; }.brand img { width: 35px; height: 35px; }.nav-cta { font-size: 6px; padding-inline: 10px; }.main-nav { gap: 5px; }.hero-presents { font-size: 5px; }.hero-presents > span { width: 9px; }.hero-heading h1 { font-size: 12.1vw; }.inner-hero h1 { font-size: 40px; }.house-card { padding-inline: 12px; }.house-card h3 { font-size: 20px; }.house-card p { min-height: 122px; }.portrait-copy h3 { font-size: 20px; }.hero-date p { font-size: 7px; } }
+@media (max-width: 640px) { .scroll-snake { right: 1px; width: 38px; height: min(74vh, 590px); }.scroll-snake-body { stroke-width: 6; }.scroll-snake-body-shadow { stroke-width: 9; } }
+@media (max-width: 360px) { .scroll-snake { width: 31px; }.scroll-snake-rail { opacity: .14; } }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   html:not([data-magic="on"]) *, html:not([data-magic="on"]) *::before, html:not([data-magic="on"]) *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .scroll-snake-head { transition: none; }
   .hero-castle, .hero-mist { will-change: auto; }
 }
+html[data-magic="off"] .scroll-snake-head { transition: none; }
