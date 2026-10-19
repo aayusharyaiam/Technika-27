@@ -52,7 +52,7 @@ The five festival portals intentionally announce **coming soon**. Account flows 
 
 ## Magical details
 
-- Full-screen loading experience with a **0–100 percentage counter**, progress bar, resource readiness, and automatic completion. “Enter Hogwarts” accelerates the counter to 100.
+- Full-screen loading experience with a **0–100 percentage counter**, progress bar, automatic completion, and a self-contained SVG night scene of stars, moon, castle, trees, and an owl. The illustrated layers ease at different speeds in response to pointer movement, with reduced-motion support.
 - GSAP orchestrates the post-loader castle zoom, staggered 3D title-letter reveal, subtitle, buttons, and supporting details.
 - Multi-speed ScrollTrigger parallax for the castle, moonlight, mist, candles, Technika crest, and Great Hall.
 - A larger, clearly visible Golden Snitch follows a **GSAP motion path**; it does **not** track the mouse. Its layer changes relative to the title, so the actual opaque letter shapes hide it on the background pass. Flight pauses when the hero is outside the viewport or the browser tab is hidden.

@@ -22,6 +22,7 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { MagicInteractions } from "./magic-interactions";
 import { WandCursor } from "./wand-cursor";
 import { ScrollSnake } from "./scroll-snake";
+import { LoadingScene } from "./loading-scene";
 
 const MagicContext = createContext({ enabled: true, ready: false });
 export const useMagic = () => useContext(MagicContext);
@@ -132,100 +133,99 @@ function WandSparks({ enabled }: { enabled: boolean }) {
 
 function LoadingScreen({ dismiss }: { dismiss: () => void }) {
   const [progress, setProgress] = useState(0);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const finishTimer = useRef<number | null>(null);
+  const screenRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let active = true;
-    let ended = false;
-    let started = false;
-    let monitorFrame = 0;
-    let startupTimer = 0;
-    const video = videoRef.current;
-    if (!video) return;
-    const paintProgress = () => {
-      if (!Number.isFinite(video.duration) || video.duration <= 0) return;
-      const ratio = Math.max(
-        0,
-        Math.min(1, video.currentTime / video.duration),
-      );
-      setProgress(Math.min(99, Math.floor(ratio * 100)));
-    };
-    const finish = () => {
-      if (!active || ended) return;
-      ended = true;
-      setProgress(100);
-      window.clearTimeout(startupTimer);
-      if (monitorFrame) cancelAnimationFrame(monitorFrame);
-      finishTimer.current = window.setTimeout(dismiss, 120);
-    };
-    const handleError = () => {
-      if (active) dismiss();
-    };
-    const monitorPlayback = () => {
+    let frame = 0;
+    let finished = false;
+    const startedAt = performance.now();
+    const duration = 1800;
+    const animate = (now: number) => {
       if (!active) return;
-      paintProgress();
-      const atEnd =
-        video.ended ||
-        (Number.isFinite(video.duration) &&
-          video.duration > 0 &&
-          video.currentTime >= video.duration - 0.03);
-      if (atEnd) {
-        finish();
+      const elapsed = now - startedAt;
+      const ratio = Math.min(1, elapsed / duration);
+      const eased = 1 - Math.pow(1 - ratio, 2);
+      const next = ratio >= 1 ? 100 : Math.min(99, Math.floor(eased * 100));
+      setProgress((current) => (current === next ? current : next));
+      if (ratio >= 1) {
+        if (!finished) {
+          finished = true;
+          finishTimer.current = window.setTimeout(dismiss, 220);
+        }
         return;
       }
-      monitorFrame = requestAnimationFrame(monitorPlayback);
+      frame = requestAnimationFrame(animate);
     };
-    const startPlayback = () => {
-      if (started || ended) return;
-      started = true;
-      video.playbackRate = 1;
-      video.defaultPlaybackRate = 1;
-      void video
-        .play()
-        .then(() => {
-          if (!monitorFrame)
-            monitorFrame = requestAnimationFrame(monitorPlayback);
-        })
-        .catch(() => {
-          started = false;
-          handleError();
-        });
-    };
-    const markMetadataReady = () => {
-      window.clearTimeout(startupTimer);
-      paintProgress();
-      startPlayback();
-    };
-    video.addEventListener("loadedmetadata", startPlayback);
-    video.addEventListener("loadeddata", markMetadataReady);
-    video.addEventListener("canplay", startPlayback);
-    video.addEventListener("timeupdate", paintProgress);
-    video.addEventListener("durationchange", paintProgress);
-    video.addEventListener("ended", finish);
-    video.addEventListener("error", handleError);
-    startupTimer = window.setTimeout(() => {
-      if (!Number.isFinite(video.duration) || video.duration <= 0)
-        handleError();
-    }, 15000);
-    if (video.readyState >= 1) markMetadataReady();
+    frame = requestAnimationFrame(animate);
     return () => {
       active = false;
-      window.clearTimeout(startupTimer);
-      video.removeEventListener("loadedmetadata", startPlayback);
-      video.removeEventListener("loadeddata", markMetadataReady);
-      video.removeEventListener("canplay", startPlayback);
-      video.removeEventListener("timeupdate", paintProgress);
-      video.removeEventListener("durationchange", paintProgress);
-      video.removeEventListener("ended", finish);
-      video.removeEventListener("error", handleError);
-      if (monitorFrame) cancelAnimationFrame(monitorFrame);
+      cancelAnimationFrame(frame);
       if (finishTimer.current) window.clearTimeout(finishTimer.current);
     };
   }, [dismiss]);
 
+  useEffect(() => {
+    const screen = screenRef.current;
+    if (!screen || window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return;
+
+    let frame = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let targetX = 0;
+    let targetY = 0;
+    const paintParallax = () => {
+      currentX += (targetX - currentX) * 0.09;
+      currentY += (targetY - currentY) * 0.09;
+      const layers = {
+        far: 0.24,
+        mid: 0.48,
+        near: 0.8,
+      };
+      for (const [name, depth] of Object.entries(layers)) {
+        screen.style.setProperty(
+          `--loading-x-${name}`,
+          `${(currentX * depth).toFixed(2)}px`,
+        );
+        screen.style.setProperty(
+          `--loading-y-${name}`,
+          `${(currentY * depth).toFixed(2)}px`,
+        );
+      }
+      if (
+        Math.abs(targetX - currentX) > 0.1 ||
+        Math.abs(targetY - currentY) > 0.1
+      ) {
+        frame = requestAnimationFrame(paintParallax);
+      } else {
+        frame = 0;
+      }
+    };
+    const move = (event: PointerEvent) => {
+      targetX = (event.clientX / window.innerWidth - 0.5) * 44;
+      targetY = (event.clientY / window.innerHeight - 0.5) * 26;
+      if (!frame) frame = requestAnimationFrame(paintParallax);
+    };
+    const reset = () => {
+      targetX = 0;
+      targetY = 0;
+      if (!frame) frame = requestAnimationFrame(paintParallax);
+    };
+
+    window.addEventListener("pointermove", move, { passive: true });
+    window.addEventListener("blur", reset);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("blur", reset);
+    };
+  }, []);
+
   return (
     <motion.div
+      ref={screenRef}
       className="loading-screen"
       role="dialog"
       aria-modal="true"
@@ -234,17 +234,7 @@ function LoadingScreen({ dismiss }: { dismiss: () => void }) {
       exit={{ opacity: 0 }}
       transition={{ duration: 1.05, ease: "easeInOut" }}
     >
-      <video
-        ref={videoRef}
-        className="loading-video"
-        autoPlay
-        muted
-        playsInline
-        preload="auto"
-        aria-hidden="true"
-      >
-        <source src="/videos/hogwarts-loader.mp4" type="video/mp4" />
-      </video>
+      <LoadingScene />
       <motion.div
         className="loading-mark"
         role="progressbar"
@@ -256,6 +246,15 @@ function LoadingScreen({ dismiss }: { dismiss: () => void }) {
         animate={{ opacity: 1, scale: 1 }}
       >
         <span className="loading-percent">{progress}%</span>
+        <span className="loading-status" role="status" aria-live="polite">
+          {progress < 100 ? "Tracing the castle in moonlight" : "The gates are open"}
+        </span>
+        <span className="loading-progress-track" aria-hidden="true">
+          <span
+            className="loading-progress-fill"
+            style={{ width: `${progress}%` }}
+          />
+        </span>
       </motion.div>
     </motion.div>
   );
@@ -271,7 +270,7 @@ export function Experience({ children }: { children: React.ReactNode }) {
     "/account",
   ].includes(pathname);
   const [loading, setLoading] = useState(true);
-  // Auth/ceremony routes use the supplied hat artwork and open immediately, without the film loader.
+  // Auth/ceremony routes use the supplied hat artwork and open immediately, without the arrival loader.
   const showLoader = loading && !authExperience;
   const [preference, setPreference] = useState<"system" | "on" | "off">(
     "system",

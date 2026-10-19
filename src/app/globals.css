@@ -1221,34 +1221,91 @@ svg {
   color: #bfa06b;
 }
 
-/* Full-screen cinematic arrival and a native wand pointer with canvas spell sparks. */
+/* Full-screen illustrated arrival scene and a native wand pointer with canvas spell sparks. */
 .loading-screen {
   position: fixed;
   z-index: 100;
   inset: 0;
   isolation: isolate;
-  background: #101522;
+  background: #080d21;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   perspective: 1200px;
+  --loading-x-far: 0px;
+  --loading-y-far: 0px;
+  --loading-x-mid: 0px;
+  --loading-y-mid: 0px;
+  --loading-x-near: 0px;
+  --loading-y-near: 0px;
 }
 
-.loading-video {
+.loading-scene {
   position: absolute;
   z-index: 0;
+  inset: -5%;
+  width: 110%;
+  height: 110%;
+  overflow: hidden;
+  pointer-events: none;
+}
+.loading-scene::before,
+.loading-scene::after {
+  content: "";
+  position: absolute;
   inset: 0;
+  pointer-events: none;
+}
+.loading-scene::before {
+  z-index: 2;
+  background: radial-gradient(circle at 51% 47%, transparent 14%, #080d2166 64%, #050817e8 100%);
+}
+.loading-scene::after {
+  z-index: 3;
+  background: linear-gradient(180deg, #070b1d14 20%, transparent 48%, #05081780 100%);
+}
+.loading-scene svg {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center;
-  opacity: 1;
-  filter: none;
-  transform: none;
+  transform: scale(1.04);
   transform-origin: center;
-  animation: none;
-  will-change: auto;
+}
+.loading-layer {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.loading-layer-sky {
+  transform: translate3d(var(--loading-x-far), var(--loading-y-far), 0);
+}
+.loading-layer-stars {
+  transform: translate3d(var(--loading-x-far), var(--loading-y-far), 0);
+  animation: loading-stars-twinkle 4.8s ease-in-out infinite alternate;
+}
+.loading-layer-moon {
+  transform: translate3d(var(--loading-x-far), var(--loading-y-far), 0);
+}
+.loading-layer-mountains,
+.loading-layer-castle,
+.loading-layer-mist {
+  transform: translate3d(var(--loading-x-mid), var(--loading-y-mid), 0);
+}
+.loading-layer-mist {
+  animation: loading-mist-drift 7s ease-in-out infinite alternate;
+}
+.loading-layer-owl {
+  transform: translate3d(var(--loading-x-near), var(--loading-y-near), 0) translateY(0);
+  animation: loading-owl-flight 5.5s ease-in-out infinite;
+}
+.loading-layer-foreground,
+.loading-layer-motes {
+  transform: translate3d(var(--loading-x-near), var(--loading-y-near), 0);
+}
+.loading-layer-motes {
+  animation: loading-motes-pulse 2.8s ease-in-out infinite alternate;
 }
 .loading-mark {
   position: relative;
@@ -1259,6 +1316,7 @@ svg {
   justify-content: center;
   transform-style: preserve-3d;
   text-align: center;
+  pointer-events: none;
 }
 .loading-percent {
   color: #fff1c2;
@@ -1272,6 +1330,34 @@ svg {
     0 4px 4px #63461f99,
     0 0 22px #fff2c866;
   transform: perspective(900px) rotateX(5deg) translateZ(46px);
+}
+.loading-status {
+  display: block;
+  margin-top: 17px;
+  color: #ead9ad;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 14px #02040c;
+}
+.loading-progress-track {
+  display: block;
+  width: min(250px, 56vw);
+  height: 3px;
+  margin-top: 15px;
+  overflow: hidden;
+  border: 1px solid #f5ca764f;
+  border-radius: 999px;
+  background: #070b1d99;
+  box-shadow: 0 0 22px #e3b57014;
+}
+.loading-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #9d6f3d, #fff1b3 75%, #f5ca76);
+  box-shadow: 0 0 12px #f5ca76aa;
+  transition: width 180ms ease-out;
 }
 .wand-sparks {
   position: fixed;
@@ -2878,17 +2964,37 @@ html[data-magic="off"] {
     transform: translateY(-12px) rotate(-6deg);
   }
 }
-@keyframes loading-video-flight {
+@keyframes loading-stars-twinkle {
   0% {
-    transform: none;
+    opacity: 0.88;
   }
-
-  45% {
-    transform: none;
-  }
-
   100% {
-    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes loading-mist-drift {
+  from {
+    transform: translate3d(var(--loading-x-mid), var(--loading-y-mid), 0) translateX(-8px);
+  }
+  100% {
+    transform: translate3d(var(--loading-x-mid), var(--loading-y-mid), 0) translateX(9px);
+  }
+}
+@keyframes loading-owl-flight {
+  0%,
+  100% {
+    transform: translate3d(var(--loading-x-near), var(--loading-y-near), 0) translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translate3d(var(--loading-x-near), var(--loading-y-near), 0) translateY(-10px) rotate(2deg);
+  }
+}
+@keyframes loading-motes-pulse {
+  from {
+    opacity: 0.68;
+  }
+  to {
+    opacity: 1;
   }
 }
 

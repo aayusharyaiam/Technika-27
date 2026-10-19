@@ -145,6 +145,12 @@ test("the loading sequence reaches 100 before revealing the website", async ({ p
     }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ["aria-valuenow"] });
   });
   await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator(".loading-screen")).toBeVisible();
+  await expect(page.locator(".loading-scene svg")).toBeVisible();
+  await expect(page.locator(".loading-video")).toHaveCount(0);
+  const parallaxBefore = await page.locator(".loading-screen").evaluate((el) => getComputedStyle(el).getPropertyValue("--loading-x-near"));
+  await page.mouse.move(1200, 680);
+  await expect.poll(() => page.locator(".loading-screen").evaluate((el) => getComputedStyle(el).getPropertyValue("--loading-x-near"))).not.toBe(parallaxBefore);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   const values = await page.evaluate(() => (window as unknown as { loaderValues: number[] }).loaderValues);
   expect(values[0]).toBe(0);
