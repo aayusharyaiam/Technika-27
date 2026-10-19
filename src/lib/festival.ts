@@ -5,12 +5,29 @@ export const festival = {
   location: "BIT Patna, Bihar",
 };
 
-export const navigation = [
+export type NavigationItem = {
+  label: string;
+  href: string;
+  dropdown?: boolean;
+  children?: Array<{ label: string; href: string }>;
+};
+
+export const navigation: NavigationItem[] = [
   { label: "Home", href: "/" },
-  { label: "Registrations", href: "/registrations", dropdown: true },
-  { label: "Members", href: "/members", dropdown: true },
+  { label: "Marauder's Map", href: "/marauders-map" },
+  { label: "Registrations", href: "/registrations", dropdown: true, children: [
+    { label: "Event registry", href: "/events" },
+    { label: "Merchandise", href: "/merchandise" },
+    { label: "Accommodation", href: "/accommodation" },
+  ] },
+  { label: "Members", href: "/members", dropdown: true, children: [
+    { label: "Core team", href: "/core" },
+    { label: "Developers", href: "/devs" },
+  ] },
   { label: "Delegate", href: "/delegate" },
-  { label: "Alumni", href: "/alumni", dropdown: true },
+  { label: "Alumni", href: "/alumni", dropdown: true, children: [
+    { label: "Alumni registration", href: "/alumni" },
+  ] },
   { label: "Contact", href: "/contact" },
 ];
 

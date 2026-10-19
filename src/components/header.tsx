@@ -49,8 +49,7 @@ export function Header() {
           {navigation.map((item) => <div className="nav-item" key={item.href}>
             <Link className={`nav-link ${pathname === item.href ? "active" : ""}`} href={item.href} aria-current={pathname === item.href ? "page" : undefined}>{item.label}{item.dropdown && <ChevronDown size={10} />}</Link>
             {item.dropdown && <div className="nav-dropdown">
-              <Link href={item.href}>{item.label === "Registrations" ? "The four houses" : item.label === "Members" ? "Meet the order" : "Hall of legacies"}<ArrowUpRight size={14} /></Link>
-              <Link href={`${item.href}#${item.label === "Members" ? "order" : item.label === "Alumni" ? "memories" : "houses"}`}>{item.label === "Registrations" ? "Explore your track" : item.label === "Members" ? "The inner sanctum" : "Pensieve archives"}<ArrowUpRight size={14} /></Link>
+              {item.children?.map((child) => <Link href={child.href} key={child.href}>{child.label}<ArrowUpRight size={14} /></Link>)}
             </div>}
           </div>)}
         </div>
@@ -60,7 +59,7 @@ export function Header() {
       </nav>
       {open && <div ref={menuRef} id="mobile-navigation" className="mobile-navigation" data-lenis-prevent>
         <span className="eyebrow">The Marauder’s Map</span>
-        {navigation.map((item, index) => <Link href={item.href} key={item.href} className={pathname === item.href ? "active" : ""} aria-current={pathname === item.href ? "page" : undefined} onClick={() => setOpen(false)}><span><small>0{index + 1}</small>{item.label}</span><ArrowUpRight size={19} /></Link>)}
+        {navigation.map((item, index) => <span key={item.href} className="mobile-navigation-group"><Link href={item.href} className={pathname === item.href ? "active" : ""} aria-current={pathname === item.href ? "page" : undefined} onClick={() => setOpen(false)}><span><small>0{index + 1}</small>{item.label}</span><ArrowUpRight size={19} /></Link>{item.children?.map((child) => <Link href={child.href} key={child.href} className="mobile-subnav" onClick={() => setOpen(false)}><span>{child.label}</span><ArrowUpRight size={15} /></Link>)}</span>)}
         <Link href={user ? "/account" : "/login"} onClick={() => setOpen(false)}><span><UserRound size={17}/>{user ? "My common room" : "Sign in / Sign up"}</span><ArrowUpRight size={19}/></Link>
         <p>All paths lead to a little magic.</p>
       </div>}

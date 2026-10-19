@@ -12,6 +12,8 @@ import { houseBootScript } from "@/lib/houses";
 import "lenis/dist/lenis.css";
 import "./globals.css";
 import "./wizarding.css";
+import "./marauders-map.css";
+import "./reference-portals.css";
 
 const garamond = localFont({ src: [
   { path: "../../public/fonts/garamond.woff2", weight: "400 800", style: "normal" },

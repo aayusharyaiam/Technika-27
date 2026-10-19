@@ -56,6 +56,21 @@ test("mobile navigation supports opening, escape, and route changes", async ({ p
   await expect(page.locator("h1")).toContainText("The Order of Technika");
 });
 
+test("Marauder's Map searches, opens, and saves event entries", async ({ page }) => {
+  await page.goto("/marauders-map", { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: /Reveal the Marauder's Map/i }).click();
+  await expect(page.locator(".map-event-card")).toHaveCount(27);
+  await page.getByRole("button", { name: "Technical", exact: true }).click();
+  await expect(page.locator(".map-event-card")).toHaveCount(10);
+  await page.getByLabel("Search events").fill("Algo Apex");
+  await expect(page.locator(".map-event-card")).toHaveCount(1);
+  await page.getByRole("button", { name: /View details/ }).click();
+  await expect(page.locator("#map-detail-title")).toHaveText("Algo Apex");
+  await page.getByRole("button", { name: "Save event" }).click();
+  await expect(page.getByRole("button", { name: "Saved to itinerary" })).toBeVisible();
+  await expect(page.locator(".map-notice")).toContainText("saved to your itinerary");
+});
+
 test("chamber filters show the correct sealed portraits", async ({ page }) => {
   await arrive(page, "/members");
   await expect(page.locator(".order-card")).toHaveCount(8);
@@ -188,7 +203,8 @@ test("cards and buttons have visible hover microinteractions", async ({ page }, 
 
 test("public routes ship unique server-side SEO and crawler documents", async ({ request }) => {
   const titles: string[] = [];
-  for (const route of ["/", "/registrations", "/members", "/delegate", "/alumni", "/contact"]) {
+  const publicRoutes = ["/", "/marauders-map", "/events", "/technical", "/cultural", "/art-craft", "/frame-focus", "/esports", "/merchandise", "/core", "/devs", "/timeline", "/event-timeline", "/accommodation", "/registrations", "/members", "/delegate", "/alumni", "/contact"];
+  for (const route of publicRoutes) {
     const response = await request.get(route);
     expect(response.ok()).toBe(true);
     const html = await response.text();
@@ -202,12 +218,12 @@ test("public routes ship unique server-side SEO and crawler documents", async ({
     expect(html).toContain('id="festival-site-schema"');
     if (route !== "/") expect(html).toContain('id="page-breadcrumbs"');
   }
-  expect(new Set(titles).size).toBe(6);
+  expect(new Set(titles).size).toBe(publicRoutes.length);
   const robots = await request.get("/robots.txt");
   expect(await robots.text()).toContain("Allow: /");
   expect(await robots.text()).toContain("Sitemap:");
   const sitemap = await request.get("/sitemap.xml");
-  expect((await sitemap.text()).match(/<loc>/g)).toHaveLength(6);
+  expect((await sitemap.text()).match(/<loc>/g)).toHaveLength(publicRoutes.length);
   const socialImage = await request.get("/images/social-card.jpg");
   expect(socialImage.headers()["content-type"]).toContain("image/jpeg");
 });
