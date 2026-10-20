@@ -141,7 +141,7 @@ function LoadingScreen({ dismiss }: { dismiss: () => void }) {
     let frame = 0;
     let finished = false;
     const startedAt = performance.now();
-    const duration = 1800;
+    const duration = 3400;
     const animate = (now: number) => {
       if (!active) return;
       const elapsed = now - startedAt;
@@ -234,7 +234,7 @@ function LoadingScreen({ dismiss }: { dismiss: () => void }) {
       exit={{ opacity: 0 }}
       transition={{ duration: 1.05, ease: "easeInOut" }}
     >
-      <LoadingScene />
+      <LoadingScene progress={progress} />
       <motion.div
         className="loading-mark"
         role="progressbar"

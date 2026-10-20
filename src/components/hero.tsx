@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import {
@@ -219,14 +218,6 @@ export function Hero() {
   return (
     <section ref={ref} className="hero" aria-labelledby="hero-title">
       <div className="hero-castle">
-        <Image
-          src="/images/hogwarts.jpg"
-          alt="Moonlit Hogwarts castle above the misty Black Lake, with floating golden candles"
-          fill
-          priority
-          sizes="100vw"
-          quality={90}
-        />
       </div>
       <div className="hero-shade" />
       <div className="hero-moon-aura" aria-hidden="true" />

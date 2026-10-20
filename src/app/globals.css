@@ -291,6 +291,18 @@ svg {
   left: 0;
   right: 0;
   pointer-events: none;
+  opacity: 0;
+  transform: translate3d(0, -18px, 0);
+  filter: blur(8px);
+  transition:
+    opacity 0.95s ease,
+    transform 1.05s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 1.05s ease;
+}
+.header-wrap.header-ready {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  filter: blur(0);
 }
 .main-nav {
   width: min(1220px, calc(100% - 64px));
@@ -437,6 +449,37 @@ svg {
   display: none;
 }
 
+/* The home page keeps one painterly night scene behind every chapter. */
+.home-page {
+  position: relative;
+  isolation: isolate;
+  min-height: 100%;
+  overflow: clip;
+  background: transparent;
+}
+.home-page > :not(.home-canvas-layer) {
+  position: relative;
+  z-index: 1;
+}
+.home-canvas-layer {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.22;
+  background: #050914;
+  transition: opacity 1.25s ease;
+}
+.home-canvas-layer[data-ready="true"] {
+  opacity: 1;
+}
+.wizarding-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 /* Castle, candlelight, autonomous snitch, and individually occluding title glyphs. */
 .hero {
   position: relative;
@@ -445,7 +488,7 @@ svg {
   min-height: 755px;
   max-height: 1120px;
   overflow: hidden;
-  background: #0b1018;
+  background: transparent;
   display: flex;
   align-items: center;
 }
@@ -454,10 +497,6 @@ svg {
   inset: -4% 0 -18%;
   z-index: 0;
   will-change: transform;
-}
-.hero-castle img {
-  object-fit: cover;
-  object-position: center 58%;
 }
 .hero-shade {
   position: absolute;
@@ -1244,9 +1283,9 @@ svg {
 .loading-scene {
   position: absolute;
   z-index: 0;
-  inset: -5%;
-  width: 110%;
-  height: 110%;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   pointer-events: none;
 }
@@ -1265,11 +1304,11 @@ svg {
   z-index: 3;
   background: linear-gradient(180deg, #070b1d14 20%, transparent 48%, #05081780 100%);
 }
-.loading-scene svg {
+.loading-scene canvas {
   display: block;
   width: 100%;
   height: 100%;
-  transform: scale(1.04);
+  transform: scale(1.01);
   transform-origin: center;
 }
 .loading-layer {

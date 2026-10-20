@@ -8,12 +8,14 @@ import {
 } from "@/components/home-sections";
 import { createPageMetadata } from "@/lib/seo";
 import { RelicsSection } from "@/components/relics-section";
+import { HomeCanvasBackground } from "@/components/home-canvas-background";
 
 export const metadata = createPageMetadata("/");
 
 export default function Home() {
   return (
-    <>
+    <div className="home-page">
+      <HomeCanvasBackground />
       <Hero />
       <Timeline />
       <RelicsSection />
@@ -21,6 +23,6 @@ export default function Home() {
       <Campus />
       <Sponsors />
       <Invitation />
-    </>
+    </div>
   );
 }

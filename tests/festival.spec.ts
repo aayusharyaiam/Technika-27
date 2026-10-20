@@ -146,7 +146,7 @@ test("the loading sequence reaches 100 before revealing the website", async ({ p
   });
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator(".loading-screen")).toBeVisible();
-  await expect(page.locator(".loading-scene svg")).toBeVisible();
+  await expect(page.locator(".loading-scene canvas")).toBeVisible();
   await expect(page.locator(".loading-video")).toHaveCount(0);
   const parallaxBefore = await page.locator(".loading-screen").evaluate((el) => getComputedStyle(el).getPropertyValue("--loading-x-near"));
   await page.mouse.move(1200, 680);
@@ -165,6 +165,15 @@ test("GSAP castle parallax responds to scrolling", async ({ page }) => {
   const before = await page.locator(".hero-castle").evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m42);
   await page.evaluate(() => window.scrollTo({ top: 420, behavior: "instant" }));
   await expect.poll(() => page.locator(".hero-castle").evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m42)).toBeGreaterThan(before + 50);
+});
+
+test("the home canvas keeps the castle scene and enters it on scroll", async ({ page }) => {
+  await arrive(page);
+  const canvas = page.locator(".home-canvas");
+  await expect(canvas).toHaveAttribute("data-canvas-scene", "background");
+  await expect(canvas).toHaveAttribute("data-scroll-progress", "0.000");
+  await page.evaluate(() => window.scrollTo({ top: 900, behavior: "instant" }));
+  await expect.poll(() => canvas.getAttribute("data-scroll-progress")).not.toBe("0.000");
 });
 
 test("the autonomous snitch passes both in front of and behind the title", async ({ page }) => {

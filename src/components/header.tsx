@@ -8,6 +8,7 @@ import { ArrowUpRight, ChevronDown, Menu, X, UserRound } from "lucide-react";
 import { navigation } from "@/lib/festival";
 import { useAuth } from "./auth-provider";
 import { useHouse } from "./house-provider";
+import { useMagic } from "./experience";
 
 export function Header() {
   const pathname = usePathname();
@@ -16,6 +17,7 @@ export function Header() {
   const menuRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { house, theme } = useHouse();
+  const { ready } = useMagic();
 
   useEffect(() => {
     if (!open) return;
@@ -39,7 +41,7 @@ export function Header() {
   }, [open]);
 
   return (
-    <header className="header-wrap">
+    <header className={`header-wrap ${ready ? "header-ready" : "header-waiting"}`} data-arrival-ready={ready ? "true" : "false"}>
       <nav className="main-nav" aria-label="Main navigation">
         <Link href="/" className="brand" onClick={() => setOpen(false)} aria-label="Technika 27 home">
           <Image src="/images/crest.webp" width={48} height={48} alt="" priority />
