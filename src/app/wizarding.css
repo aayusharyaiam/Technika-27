@@ -13,7 +13,7 @@ body { background:var(--bg); transition:background-color .65s,color .65s; }
 html:not([data-house="default"])[data-house] :is(.event-card:not(.parchment-card),.sponsor-card,.academy-card,.house-card,.memory-card,.registration-clock,.sealed-notice,.order-decree,.faq-list details,.delegate-details,.owl-art,.contact-location) { background-color:var(--panel); border-color:color-mix(in srgb,var(--gold) 22%,transparent); }
 .title-letter { background-image:linear-gradient(180deg,color-mix(in srgb,var(--gold) 40%,white),var(--gold) 48%,var(--gold-deep)); }
 .hero-presents,.hero-edition,.hero-date p,.hero-place,.crest-caption,.text-link,.nav-link.active,.day-tabs button.active,.soon-badge,.inner-hero h1,.inner-hero h1 em,.countdown-units span,.invitation-oath,.footer-oath { color:var(--gold); }
-.eyebrow,.ornament-divider,.scroll-cue,.magic-toggle,.loading-percent { color:var(--gold); }
+.eyebrow,.ornament-divider,.scroll-cue,.loading-percent { color:var(--gold); }
 .nav-link.active::after,.soon-badge i,.ambient-particles i { background:var(--gold); }
 .day-tabs button.active { background:color-mix(in srgb,var(--gold) 14%,transparent); border-color:color-mix(in srgb,var(--gold) 40%,transparent); }
 .order-filters button.active { background:var(--gold); border-color:var(--gold); }
@@ -225,8 +225,6 @@ html[data-house]:not([data-house="default"]) .hero-castle img { filter:hue-rotat
   .sorting-shell { padding-top:110px; }.sorting-topline { align-items:start; }.sorting-topline > span { font-size:6px; }.sorting-mark { font-size:8px; }.sorting-house-reveal { gap:10px; max-width:100%; padding:12px; }.sorting-house-reveal small { font-size:8px; }.sorting-house-reveal > div { min-width:0; }.sorting-footnote { margin-top:22px; font-size:8px; }
 }
 @media (prefers-reduced-motion:reduce) { .sorting-stars i { animation:none !important; }.sorting-options button { transition:none; } }
-@media (max-width:640px) { body:has(.auth-page, .sorting-page) .magic-toggle.magic-disabled:not(:focus-visible) > span { opacity:0; } }
-
 /* A single signup journey: the ceremony replaces the form in the same frame. */
 .signup-experience { padding-block:130px 75px; scroll-margin-top:110px; }
 .signup-experience > .auth-page { padding:0; }

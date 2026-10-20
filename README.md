@@ -60,7 +60,7 @@ The five festival portals intentionally announce **coming soon**. Account flows 
 - Photographic Elder Wand cursor cut from a downloaded replica photo, with a high-resolution overlay, native PNG fallback, subtle spark trail, and click/tap spell bursts. Inputs retain a normal text cursor. Artwork attribution and license are in `public/images/ATTRIBUTION.md`.
 - Lenis smooth wheel scrolling synchronised to the GSAP ticker and ScrollTrigger, native touch scrolling, gold scrollbars.
 - Responsive floating navigation and keyboard-accessible mobile menu, timeline tabs, filters, and native accordion FAQs.
-- The floating wand button reflects the **actual** motion state. System reduced-motion preferences are honoured initially; “Enable magical effects” explicitly turns on the complete animation experience, including CSS microanimations.
+- Magical effects are always active throughout the experience; there is no pause/enable control, so the canvas, scroll scenes, cursor sparks, and CSS microanimations remain in sync.
 - “Save the date” downloads a valid `.ics` calendar file; it does not submit a registration or email signup.
 
 ## The Wizarding World components

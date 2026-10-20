@@ -7,17 +7,14 @@ import {
   useEffect,
   useRef,
   useState,
-  useSyncExternalStore,
 } from "react";
 import { usePathname } from "next/navigation";
 import {
   AnimatePresence,
   motion,
   MotionConfig,
-  useReducedMotion,
 } from "motion/react";
 import Lenis from "lenis";
-import { Sparkles, WandSparkles } from "lucide-react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { MagicInteractions } from "./magic-interactions";
 import { WandCursor } from "./wand-cursor";
@@ -26,7 +23,6 @@ import { LoadingScene } from "./loading-scene";
 
 const MagicContext = createContext({ enabled: true, ready: false });
 export const useMagic = () => useContext(MagicContext);
-const subscribeHydration = () => () => {};
 
 type Spark = {
   x: number;
@@ -272,19 +268,9 @@ export function Experience({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   // Auth/ceremony routes use the supplied hat artwork and open immediately, without the arrival loader.
   const showLoader = loading && !authExperience;
-  const [preference, setPreference] = useState<"system" | "on" | "off">(
-    "system",
-  );
-  const reducedMotion = useReducedMotion();
-  // Keep the first client render identical to SSR, then apply the system preference.
-  const hydrated = useSyncExternalStore(
-    subscribeHydration,
-    () => true,
-    () => false,
-  );
-  const enabled =
-    preference === "on" ||
-    (preference === "system" && (!hydrated || !reducedMotion));
+  // The wizarding experience is intentionally always active; there is no pause
+  // control so the arrival scene and all page interactions stay in sync.
+  const enabled = true;
   const dismiss = useCallback(() => setLoading(false), []);
 
   useEffect(() => {
@@ -332,20 +318,6 @@ export function Experience({ children }: { children: React.ReactNode }) {
           <>
             <div className="scroll-progress" aria-hidden="true" />
             <ScrollSnake />
-            <button
-              className={`magic-toggle ${enabled ? "" : "magic-disabled"}`}
-              aria-label={
-                enabled ? "Pause magical effects" : "Enable magical effects"
-              }
-              aria-pressed={enabled}
-              onClick={() => setPreference(enabled ? "off" : "on")}
-              title={
-                enabled ? "Pause magical effects" : "Enable magical effects"
-              }
-            >
-              {enabled ? <WandSparkles size={17} /> : <Sparkles size={17} />}
-              <span>{enabled ? "Magic on" : "Enable magic"}</span>
-            </button>
           </>
         )}
       </MagicContext.Provider>

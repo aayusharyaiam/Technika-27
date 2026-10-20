@@ -97,16 +97,11 @@ test("save the date downloads a real calendar and FAQs expand", async ({ page })
   await expect(page.getByText(/The delegate portal is being prepared/)).toBeVisible();
 });
 
-test("snitch is autonomous, and motion can be paused", async ({ page }) => {
+test("snitch is autonomous and magical effects stay enabled", async ({ page }) => {
   await arrive(page);
   const first = await page.locator(".flying-snitch").evaluate((el) => el.getAttribute("style"));
   await expect.poll(() => page.locator(".flying-snitch").evaluate((el) => el.getAttribute("style"))).not.toBe(first);
-  await page.getByRole("button", { name: "Pause magical effects" }).click();
-  await expect(page.locator("html")).toHaveAttribute("data-magic", "off");
-  const paused = await page.locator(".flying-snitch").evaluate((el) => el.getAttribute("style"));
-  await page.waitForTimeout(200);
-  expect(await page.locator(".flying-snitch").evaluate((el) => el.getAttribute("style"))).toBe(paused);
-  await page.getByRole("button", { name: "Enable magical effects" }).click();
+  await expect(page.locator(".magic-toggle")).toHaveCount(0);
   await expect(page.locator("html")).toHaveAttribute("data-magic", "on");
 });
 
@@ -125,7 +120,8 @@ test("reduced motion and narrow phone screens remain usable", async ({ page }) =
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 320, height: 740 });
   await arrive(page);
-  await expect(page.locator("html")).toHaveAttribute("data-magic", "off");
+  await expect(page.locator("html")).toHaveAttribute("data-magic", "on");
+  await expect(page.locator(".magic-toggle")).toHaveCount(0);
   for (const route of ["/", "/registrations", "/members", "/delegate", "/alumni", "/contact"]) {
     await page.goto(route);
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -189,11 +185,10 @@ test("the autonomous snitch passes both in front of and behind the title", async
   await expect(page.locator(".snitch-realm")).toHaveAttribute("data-depth", "behind", { timeout: 16000 });
 });
 
-test("explicit motion controls can override a reduced-motion system preference", async ({ page }) => {
+test("magical effects stay enabled with a reduced-motion system preference", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await arrive(page);
-  await expect(page.getByRole("button", { name: "Enable magical effects" })).toHaveAttribute("aria-pressed", "false");
-  await page.getByRole("button", { name: "Enable magical effects" }).click();
+  await expect(page.locator(".magic-toggle")).toHaveCount(0);
   await expect(page.locator("html")).toHaveAttribute("data-magic", "on");
   const first = await page.locator(".flying-snitch").getAttribute("style");
   await expect.poll(() => page.locator(".flying-snitch").getAttribute("style")).not.toBe(first);
