@@ -457,6 +457,16 @@ svg {
   overflow: clip;
   background: transparent;
 }
+.home-page::after {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, #0408142e 0%, #05091466 52%, #05050dce 100%),
+    radial-gradient(ellipse at 50% 28%, transparent 12%, #02040c55 78%);
+}
 .home-page > :not(.home-canvas-layer) {
   position: relative;
   z-index: 1;
@@ -478,6 +488,7 @@ svg {
   display: block;
   width: 100%;
   height: 100%;
+  contain: strict;
 }
 
 /* Castle, candlelight, autonomous snitch, and individually occluding title glyphs. */

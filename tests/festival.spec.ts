@@ -171,6 +171,9 @@ test("the home canvas keeps the castle scene and enters it on scroll", async ({ 
   await arrive(page);
   const canvas = page.locator(".home-canvas");
   await expect(canvas).toHaveAttribute("data-canvas-scene", "background");
+  await expect(canvas).toHaveAttribute("data-canvas-source", "/images/hogwarts.jpg");
+  await expect(canvas).toHaveAttribute("data-image-layers", /moon/);
+  await expect(canvas).toHaveAttribute("data-image-layers", /portal-interior/);
   await expect(canvas).toHaveAttribute("data-scroll-progress", "0.000");
   await page.evaluate(() => window.scrollTo({ top: 900, behavior: "instant" }));
   await expect.poll(() => canvas.getAttribute("data-scroll-progress")).not.toBe("0.000");
