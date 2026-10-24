@@ -55,30 +55,23 @@ const harryP = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-<<<<<<< HEAD
   title: {
-    default: "Technika ’27 — Where Technology Meets Magic",
-    template: "%s | Technika ’27",
+    default: "Technika 2K26 — BIT Patna Technical Festival",
+    template: "%s | Technika 2K26",
   },
   description:
-    "Step into the wizarding world of Technika ’27, the techno-cultural festival of BIT Patna. Three days of technology, creativity, and extraordinary possibilities. January 8–10, 2027.",
-  applicationName: "Technika ’27",
-  keywords: [
-    "Technika 27",
-    "Technika 2027",
-    "BIT Patna fest",
-    "BIT Patna techno cultural festival",
-    "college fest Bihar",
-    "Triwizard Tech Odyssey",
-    "BIT Patna hackathon",
-    "robotics festival Patna",
-  ],
-=======
-  title: { default: "Technika 2K26 — BIT Patna Technical Festival", template: "%s | Technika 2K26" },
-  description: "Step into Technika 2K26, the annual technical festival of BIT Patna. Three days of innovation, creativity, competitions, and extraordinary possibilities. January 16–18, 2026.",
+    "Step into Technika 2K26, the annual technical festival of BIT Patna. Three days of innovation, creativity, competitions, and extraordinary possibilities. January 16–18, 2026.",
   applicationName: "Technika 2K26",
-  keywords: ["Technika 2K26", "Technika 2026", "BIT Patna fest", "BIT Patna technical festival", "college fest Bihar", "Dev Conquest hackathon", "BIT Patna robotics", "E-Sports festival Patna"],
->>>>>>> 93c4ea46efe08293b2f6b929b4575f46a39cfc52
+  keywords: [
+    "Technika 2K26",
+    "Technika 2026",
+    "BIT Patna fest",
+    "BIT Patna technical festival",
+    "college fest Bihar",
+    "Dev Conquest hackathon",
+    "BIT Patna robotics",
+    "E-Sports festival Patna",
+  ],
   authors: [{ name: "Technika — BIT Patna" }],
   creator: "Technika — BIT Patna",
   category: "education",
@@ -95,25 +88,22 @@ export const metadata: Metadata = {
     },
   },
   verification: { google: process.env.GOOGLE_SITE_VERIFICATION },
-<<<<<<< HEAD
   openGraph: {
-    title: "Technika ’27 — The Triwizard Tech Odyssey",
-    description: "Technology, creativity, and a little magic at BIT Patna.",
+    title: "Technika 2K26 — BIT Patna",
+    description:
+      "Technology, creativity, and hands-on engineering excellence at BIT Patna.",
     type: "website",
     locale: "en_IN",
-    siteName: "Technika ’27 — BIT Patna",
+    siteName: "Technika 2K26 — BIT Patna",
     images: [
       {
         url: "/images/social-card.jpg",
         width: 1200,
         height: 630,
-        alt: "Technika 27 — The Triwizard Tech Odyssey",
+        alt: "Technika 2K26 — BIT Patna Technical Festival",
       },
     ],
   },
-=======
-  openGraph: { title: "Technika 2K26 — BIT Patna", description: "Technology, creativity, and hands-on engineering excellence at BIT Patna.", type: "website", locale: "en_IN", siteName: "Technika 2K26 — BIT Patna", images: [{ url: "/images/social-card.jpg", width: 1200, height: 630, alt: "Technika 2K26 — BIT Patna Technical Festival" }] },
->>>>>>> 93c4ea46efe08293b2f6b929b4575f46a39cfc52
   twitter: { card: "summary_large_image", images: ["/images/social-card.jpg"] },
 };
 

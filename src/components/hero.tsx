@@ -5,11 +5,14 @@ import {
   ArrowDown,
   MapPin,
   Sparkles,
+  ArrowUpRight,
+  BookOpen,
 } from "lucide-react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { AmbientParticles, SnitchArtwork } from "./ornaments";
 import { useMagic } from "./experience";
 import { HouseBanners } from "./house-banners";
+import Link from "next/link";
 
 function GoldenSnitch() {
   const realmRef = useRef<HTMLDivElement>(null);
@@ -247,11 +250,7 @@ export function Hero() {
               <Sparkles size={12} /> TECHNIKA 2K26 · BIT PATNA{" "}
               <Sparkles size={12} />
             </span>
-<<<<<<< HEAD
-            <h1 id="hero-title" aria-label="Technika">
-=======
             <h1 id="hero-title" aria-label="Technika 2K26">
->>>>>>> 93c4ea46efe08293b2f6b929b4575f46a39cfc52
               <span aria-hidden="true">
                 {"TECHNIKA".split("").map((letter, i) => (
                   <span className="title-letter" key={i}>
@@ -272,11 +271,8 @@ export function Hero() {
             </div>
             <p className="hero-description">
               Innovation, creativity, and hands-on engineering excellence.
-              <br />
-              A celebration of the minds shaping tomorrow.
+              <br />A celebration of the minds shaping tomorrow.
             </p>
-<<<<<<< HEAD
-=======
             <div className="hero-actions">
               <Link href="/registrations" className="button button-gold">
                 Register now <ArrowUpRight size={17} />
@@ -285,7 +281,6 @@ export function Hero() {
                 Explore the events <BookOpen size={16} />
               </a>
             </div>
->>>>>>> 93c4ea46efe08293b2f6b929b4575f46a39cfc52
             <span className="hero-place">
               <MapPin size={12} />
               BIT PATNA · INDIA
