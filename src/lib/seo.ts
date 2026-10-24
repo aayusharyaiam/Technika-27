@@ -8,8 +8,8 @@ export const indexable = process.env.VERCEL_ENV !== "preview";
 
 export const pageSeo = {
   "/": {
-    title: "Technika ’27 — BIT Patna Techno-Cultural Fest",
-    description: "Discover Technika ’27, BIT Patna’s Wizarding World–inspired techno-cultural festival. Explore robotics, hackathons, creative challenges, and a provisional January 8–10, 2027 programme.",
+    title: "Technika 2K26 — BIT Patna Technical Festival",
+    description: "Discover Technika 2K26, BIT Patna’s annual technical festival. Explore Dev Conquest, coding contests, robotics, E-Sports, cultural experiences, and a 5 Lakhs+ prize pool.",
     label: "Home",
   },
   "/marauders-map": {
@@ -60,7 +60,7 @@ export type SitePath = keyof typeof pageSeo;
 
 export function createPageMetadata(path: SitePath): Metadata {
   const page = pageSeo[path];
-  const title = path === "/" ? page.title : `${page.title} | Technika ’27`;
+  const title = path === "/" ? page.title : `${page.title} | Technika 2K26`;
   return {
     title: { absolute: title },
     description: page.description,
@@ -79,7 +79,7 @@ export function breadcrumbSchema(path: SitePath) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Technika ’27", item: `${siteUrl}/` },
+      { "@type": "ListItem", position: 1, name: "Technika 2K26", item: `${siteUrl}/` },
       ...(path === "/" ? [] : [{ "@type": "ListItem", position: 2, name: pageSeo[path].label, item: `${siteUrl}${path}` }]),
     ],
   };

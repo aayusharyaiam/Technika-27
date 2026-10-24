@@ -15,9 +15,9 @@ test("arrival, home sections, timeline tabs, and real links work", async ({ page
   await arrive(page);
   await expect(page.locator("#hero-title")).toContainText("TECHNIKA");
   await page.getByRole("tab", { name: /DAY II ·/ }).click();
-  await expect(page.getByRole("tabpanel", { name: /DAY II ·/ })).toContainText("The Triwizard Spellathon");
+  await expect(page.getByRole("tabpanel", { name: /DAY II ·/ })).toContainText("Technical Events");
   await page.getByRole("tab", { name: /DAY II ·/ }).press("ArrowRight");
-  await expect(page.getByRole("tabpanel", { name: /DAY III ·/ })).toContainText("The Yule Ball");
+  await expect(page.getByRole("tabpanel", { name: /DAY III ·/ })).toContainText("Closing Ceremony");
   for (const id of ["about", "campus", "sponsors"]) {
     await page.locator(`#${id}`).scrollIntoViewIfNeeded();
     await expect(page.locator(`#${id} h2`)).toBeVisible();
@@ -196,7 +196,7 @@ test("cards and buttons have visible hover microinteractions", async ({ page }, 
   await expect.poll(() => card.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m42)).toBeLessThan(-3);
   await page.getByRole("tab", { name: /DAY II ·/ }).click();
   const nextCard = page.locator(".event-card").first();
-  await expect(nextCard).toContainText("The Triwizard Spellathon");
+  await expect(nextCard).toContainText("Technical Events");
   await nextCard.hover();
   await expect(nextCard).toHaveClass(/magic-card-active/);
 });

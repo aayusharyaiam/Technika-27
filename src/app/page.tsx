@@ -4,10 +4,11 @@ import {
   About,
   Campus,
   Invitation,
+  PreviousTechnika,
+  PrizePool,
   Sponsors,
 } from "@/components/home-sections";
 import { createPageMetadata } from "@/lib/seo";
-import { RelicsSection } from "@/components/relics-section";
 
 export const metadata = createPageMetadata("/");
 
@@ -15,8 +16,9 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <PrizePool />
       <Timeline />
-      <RelicsSection />
+      <PreviousTechnika />
       <About />
       <Campus />
       <Sponsors />

@@ -14,7 +14,7 @@ export function Timeline() {
   const [day, setDay] = useState(0);
   return <section id="timeline" className="section timeline-section">
     <div className="shell">
-      <Reveal className="section-intro"><Eyebrow>The grimoire of events</Eyebrow><h2>Three days. <em>Infinite magic.</em></h2><p>Every great story begins with a quest. Here’s yours.</p><Divider /></Reveal>
+      <Reveal className="section-intro"><Eyebrow>The Technika 2K26 timeline</Eyebrow><h2>Three days. <em>Endless possibility.</em></h2><p>Hackathons, technical challenges, cultural experiences, and a finale worth remembering.</p><Divider /></Reveal>
       <Reveal><div className="day-tabs" role="tablist" aria-label="Festival days">{schedule.map((item, index) => <button key={item.day} id={`day-tab-${index}`} role="tab" aria-selected={day === index} aria-controls="schedule-panel" tabIndex={day === index ? 0 : -1} onClick={() => setDay(index)} onKeyDown={(e) => { if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) { e.preventDefault(); const next = e.key === "Home" ? 0 : e.key === "End" ? 2 : (day + (e.key === "ArrowRight" ? 1 : -1) + 3) % 3; setDay(next); document.getElementById(`day-tab-${next}`)?.focus(); } }} className={day === index ? "active" : ""}><span>DAY {item.day} <i>·</i> {item.date}</span><small>{item.title}</small></button>)}</div></Reveal>
       <div id="schedule-panel" role="tabpanel" aria-labelledby={`day-tab-${day}`} tabIndex={0}>
         <AnimatePresence mode="wait"><motion.div className="event-grid" key={day} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: .25 }}>{schedule[day].events.map((event, index) => {
@@ -27,7 +27,7 @@ export function Timeline() {
           </article>;
         })}</motion.div></AnimatePresence>
       </div>
-      <p className="schedule-note"><span>✦</span> A glimpse of what awaits. This is an illustrative schedule; the final programme will be revealed soon.</p>
+      <p className="schedule-note"><span>✦</span> From Dev Conquest to the closing ceremony with Mohammed Irfan, this is the festival at a glance.</p>
     </div>
   </section>;
 }
