@@ -244,10 +244,14 @@ export function Hero() {
           </div>
           <div className="hero-heading">
             <span className="hero-edition">
-              <Sparkles size={12} /> The wizarding edition{" "}
+              <Sparkles size={12} /> TECHNIKA 2K26 · BIT PATNA{" "}
               <Sparkles size={12} />
             </span>
+<<<<<<< HEAD
             <h1 id="hero-title" aria-label="Technika">
+=======
+            <h1 id="hero-title" aria-label="Technika 2K26">
+>>>>>>> 93c4ea46efe08293b2f6b929b4575f46a39cfc52
               <span aria-hidden="true">
                 {"TECHNIKA".split("").map((letter, i) => (
                   <span className="title-letter" key={i}>
@@ -256,21 +260,32 @@ export function Hero() {
                 ))}
               </span>
             </h1>
-            <p className="hero-subtitle">The Triwizard Tech Odyssey</p>
+            <p className="hero-subtitle">The annual techno-cultural festival</p>
           </div>
           <div className="hero-details">
             <div className="hero-date">
               <span />
               <p>
-                08 <i>—</i> 10 JANUARY, 2027
+                16 <i>—</i> 18 JANUARY, 2026
               </p>
               <span />
             </div>
             <p className="hero-description">
-              Beyond the ordinary. Into the extraordinary.
+              Innovation, creativity, and hands-on engineering excellence.
               <br />
-              Three days of innovation, wonder, and a little mischief.
+              A celebration of the minds shaping tomorrow.
             </p>
+<<<<<<< HEAD
+=======
+            <div className="hero-actions">
+              <Link href="/registrations" className="button button-gold">
+                Register now <ArrowUpRight size={17} />
+              </Link>
+              <a href="#about" className="button button-glass">
+                Explore the events <BookOpen size={16} />
+              </a>
+            </div>
+>>>>>>> 93c4ea46efe08293b2f6b929b4575f46a39cfc52
             <span className="hero-place">
               <MapPin size={12} />
               BIT PATNA · INDIA
@@ -281,13 +296,13 @@ export function Hero() {
       <div className="hero-mist" aria-hidden="true" />
       <div className="hero-bottom">
         <span className="hero-volume">
-          VOL. XVII <i>✦</i> A NEW CHAPTER
+          VOL. XVI <i>✦</i> A NEW CHAPTER
         </span>
         <a href="#timeline" className="scroll-cue">
           <span>Unfold the magic</span>
           <ArrowDown size={15} />
         </a>
-        <span className="hero-side-note">NOT ALL MAGIC IS FICTION.</span>
+        <span className="hero-side-note">BUILD WHAT COMES NEXT.</span>
       </div>
     </section>
   );

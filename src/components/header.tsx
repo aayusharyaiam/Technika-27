@@ -43,9 +43,9 @@ export function Header() {
   return (
     <header className={`header-wrap ${ready ? "header-ready" : "header-waiting"}`} data-arrival-ready={ready ? "true" : "false"}>
       <nav className="main-nav" aria-label="Main navigation">
-        <Link href="/" className="brand" onClick={() => setOpen(false)} aria-label="Technika 27 home">
+        <Link href="/" className="brand" onClick={() => setOpen(false)} aria-label="Technika 2K26 home">
           <Image src="/images/crest.webp" width={48} height={48} alt="" priority />
-          <span>TECHNIKA <b>’27</b><small>BIT PATNA CHAPTER</small></span>
+          <span>TECHNIKA <b>2K26</b><small>BIT PATNA CHAPTER</small></span>
         </Link>
         <div className="desktop-links">
           {navigation.map((item) => <div className="nav-item" key={item.href}>

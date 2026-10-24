@@ -1,7 +1,7 @@
 export const festival = {
-  name: "Technika ’27",
-  dateLabel: "08 — 10 January 2027",
-  start: "2027-01-08T09:00:00+05:30",
+  name: "Technika 2K26",
+  dateLabel: "16 — 18 January 2026",
+  start: "2026-01-16T09:00:00+05:30",
   location: "BIT Patna, Bihar",
 };
 
@@ -39,20 +39,16 @@ export const houses = [
 ];
 
 export const schedule = [
-  { day: "I", date: "08 JAN", title: "The Awakening", events: [
-    { time: "10:00 AM", category: "Grand Opening", title: "The Sorting Ceremony", description: "The gates open. Meet your fellow wizards, find your house, and begin an unforgettable odyssey.", venue: "Central Amphitheatre", icon: "flame", color: "gold" },
-    { time: "02:00 PM", category: "Aerial Sorcery", title: "Quidditch Drone Cup", description: "Take to the skies. Navigate enchanted hoops and race your way to house glory.", venue: "Campus Grounds", icon: "wind", color: "crimson" },
-    { time: "06:00 PM", category: "Cybersecurity", title: "Defense Against Dark Code", description: "Break the cipher, capture the flag, and defend the digital realm from the darkest exploits.", venue: "Computing Labs", icon: "shield", color: "blue" },
+  { day: "I", date: "16 JAN", title: "The Opening", events: [
+    { time: "24 HOURS", category: "Flagship Hackathon", title: "Dev Conquest", description: "Build, collaborate, and compete in Technika’s 24-hour flagship hackathon.", venue: "Innovation Hall", icon: "code", color: "gold" },
+    { time: "06:00 PM", category: "Inauguration", title: "Opening Ceremony", description: "Join the inauguration and welcome address as Technika 2K26 begins.", venue: "Main Auditorium", icon: "flame", color: "crimson" },
   ] },
-  { day: "II", date: "09 JAN", title: "The Trials", events: [
-    { time: "09:00 AM", category: "Flagship Hackathon", title: "The Triwizard Spellathon", description: "An overnight adventure of ideas, algorithms, and invention. Build something the world has never seen.", venue: "Innovation Hall", icon: "code", color: "gold" },
-    { time: "01:30 PM", category: "AI Workshop", title: "Potions & Algorithms", description: "A little curiosity, a dash of data, and the art of machine learning with fellow code alchemists.", venue: "Seminar Hall", icon: "flask", color: "blue" },
-    { time: "05:00 PM", category: "Combat Robotics", title: "Robo-Duels Coliseum", description: "Metal meets mettle as student-built machines face off in the ultimate engineering arena.", venue: "Open Mech Arena", icon: "bot", color: "crimson" },
+  { day: "II", date: "17 JAN", title: "The Arena", events: [
+    { time: "ALL DAY", category: "Technical Festival", title: "Technical Events", description: "Coding contests, robotics, E-Sports, and more across the BIT Patna campus.", venue: "BIT Patna Campus", icon: "bot", color: "blue" },
+    { time: "ALL DAY", category: "Creative Festival", title: "Cultural & Fun", description: "Bring your energy to the cultural, creative, and fun experiences of Technika.", venue: "Festival Grounds", icon: "music", color: "crimson" },
   ] },
-  { day: "III", date: "10 JAN", title: "The Triumph", events: [
-    { time: "11:00 AM", category: "Final Showcase", title: "The Goblet of Code", description: "The finest inventions take the stage. Present your creation and let your ingenuity shine.", venue: "Main Auditorium", icon: "trophy", color: "gold" },
-    { time: "04:30 PM", category: "Felicitation", title: "The House Cup", description: "Honour the champions, celebrate every breakthrough, and crown this year’s winning house.", venue: "Main Auditorium", icon: "shield", color: "blue" },
-    { time: "07:00 PM", category: "The Grand Finale", title: "The Yule Ball", description: "One last spell. An evening of music, lights, and memories beneath the enchanted night sky.", venue: "Open Air Stage", icon: "music", color: "crimson" },
+  { day: "III", date: "18 JAN", title: "The Finale", events: [
+    { time: "07:00 PM", category: "Closing Ceremony", title: "Closing Ceremony", description: "Close the festival with a celebration featuring key artist Mohammed Irfan.", venue: "Open Air Stage", icon: "music", color: "gold" },
   ] },
 ];
 
