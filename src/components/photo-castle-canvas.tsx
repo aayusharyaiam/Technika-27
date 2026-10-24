@@ -941,8 +941,18 @@ export function PhotoWizardingCanvas({
     draw(0);
 
     const shouldAnimate = !reducedMotion.matches && (mode === "loading" || motionEnabled);
+    let lastAnimateTime = 0;
     const animate = (now: number) => {
-      draw(now);
+      // When in background mode, throttle ambient time ripples to ~30fps to keep
+      // main thread and smooth scrolling 100% fluid at 60/120fps.
+      if (mode === "background") {
+        if (now - lastAnimateTime >= 33) {
+          lastAnimateTime = now;
+          draw(now);
+        }
+      } else {
+        draw(now);
+      }
       if (shouldAnimate) animationFrame = window.requestAnimationFrame(animate);
     };
     if (shouldAnimate) animationFrame = window.requestAnimationFrame(animate);

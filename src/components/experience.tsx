@@ -9,17 +9,12 @@ import {
   useState,
 } from "react";
 import { usePathname } from "next/navigation";
-import {
-  AnimatePresence,
-  motion,
-  MotionConfig,
-} from "motion/react";
-import Lenis from "lenis";
-import { gsap, ScrollTrigger } from "@/lib/gsap";
+import { AnimatePresence, motion, MotionConfig } from "motion/react";
+import { ScrollTrigger } from "@/lib/gsap";
 import { MagicInteractions } from "./magic-interactions";
 import { WandCursor } from "./wand-cursor";
-import { ScrollSnake } from "./scroll-snake";
 import { LoadingScene } from "./loading-scene";
+import SnakeScroll from "@/components/snake-scroll";
 
 const MagicContext = createContext({ enabled: true, ready: false });
 export const useMagic = () => useContext(MagicContext);
@@ -164,7 +159,10 @@ function LoadingScreen({ dismiss }: { dismiss: () => void }) {
 
   useEffect(() => {
     const screen = screenRef.current;
-    if (!screen || window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+    if (
+      !screen ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
       return;
 
     let frame = 0;
@@ -243,7 +241,9 @@ function LoadingScreen({ dismiss }: { dismiss: () => void }) {
       >
         <span className="loading-percent">{progress}%</span>
         <span className="loading-status" role="status" aria-live="polite">
-          {progress < 100 ? "Tracing the castle in moonlight" : "The gates are open"}
+          {progress < 100
+            ? "Tracing the castle in moonlight"
+            : "The gates are open"}
         </span>
         <span className="loading-progress-track" aria-hidden="true">
           <span
@@ -277,29 +277,27 @@ export function Experience({ children }: { children: React.ReactNode }) {
     if (!showLoader) return;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // Pause Lenis smooth scrolling while arrival loading scene is displayed
+    const globalLenis = (
+      window as unknown as { lenis?: { stop: () => void; start: () => void } }
+    ).lenis;
+    globalLenis?.stop();
     return () => {
       document.body.style.overflow = overflow;
+      globalLenis?.start();
     };
   }, [showLoader]);
 
   useEffect(() => {
     document.documentElement.dataset.magic = enabled ? "on" : "off";
-    if (!enabled || showLoader) return;
-    const lenis = new Lenis({
-      duration: 1.3,
-      smoothWheel: true,
-      syncTouch: false,
-      anchors: { offset: -105 },
-    });
-    const tick = (time: number) => lenis.raf(time * 1000);
-    lenis.on("scroll", ScrollTrigger.update);
-    gsap.ticker.add(tick);
-    gsap.ticker.lagSmoothing(0);
-    return () => {
-      lenis.off("scroll", ScrollTrigger.update);
-      gsap.ticker.remove(tick);
-      lenis.destroy();
-    };
+    if (showLoader) return;
+    // When loader finishes, ensure Lenis recalculates dimensions and ScrollTrigger refreshes
+    const globalLenis = (
+      window as unknown as { lenis?: { start: () => void; resize: () => void } }
+    ).lenis;
+    globalLenis?.start();
+    globalLenis?.resize();
+    ScrollTrigger.refresh();
   }, [enabled, showLoader]);
 
   return (
@@ -313,11 +311,11 @@ export function Experience({ children }: { children: React.ReactNode }) {
         </AnimatePresence>
         <WandSparks enabled={enabled} />
         <WandCursor />
+        <SnakeScroll />
         <MagicInteractions />
         {!showLoader && (
           <>
             <div className="scroll-progress" aria-hidden="true" />
-            <ScrollSnake />
           </>
         )}
       </MagicContext.Provider>

@@ -1,3 +1,5 @@
+import { createClient } from "@/utils/supabase/server";
+
 import { Hero } from "@/components/hero";
 import { Timeline } from "@/components/timeline";
 import {
@@ -9,10 +11,11 @@ import {
 import { createPageMetadata } from "@/lib/seo";
 import { RelicsSection } from "@/components/relics-section";
 import { HomeCanvasBackground } from "@/components/home-canvas-background";
-
 export const metadata = createPageMetadata("/");
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+
   return (
     <div className="home-page">
       <HomeCanvasBackground />

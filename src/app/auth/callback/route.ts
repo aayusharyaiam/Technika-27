@@ -1,18 +1,19 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { getServerSupabase } from "@/lib/supabase/server";
+import { createClient } from "@/utils/supabase/server";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
-  const code = request.nextUrl.searchParams.get("code");
-  const requestedNext = request.nextUrl.searchParams.get("next");
-  const next = requestedNext === "/reset-password" ? "/reset-password" : "/account";
-  const client = await getServerSupabase();
-  if (code && client) {
-    const { error } = await client.auth.exchangeCodeForSession(code);
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get("code");
+  const origin = url.origin;
+
+  if (code) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
     if (!error) {
-      const response = NextResponse.redirect(new URL(next, request.url));
-      response.headers.set("Cache-Control", "private, no-store");
-      return response;
+      return NextResponse.redirect(`${origin}/dashboard`);
     }
   }
-  return NextResponse.redirect(new URL("/login?error=confirmation", request.url));
+
+  return NextResponse.redirect(`${origin}/login?error=confirmation`);
 }

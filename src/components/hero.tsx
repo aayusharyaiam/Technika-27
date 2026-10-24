@@ -1,11 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 import {
   ArrowDown,
-  ArrowUpRight,
-  BookOpen,
   MapPin,
   Sparkles,
 } from "lucide-react";
@@ -217,8 +214,7 @@ export function Hero() {
 
   return (
     <section ref={ref} className="hero" aria-labelledby="hero-title">
-      <div className="hero-castle">
-      </div>
+      <div className="hero-castle"></div>
       <div className="hero-shade" />
       <div className="hero-moon-aura" aria-hidden="true" />
       <div className="castle-house-light" aria-hidden="true" />
@@ -251,16 +247,13 @@ export function Hero() {
               <Sparkles size={12} /> The wizarding edition{" "}
               <Sparkles size={12} />
             </span>
-            <h1 id="hero-title" aria-label="Technika ’27">
+            <h1 id="hero-title" aria-label="Technika">
               <span aria-hidden="true">
                 {"TECHNIKA".split("").map((letter, i) => (
                   <span className="title-letter" key={i}>
                     {letter}
                   </span>
                 ))}
-                <span className="title-letter title-apostrophe">’</span>
-                <span className="title-letter title-year">2</span>
-                <span className="title-letter title-year">7</span>
               </span>
             </h1>
             <p className="hero-subtitle">The Triwizard Tech Odyssey</p>
@@ -278,14 +271,6 @@ export function Hero() {
               <br />
               Three days of innovation, wonder, and a little mischief.
             </p>
-            <div className="hero-actions">
-              <Link href="/registrations" className="button button-gold">
-                Enter the tournament <ArrowUpRight size={17} />
-              </Link>
-              <a href="#about" className="button button-glass">
-                Explore the chronicles <BookOpen size={16} />
-              </a>
-            </div>
             <span className="hero-place">
               <MapPin size={12} />
               BIT PATNA · INDIA
