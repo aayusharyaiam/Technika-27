@@ -43,9 +43,9 @@ export const mapCategories: Record<MapCategory, {
   accent: string;
   regionLabel: string;
 }> = {
-  technical: { label: "Technical", accent: "#315f4d", regionLabel: "Wizarding Labs" },
-  fun: { label: "Fun & E-sports", accent: "#873f35", regionLabel: "Forbidden Grounds" },
-  cultural: { label: "Cultural", accent: "#665273", regionLabel: "Great Hall of Arts" },
+  technical: { label: "Technical", accent: "var(--fg-highlight)", regionLabel: "Wizarding Labs" },
+  fun: { label: "Fun & E-sports", accent: "var(--fg-brand)", regionLabel: "Forbidden Grounds" },
+  cultural: { label: "Cultural", accent: "var(--fg-accent)", regionLabel: "Great Hall of Arts" },
 };
 
 /**

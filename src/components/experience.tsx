@@ -15,6 +15,7 @@ import { MagicInteractions } from "./magic-interactions";
 import { WandCursor } from "./wand-cursor";
 import { LoadingScene } from "./loading-scene";
 import SnakeScroll from "@/components/snake-scroll";
+import { HouseSwitcher } from "./house-switcher";
 
 const MagicContext = createContext({ enabled: true, ready: false });
 export const useMagic = () => useContext(MagicContext);
@@ -41,12 +42,12 @@ function WandSparks({ enabled }: { enabled: boolean }) {
     let frame = 0;
     let lastSpawn = 0;
     const finePointer = window.matchMedia("(pointer: fine)");
-    let accent = "#ffd893";
+    let accent = "";
+    let highlight = "";
     const getAccent = () => {
-      accent =
-        getComputedStyle(document.documentElement)
-          .getPropertyValue("--gold")
-          .trim() || "#ffd893";
+      const styles = getComputedStyle(document.documentElement);
+      accent = styles.getPropertyValue("--fg-brand").trim();
+      highlight = styles.getPropertyValue("--fg-highlight").trim();
     };
     const palette = new MutationObserver(getAccent);
     palette.observe(document.documentElement, {
@@ -69,7 +70,7 @@ function WandSparks({ enabled }: { enabled: boolean }) {
         p.y += p.vy;
         p.vy += 0.025;
         ctx.globalAlpha = Math.max(0, (1 - p.age / p.life) * 0.9);
-        ctx.fillStyle = p.blue ? "#b8e3ff" : accent;
+        ctx.fillStyle = p.blue ? highlight : accent;
         ctx.shadowColor = ctx.fillStyle;
         ctx.shadowBlur = 7;
         ctx.beginPath();
@@ -313,6 +314,7 @@ export function Experience({ children }: { children: React.ReactNode }) {
         <WandCursor />
         <SnakeScroll />
         <MagicInteractions />
+        <HouseSwitcher />
         {!showLoader && (
           <>
             <div className="scroll-progress" aria-hidden="true" />

@@ -1,8 +1,9 @@
-import { isHouse, type House } from "./houses";
+import { houseFromValue, type House } from "./houses";
 
 export type SortedHouse = Exclude<House, "default">;
 export function savedProfileHouse(value: unknown): SortedHouse | null {
-  return isHouse(value) && value !== "default" ? value : null;
+  const house = houseFromValue(value);
+  return house && house !== "default" ? house : null;
 }
 
 // Presentation state only. Never used as a profile, house count, or membership record.

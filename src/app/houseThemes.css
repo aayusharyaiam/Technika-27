@@ -1,8 +1,11 @@
 /*
-  HOGWARTS HOUSE THEMES — four dark themes, one shared token system.
+  HOGWARTS THEMES — the default Hogwarts look plus the four houses, all dark,
+  all sharing one token system.
 
-  Import after the Tailwind directives in app/globals.css:
-      @import "./house-themes.css";
+  Import it in app/layout.tsx after the other global styles (a CSS @import
+  would have to sit above the Tailwind directives, so a JS import is simpler):
+       import "./globals.css";
+       import "./house-themes.css";
 
   HOW IT WORKS
   Each house only declares a few knobs (section 2): a hue, chroma and peak
@@ -29,6 +32,7 @@
 /* ================================================================== */
 
 :root,
+[data-theme="hogwarts"],
 [data-theme="gryffindor"],
 [data-theme="slytherin"],
 [data-theme="ravenclaw"],
@@ -363,14 +367,62 @@
   --glow-highlight:
     0 0 0 1px var(--highlight-border),
     0 8px 32px -8px color-mix(in oklab, var(--tertiary-500) 55%, transparent);
+
+  /* Compatibility aliases for the existing editorial CSS. Keeping these
+     aliases tied to the semantic system makes legacy surfaces recolour with
+     the same house as the Tailwind utilities. */
+  --panel: var(--surface-1);
+  --text: var(--fg);
+  --muted: var(--fg-muted);
+  --gold: var(--fg-brand);
+  --gold-deep: var(--primary-600);
+  --ink: var(--neutral-800);
+  --paper: var(--neutral-100);
+  --house-flag: var(--primary-800);
+  --house-second: var(--secondary-300);
+  --house-glow: var(--primary-300);
+  --house-tower-hue: 0deg;
 }
 
 /* ================================================================== */
-/* 2. THE HOUSES (knobs only). Slytherin first: it is the :root default */
+/* 2. THE THEMES (knobs only)                                          */
 /* ================================================================== */
 
+/* HOGWARTS — the default "Technika" look, sampled from the navbar design:
+   gold (#f8d28d) on violet-black (#0f0c19), amethyst, rust copper.
+   :root:not([data-theme]) applies it before next-themes sets the attribute,
+   without leaking into the other themes afterwards. */
+:root:not([data-theme]),
+[data-theme="hogwarts"] {
+  --primary-hue: 81;
+  --primary-chroma: 0.1;
+  --primary-light: 0.88;
+  --secondary-hue: 300;
+  --secondary-chroma: 0.11;
+  --secondary-light: 0.6;
+  --tertiary-hue: 48;
+  --tertiary-chroma: 0.11;
+  --tertiary-light: 0.62;
+  --neutral-hue: 294;
+  --neutral-chroma: 0.027;
+
+  --success-hue: 155;
+  --warning-hue: 60;
+  --danger-hue: 20;
+  --info-hue: 245;
+
+  /* gold is a light colour: dark text on brand fills, gold links and focus ring */
+  --house-flag: var(--primary-800);
+  --house-second: var(--primary-400);
+  --on-brand: var(--neutral-1000);
+  --fg-brand: var(--primary-500);
+  --link: var(--primary-400);
+  --link-hover: var(--primary-300);
+  --ring: var(--primary-400);
+  --selection: color-mix(in oklab, var(--primary-500) 30%, transparent);
+}
+
 /* SLYTHERIN — emerald + silver, lake teal, green-black neutrals */
-:root,
 [data-theme="slytherin"] {
   --primary-hue: 158;
   --primary-chroma: 0.12;
@@ -383,6 +435,7 @@
   --tertiary-light: 0.72;
   --neutral-hue: 165;
   --neutral-chroma: 0.02;
+  --house-tower-hue: 85deg;
 
   --success-hue: 128;
   --warning-hue: 85;
@@ -406,6 +459,7 @@
   --tertiary-light: 0.68;
   --neutral-hue: 22;
   --neutral-chroma: 0.022;
+  --house-tower-hue: 325deg;
 
   --success-hue: 150;
   --warning-hue: 62;
@@ -429,6 +483,7 @@
   --tertiary-light: 0.8;
   --neutral-hue: 268;
   --neutral-chroma: 0.03;
+  --house-tower-hue: 170deg;
 
   --success-hue: 155;
   --warning-hue: 80;
@@ -453,6 +508,7 @@
   --tertiary-light: 0.7;
   --neutral-hue: 75;
   --neutral-chroma: 0.018;
+  --house-tower-hue: 0deg;
 
   --success-hue: 150;
   --warning-hue: 55;
@@ -476,4 +532,216 @@ body {
 ::selection {
   background-color: var(--selection);
   color: var(--fg-strong);
+}
+
+/* ================================================================== */
+/* 4. DARK HOUSE APPLICATION                                            */
+/* ================================================================== */
+
+/* These are the shared brand surfaces used by the pre-existing editorial
+   components. The geometry, spacing, typography and illustrations stay
+   untouched; only the colour layer follows the authenticated house. */
+html[data-theme] .button-gold {
+  background: var(--gradient-brand);
+  border-color: var(--brand-border);
+  color: var(--on-brand);
+  box-shadow: var(--glow-brand);
+}
+
+html[data-theme] .button-gold:hover {
+  background: linear-gradient(
+    115deg,
+    var(--brand-hover),
+    var(--brand)
+  );
+  box-shadow: var(--glow-brand);
+}
+
+html[data-theme] .button-glass {
+  border-color: var(--line-brand);
+  background: color-mix(in oklab, var(--surface-1) 72%, transparent);
+  color: var(--fg-brand);
+}
+
+html[data-theme] .button-glass:hover {
+  background: var(--brand-soft);
+  border-color: var(--brand-border);
+  box-shadow: var(--glow-brand);
+}
+
+html[data-theme] .nav-account.active {
+  color: var(--fg-brand);
+}
+
+html[data-theme]
+  :is(
+    .main-nav,
+    .registration-clock,
+    .event-card:not(.parchment-card),
+    .sponsor-card,
+    .academy-card,
+    .memory-card,
+    .sealed-notice,
+    .faq-list details,
+    .delegate-details,
+    .owl-art,
+    .contact-location,
+    .campus-panel,
+    .sponsor-invite,
+    .previous-panel,
+    .prize-pool-card,
+    .goblet-chapter,
+    .hallows-chapter
+  ) {
+  border-color: var(--line-brand);
+  background-color: var(--surface-1);
+}
+
+html[data-theme] :is(.event-card:not(.parchment-card), .sponsor-card) {
+  background-image: var(--gradient-surface);
+}
+
+html[data-theme] .magic-card-active {
+  border-color: var(--brand-border) !important;
+  box-shadow: var(--glow-brand), var(--shadow-lg);
+  background-image: radial-gradient(
+    circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    var(--brand-soft-hover),
+    transparent 60%
+  );
+}
+
+html[data-theme] :is(.hero-presents, .hero-edition, .hero-date p, .hero-place, .text-link, .eyebrow, .scroll-cue, .nav-link.active, .inner-hero h1, .inner-hero h1 em, .countdown-units span, .invitation-oath, .footer-oath) {
+  color: var(--fg-brand);
+}
+
+html[data-theme] :is(.nav-link.active::after, .soon-badge > i, .ambient-particles i) {
+  background-color: var(--brand);
+}
+
+html[data-theme] :is(.nav-link.active::after, .ambient-particles i) {
+  box-shadow: 0 0 8px var(--brand);
+}
+
+html[data-theme] .title-letter {
+  background-image: var(--gradient-text);
+}
+
+html[data-theme] .hero-castle {
+  filter: saturate(0.8) hue-rotate(var(--house-tower-hue));
+}
+
+html[data-theme] :is(.loading-progress-track, .loading-progress-fill) {
+  border-color: var(--brand-border);
+}
+
+html[data-theme] .loading-progress-fill {
+  background: var(--gradient-brand);
+  box-shadow: 0 0 12px var(--brand);
+}
+
+/* The map and reference portals keep their own typography and layouts, but
+   their interactive/accent layer also follows the active house. */
+html[data-theme] .marauders-page {
+  background:
+    radial-gradient(
+      ellipse at 20% 0%,
+      color-mix(in oklab, var(--primary-500) 12%, transparent),
+      transparent 30%
+    ),
+    radial-gradient(
+      ellipse at 88% 42%,
+      color-mix(in oklab, var(--secondary-500) 9%, transparent),
+      transparent 35%
+    ),
+    var(--bg);
+}
+
+html[data-theme]
+  :is(
+    .map-kicker,
+    .map-section-kicker,
+    .map-header-copy h1 em,
+    .map-header-seal,
+    .map-header-aside b,
+    .map-saved-toggle,
+    .map-clear-button:hover,
+    .map-event-category,
+    .map-text-button,
+    .map-legend-heading span,
+    .map-notice
+  ) {
+  color: var(--fg-brand);
+}
+
+html[data-theme]
+  :is(.map-header-seal, .map-header-aside, .map-discovery-bar, .map-search-wrap, .map-event-card, .map-legend, .map-notice) {
+  border-color: var(--line-brand);
+}
+
+html[data-theme]
+  :is(.map-filter.active, .map-saved-toggle.active) {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+html[data-theme] .reference-portal-page {
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      color-mix(in oklab, var(--primary-500) 10%, transparent),
+      transparent 32%
+    ),
+    radial-gradient(
+      ellipse at 88% 62%,
+      color-mix(in oklab, var(--secondary-500) 8%, transparent),
+      transparent 38%
+    ),
+    var(--bg);
+}
+
+html[data-theme]
+  :is(
+    .reference-card,
+    .reference-document-strip,
+    .reference-browser,
+    .reference-catalogue-note,
+    .reference-directory-intro,
+    .reference-timeline,
+    .reference-form-portal,
+    .reference-profile-portal
+  ) {
+  border-color: var(--line-brand);
+  background-image: var(--gradient-surface);
+}
+
+html[data-theme]
+  :is(
+    .reference-card-icon,
+    .reference-strip-icon,
+    .reference-rune,
+    .reference-seal,
+    .reference-form-seal,
+    .reference-timeline-mark
+  ) {
+  border-color: var(--brand-border);
+  color: var(--fg-brand);
+  background-color: var(--brand-soft);
+}
+
+html[data-theme]
+  :is(
+    .reference-card-kicker,
+    .reference-strip-kicker,
+    .reference-mini-label,
+    .reference-card-action,
+    .reference-browser-copy h2 em,
+    .reference-catalogue-note h2 em,
+    .reference-directory-intro h2 em,
+    .reference-form-portal h2 em,
+    .reference-profile-portal h2 em,
+    .mobile-navigation-group > a:first-child.active
+  ) {
+  color: var(--fg-brand);
 }

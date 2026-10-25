@@ -9,11 +9,13 @@ export type NavigationItem = {
   label: string;
   href: string;
   dropdown?: boolean;
+  authOnly?: boolean;
   children?: Array<{ label: string; href: string }>;
 };
 
 export const navigation: NavigationItem[] = [
   { label: "Home", href: "/" },
+  { label: "Dashboard", href: "/dashboard", authOnly: true },
   { label: "Marauder's Map", href: "/marauders-map" },
   { label: "Registrations", href: "/registrations", dropdown: true, children: [
     { label: "Event registry", href: "/events" },
@@ -32,10 +34,10 @@ export const navigation: NavigationItem[] = [
 ];
 
 export const houses = [
-  { name: "Gryffindor", title: "Dare to build.", track: "Robotics & Hardware", color: "#df7465", rune: "G", description: "For the brave makers, machine architects, and fearless competitors of the arena." },
-  { name: "Ravenclaw", title: "Think beyond.", track: "AI & Algorithms", color: "#8cc8e8", rune: "R", description: "For curious minds who turn clever ideas into extraordinary possibilities." },
-  { name: "Slytherin", title: "Rewrite the rules.", track: "Cybersecurity & Web3", color: "#91c6a7", rune: "S", description: "For ambitious strategists, digital defenders, and masters of the unexpected." },
-  { name: "Hufflepuff", title: "Make it matter.", track: "Design & Culture", color: "#edc96f", rune: "H", description: "For the creative collaborators who bring people, purpose, and magic together." },
+  { name: "Gryffindor", theme: "gryffindor", title: "Dare to build.", track: "Robotics & Hardware", rune: "G", description: "For the brave makers, machine architects, and fearless competitors of the arena." },
+  { name: "Ravenclaw", theme: "ravenclaw", title: "Think beyond.", track: "AI & Algorithms", rune: "R", description: "For curious minds who turn clever ideas into extraordinary possibilities." },
+  { name: "Slytherin", theme: "slytherin", title: "Rewrite the rules.", track: "Cybersecurity & Web3", rune: "S", description: "For ambitious strategists, digital defenders, and masters of the unexpected." },
+  { name: "Hufflepuff", theme: "hufflepuff", title: "Make it matter.", track: "Design & Culture", rune: "H", description: "For the creative collaborators who bring people, purpose, and magic together." },
 ];
 
 export const schedule = [

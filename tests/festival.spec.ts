@@ -25,6 +25,32 @@ test("arrival, home sections, timeline tabs, and real links work", async ({ page
   expect(errors).toEqual([]);
 });
 
+test("login exposes the Supabase password recovery flow", async ({ page }) => {
+  await page.goto("/login", { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "Forgot your password?" }).click();
+  await expect(page.getByRole("heading", { name: /Recover your castle key/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Send my reset letter" })).toBeVisible();
+  await expect(page.getByText(/verified reset link/i)).toBeVisible();
+});
+
+test("Supabase auth callback keeps the password reset destination", async ({ request }) => {
+  const response = await request.get("/auth/callback?next=%2Freset-password", { maxRedirects: 0 });
+  expect(response.status()).toBe(307);
+  expect(response.headers().location).toMatch(/\/login\?error=reset$/);
+});
+
+test("house crest logo and website icons follow the equipped house", async ({ page }) => {
+  await arrive(page);
+  await page.getByRole("button", { name: "Change house" }).click();
+
+  for (const house of ["gryffindor", "ravenclaw", "hufflepuff", "slytherin"]) {
+    await page.getByRole("button", { name: new RegExp(house, "i") }).click();
+    await expect(page.locator(`[data-house-logo="${house}"]`)).toHaveAttribute("src", new RegExp(`${house}\\.png`));
+    await expect(page.locator('link[rel~="icon"]').first()).toHaveAttribute("href", new RegExp(`${house}\\.png`));
+    await expect(page.locator('link[rel="apple-touch-icon"]').first()).toHaveAttribute("href", new RegExp(`${house}\\.png`));
+  }
+});
+
 test("every themed portal is readable, images load, and layout fits", async ({ page }, testInfo) => {
   test.setTimeout(90000);
   for (const route of ["/", "/registrations", "/members", "/delegate", "/alumni", "/contact"]) {

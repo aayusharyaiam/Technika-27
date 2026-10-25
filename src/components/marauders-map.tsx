@@ -301,13 +301,13 @@ function MapIllustration({
             <feBlend in="SourceGraphic" in2="noise" mode="multiply" />
           </filter>
           <linearGradient id="map-paper" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#e9d6ad" />
-            <stop offset=".48" stopColor="#d8bd8d" />
-            <stop offset="1" stopColor="#b58d60" />
+            <stop offset="0" stopColor="var(--secondary-200)" />
+            <stop offset=".48" stopColor="var(--secondary-400)" />
+            <stop offset="1" stopColor="var(--secondary-600)" />
           </linearGradient>
           <radialGradient id="map-wash" cx=".5" cy=".5" r=".7">
-            <stop offset="0" stopColor="#fff2cc" stopOpacity=".56" />
-            <stop offset="1" stopColor="#8d5d3f" stopOpacity=".2" />
+            <stop offset="0" stopColor="var(--fg-strong)" stopOpacity=".56" />
+            <stop offset="1" stopColor="var(--primary-700)" stopOpacity=".2" />
           </radialGradient>
         </defs>
         <g transform={`translate(${transform.x} ${transform.y}) scale(${transform.scale})`} className="map-zoom-layer">

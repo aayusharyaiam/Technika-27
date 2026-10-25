@@ -12,23 +12,30 @@ import { useAuth } from "./auth-provider";
 import { useMagic } from "./experience";
 
 type Mode = "login" | "signup" | "forgot" | "reset";
+type CallbackError = "confirmation" | "reset";
 
 function authError(caught: unknown) {
   const message = caught instanceof Error ? caught.message : "The Owlery could not complete that request. Please try again.";
   if (/invalid login credentials/i.test(message)) return "That email and password do not match. Please try again or reset your password.";
   if (/already registered|already exists/i.test(message)) return "An account already exists for that email. Return to the Hall to sign in, or reset your password.";
-  if (/email not confirmed/i.test(message)) return "Please open the confirmation letter in your inbox before signing in.";
+  if (/(email|user)[ _]not[ _]confirmed/i.test(message)) return "Please open the confirmation letter in your inbox before signing in.";
   if (/fetch|network|timeout/i.test(message)) return "We could not reach the account service. Check your connection and try again.";
   if (/rate limit|too many/i.test(message)) return "Too many requests reached the Owlery. Please wait a moment before trying again.";
   return message;
 }
 
-export function AuthForm({ mode: initialMode, callbackError = false, onSignupSuccess }: { mode: Mode; callbackError?: boolean; onSignupSuccess?: () => void }) {
+export function AuthForm({ mode: initialMode, callbackError, onSignupSuccess }: { mode: Mode; callbackError?: CallbackError; onSignupSuccess?: () => void }) {
   const [mode, setMode] = useState(initialMode);
   const [busy, setBusy] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [error, setError] = useState(callbackError ? "That confirmation link has expired or could not be verified. Request a new email below." : "");
+  const [error, setError] = useState(
+    callbackError === "reset"
+      ? "That password reset link has expired or could not be verified. Request a new reset letter below."
+      : callbackError === "confirmation"
+        ? "That confirmation link has expired or could not be verified. Request a new confirmation email below."
+        : "",
+  );
   const [message, setMessage] = useState("");
   const { setHouse } = useHouse();
   const { user } = useAuth();
@@ -69,15 +76,25 @@ export function AuthForm({ mode: initialMode, callbackError = false, onSignupSuc
     setBusy(true);
     try {
       if (mode === "forgot") {
-        const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/callback?next=/reset-password` });
+        const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/reset-password")}` });
         if (error) throw error;
         setMessage("If an account exists for that email, a password reset letter is on its way. Check your inbox and spam folder.");
       } else if (signup) {
-        const { data, error } = await client.auth.signUp({ email, password, options: { data: { display_name: name, college, phone }, emailRedirectTo: `${window.location.origin}/auth/callback?next=/account` } });
+        const { data, error } = await client.auth.signUp({ email, password, options: { data: { display_name: name, college, phone }, emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/signup?step=ceremony")}` } });
         if (error) throw error;
+        const emailConfirmed = Boolean(data.user?.email_confirmed_at || data.user?.confirmed_at);
+        if (!emailConfirmed) {
+          if (data.session) await client.auth.signOut();
+          setMessage("Your account was created. Check your inbox for the Supabase confirmation email, then use that link to open the Hat and continue.");
+          return;
+        }
         if (data.session) {
+          if (!data.user) throw new Error("The account service returned an incomplete session. Please try again.");
           setLeaving(true);
-          if (savedProfileHouse(data.user?.user_metadata?.house)) {
+          const { data: profile } = await client.from("profiles").select("house").eq("id", data.user.id).maybeSingle();
+          const savedHouse = savedProfileHouse(profile?.house) || savedProfileHouse(data.user?.user_metadata?.house);
+          if (savedHouse) {
+            setHouse(savedHouse);
             router.push("/account"); router.refresh();
           } else if (onSignupSuccess) {
             // The signup container swaps the form for the ceremony without navigating away.
@@ -85,7 +102,7 @@ export function AuthForm({ mode: initialMode, callbackError = false, onSignupSuc
           } else router.replace("/signup?step=ceremony");
         } else {
           // Supabase can deliberately obscure duplicate emails; don't assert that a new account was created.
-          setMessage("Check your inbox for a confirmation letter, then return to this signup page to continue with the Hat. If you already have an account, return to the Hall to sign in or reset your password.");
+          setMessage("If this email can receive mail, Supabase has sent a confirmation letter. Open it before returning to continue with the Hat. If you already have an account, return to the Hall to sign in or reset your password.");
         }
       } else if (mode === "reset") {
         const { data: verified, error: verificationError } = await client.auth.getUser();
@@ -96,7 +113,12 @@ export function AuthForm({ mode: initialMode, callbackError = false, onSignupSuc
       } else {
         const { data, error } = await client.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        const savedHouse = savedProfileHouse(data.user?.user_metadata?.house);
+        if (!data.user.email_confirmed_at && !data.user.confirmed_at) {
+          await client.auth.signOut();
+          throw new Error("Email not confirmed");
+        }
+        const { data: profile } = await client.from("profiles").select("house").eq("id", data.user.id).maybeSingle();
+        const savedHouse = savedProfileHouse(profile?.house) || savedProfileHouse(data.user?.user_metadata?.house);
         setLeaving(true);
         if (savedHouse) {
           setHouse(savedHouse);
@@ -111,7 +133,7 @@ export function AuthForm({ mode: initialMode, callbackError = false, onSignupSuc
   return <div className="auth-form-panel">
     <span className="auth-chapter">{signup ? "CHAPTER I · YOUR LETTER HAS ARRIVED" : mode === "forgot" ? "A LOST KEY CAN BE FOUND" : mode === "reset" ? "A NEW KEY TO THE CASTLE" : "WELCOME BACK TO THE COMMON ROOM"}</span>
     <h1>{signup ? <>The Hat <em>Awaits</em></> : mode === "forgot" ? <>Recover your <em>castle key.</em></> : mode === "reset" ? <>A fresh start. <em>A stronger spell.</em></> : <>The Hat <em>Remembers You</em></>}</h1>
-    <p className="auth-intro">{signup ? "Every great journey begins with a choice. Your story begins here." : mode === "forgot" ? "We’ll send a verified reset link to your email." : mode === "reset" ? "Choose a new password for your Technika account." : "Ahh… welcome back. Your place in the wizarding world awaits."}</p>
+    <p className="auth-intro">{signup ? "Every great journey begins with a choice. Your story begins here. Supabase will send a confirmation email before the Hat opens." : mode === "forgot" ? "We’ll send a verified reset link to your email." : mode === "reset" ? "Choose a new password for your Technika account." : "Ahh… welcome back. Your place in the wizarding world awaits."}</p>
     {user && mode !== "reset" && !leaving && <p className="auth-already">You are already signed in. <Link href="/account">Open your common room →</Link></p>}
     <form onSubmit={submit} className="wizard-auth-form" aria-busy={disabled}>
       {signup && <label htmlFor="auth-name">Full name<input id="auth-name" name="name" autoComplete="name" maxLength={80} minLength={2} placeholder="The name on your letter" disabled={disabled} required/></label>}
@@ -124,7 +146,7 @@ export function AuthForm({ mode: initialMode, callbackError = false, onSignupSuc
       {error && <p ref={alert} tabIndex={-1} className="auth-feedback auth-error" role="alert">{error}</p>}
       {message && <p className="auth-feedback auth-success" role="status"><CheckCircle2 size={17}/>{message}</p>}
       <button type="submit" className="button button-gold auth-submit" disabled={disabled}>{disabled ? <><LoaderCircle size={15} className="spin"/>{leaving ? "Opening the Hall…" : "Contacting the Owlery…"}</> : <>{signup ? "BEGIN YOUR CEREMONY" : mode === "forgot" ? "Send my reset letter" : mode === "reset" ? "Save my new password" : "RETURN TO YOUR HOUSE"}<ArrowRight size={16}/></>}</button>
-      {signup && <span className="auth-house-note">Four houses. Equal belonging. No house selection required.</span>}
+      {signup && <span className="auth-house-note">Confirm your email before the ceremony begins. Four houses. Equal belonging.</span>}
     </form>
     <div className="auth-switch">{signup ? <>Already have an account? <Link href="/login">Return to the Hall.</Link></> : mode === "forgot" ? <button type="button" disabled={disabled} onClick={() => { setMode("login"); setError(""); setMessage(""); }}>← Return to sign in</button> : mode === "reset" ? <Link href="/account">Return to your common room →</Link> : <>New to the ceremony? <Link href="/signup">Let the Hat discover you.</Link></>}</div>
   </div>;

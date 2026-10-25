@@ -5,17 +5,14 @@
  * the right edge of the viewport and grows longer the further you scroll.
  *
  * Works in React (Vite/CRA) and Next.js (App Router or Pages Router).
- * Layout + the faint rail use Tailwind classes; the snake itself is drawn on
- * a <canvas>, so it needs no extra dependencies.
+ * The snake is drawn on a <canvas>, so it needs no extra dependencies.
+ *
+ * Colours:
+ *   palette="nagini" (default)  the original dark-green snake with gold diamonds
+ *   palette="theme"             recoloured from the active house theme (house-themes.css)
  *
  * Usage (Next.js App Router) — app/layout.tsx:
- *
- *   import SnakeScroll from "@/components/snake-scroll";
- *   ...
- *   <body>
- *     {children}
- *     <SnakeScroll />
- *   </body>
+ *   <body>{children}<SnakeScroll /></body>
  */
 
 import {
@@ -32,8 +29,139 @@ export interface SnakeScrollProps {
   inset?: number;
   /** Hide the browser's native scrollbar (html element only). Default true. */
   hideNativeScrollbar?: boolean;
+  /** "nagini" = the original green snake. "theme" = colours follow the active house. */
+  palette?: "nagini" | "theme";
   /** Extra classes for the fixed wrapper, e.g. "hidden md:block" or "z-[100]". */
   className?: string;
+}
+
+/* ------------------------------------------------------------------ */
+/* colours                                                             */
+/* ------------------------------------------------------------------ */
+
+type Palette = {
+  outline: string;
+  flankA: string;
+  flankB: string;
+  backA: string;
+  backB: string;
+  dorsal: string;
+  sheen: string;
+  diamondFill: string;
+  diamondStroke: string;
+  spots: string;
+  headA: string;
+  headB: string;
+  headC: string;
+  headMarkFill: string;
+  headMarkStroke: string;
+  eyeGlow: string;
+  eyeA: string;
+  eyeB: string;
+  pupil: string;
+  glint: string;
+  nostril: string;
+  tongue: string;
+};
+
+/** The original Nagini look. */
+const NAGINI: Palette = {
+  outline: "#02100a",
+  flankA: "#3b6a2c",
+  flankB: "#6f9a35",
+  backA: "#14452a",
+  backB: "#1b5e35",
+  dorsal: "#06210f",
+  sheen: "rgba(200,255,200,0.2)",
+  diamondFill: "rgba(2,16,8,0.85)",
+  diamondStroke: "rgba(230,190,70,0.55)",
+  spots: "rgba(232,205,110,0.75)",
+  headA: "#164a2c",
+  headB: "#256b3a",
+  headC: "#3c8a3f",
+  headMarkFill: "rgba(3,22,10,0.55)",
+  headMarkStroke: "rgba(230,190,70,0.55)",
+  eyeGlow: "rgba(255,200,40,0.7)",
+  eyeA: "#fff7a8",
+  eyeB: "#e3a30c",
+  pupil: "#050505",
+  glint: "rgba(255,255,255,0.85)",
+  nostril: "#02100a",
+  tongue: "#d3203f",
+};
+
+type RGB = [number, number, number];
+const rgba = (c: RGB, a = 1) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${a})`;
+
+/**
+ * Turns a theme token into a plain [r, g, b].
+ * getPropertyValue("--primary-600") returns the raw text, which contains calc()
+ * and that the canvas can't parse (it then silently stays black). So we let the
+ * browser compute a real colour on a hidden element and read it back as pixels.
+ */
+function makeReader() {
+  const probe = document.createElement("span");
+  probe.style.cssText =
+    "position:absolute;visibility:hidden;pointer-events:none";
+  document.documentElement.appendChild(probe);
+  const px = document.createElement("canvas");
+  px.width = px.height = 1;
+  const pctx = px.getContext("2d", { willReadFrequently: true });
+  const root = getComputedStyle(document.documentElement);
+
+  const read = (token: string, fallback: RGB): RGB => {
+    if (!pctx || !root.getPropertyValue(token).trim()) return fallback; // token missing
+    probe.style.color = `var(${token})`;
+    const css = getComputedStyle(probe).color;
+    pctx.clearRect(0, 0, 1, 1);
+    pctx.fillStyle = "#ff00ff"; // sentinel: stays magenta if the browser can't parse `css`
+    pctx.fillStyle = css;
+    pctx.fillRect(0, 0, 1, 1);
+    const d = pctx.getImageData(0, 0, 1, 1).data;
+    if (d[0] === 255 && d[1] === 0 && d[2] === 255) return fallback;
+    return [d[0], d[1], d[2]];
+  };
+  return { read, dispose: () => probe.remove() };
+}
+
+/** Same snake, recoloured from the active theme's tokens. */
+function themePalette(read: (token: string, fb: RGB) => RGB): Palette {
+  const bg = read("--bg-sunken", [2, 16, 10]);
+  const p400 = read("--primary-400", [111, 154, 53]);
+  const p600 = read("--primary-600", [59, 106, 44]);
+  const p800 = read("--primary-800", [20, 69, 42]);
+  const p900 = read("--primary-900", [6, 33, 15]);
+  const p200 = read("--primary-200", [200, 255, 200]);
+  const accent = read("--secondary-400", [230, 190, 70]);
+  const accentPale = read("--secondary-300", [232, 205, 110]);
+  const eyeLight = read("--warning-fg", [255, 247, 168]);
+  const eyeDeep = read("--warning-solid", [227, 163, 12]);
+  const tongue = read("--danger-solid", [211, 32, 63]);
+  const white = read("--fg-strong", [255, 255, 255]);
+  return {
+    outline: rgba(bg),
+    flankA: rgba(p600),
+    flankB: rgba(p400),
+    backA: rgba(p800),
+    backB: rgba(p600),
+    dorsal: rgba(p900),
+    sheen: rgba(p200, 0.22),
+    diamondFill: rgba(p900, 0.85),
+    diamondStroke: rgba(accent, 0.6),
+    spots: rgba(accentPale, 0.75),
+    headA: rgba(p800),
+    headB: rgba(p600),
+    headC: rgba(p400),
+    headMarkFill: rgba(p900, 0.6),
+    headMarkStroke: rgba(accent, 0.6),
+    eyeGlow: rgba(eyeDeep, 0.7),
+    eyeA: rgba(eyeLight),
+    eyeB: rgba(eyeDeep),
+    pupil: rgba(bg),
+    glint: rgba(white, 0.85),
+    nostril: rgba(bg),
+    tongue: rgba(tongue),
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -87,6 +215,7 @@ export default function SnakeScroll({
   width = 56,
   inset = 20,
   hideNativeScrollbar = true,
+  palette = "nagini",
   className = "",
 }: SnakeScrollProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -127,6 +256,22 @@ export default function SnakeScroll({
     let raf = 0;
     let dirty = true;
 
+    /* colours: fixed green, or read from the active theme */
+    let pal: Palette = NAGINI;
+    const reader = palette === "theme" ? makeReader() : null;
+    const refreshColors = () => {
+      pal = reader ? themePalette(reader.read) : NAGINI;
+      dirty = true;
+    };
+    const observer = reader
+      ? new MutationObserver(refreshColors) // re-read when the house changes
+      : null;
+    observer?.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-house", "data-theme"],
+    });
+    refreshColors();
+
     /** Horizontal offset of the body at height y. */
     const wave = (y: number, y0: number, ph: number) => {
       const env = 0.45 + 0.55 * smoothstep(0, 90 * g.u, y - y0);
@@ -166,7 +311,7 @@ export default function SnakeScroll({
         const spread = 0.4 + 0.18 * Math.sin(tongueClock * 40);
         ctx.save();
         ctx.lineCap = "round";
-        ctx.strokeStyle = "#d3203f";
+        ctx.strokeStyle = pal.tongue;
         ctx.lineWidth = Math.max(1, r * 0.16);
         ctx.beginPath();
         ctx.moveTo(startX, 0);
@@ -205,14 +350,14 @@ export default function SnakeScroll({
       head.closePath();
 
       const hg = ctx.createLinearGradient(-0.9 * r, 0, 2.4 * r, 0);
-      hg.addColorStop(0, "#164a2c");
-      hg.addColorStop(0.55, "#256b3a");
-      hg.addColorStop(1, "#3c8a3f");
+      hg.addColorStop(0, pal.headA);
+      hg.addColorStop(0.55, pal.headB);
+      hg.addColorStop(1, pal.headC);
       ctx.fillStyle = hg;
       ctx.fill(head);
       ctx.lineJoin = "round";
       ctx.lineWidth = 1.3;
-      ctx.strokeStyle = "#02100a";
+      ctx.strokeStyle = pal.outline;
       ctx.stroke(head);
 
       // Dorsal diamond marking, same motif as the body
@@ -222,15 +367,15 @@ export default function SnakeScroll({
       ctx.lineTo(1.5 * r, 0);
       ctx.lineTo(0.2 * r, 0.5 * r);
       ctx.closePath();
-      ctx.fillStyle = "rgba(3,22,10,0.55)";
+      ctx.fillStyle = pal.headMarkFill;
       ctx.fill();
       ctx.lineWidth = 0.7;
-      ctx.strokeStyle = "rgba(230,190,70,0.55)";
+      ctx.strokeStyle = pal.headMarkStroke;
       ctx.stroke();
 
       // Eyes: glowing amber, slit pupils
       ctx.save();
-      ctx.shadowColor = "rgba(255,200,40,0.7)";
+      ctx.shadowColor = pal.eyeGlow;
       ctx.shadowBlur = 4;
       for (const side of [-1, 1]) {
         const ex = 1.05 * r;
@@ -243,8 +388,8 @@ export default function SnakeScroll({
           ey,
           0.4 * r,
         );
-        eg.addColorStop(0, "#fff7a8");
-        eg.addColorStop(1, "#e3a30c");
+        eg.addColorStop(0, pal.eyeA);
+        eg.addColorStop(1, pal.eyeB);
         ctx.fillStyle = eg;
         ctx.beginPath();
         ctx.ellipse(ex, ey, 0.4 * r, 0.32 * r, 0, 0, TAU);
@@ -254,18 +399,18 @@ export default function SnakeScroll({
       for (const side of [-1, 1]) {
         const ex = 1.05 * r;
         const ey = side * 0.78 * r;
-        ctx.fillStyle = "#050505";
+        ctx.fillStyle = pal.pupil;
         ctx.beginPath();
         ctx.ellipse(ex, ey, 0.3 * r, 0.07 * r, 0, 0, TAU);
         ctx.fill();
-        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.fillStyle = pal.glint;
         ctx.beginPath();
         ctx.arc(ex + 0.14 * r, ey - 0.12 * r, Math.max(0.6, 0.06 * r), 0, TAU);
         ctx.fill();
       }
 
       // Nostrils
-      ctx.fillStyle = "#02100a";
+      ctx.fillStyle = pal.nostril;
       for (const side of [-1, 1]) {
         ctx.beginPath();
         ctx.arc(2.0 * r, side * 0.17 * r, Math.max(0.6, 0.07 * r), 0, TAU);
@@ -345,11 +490,11 @@ export default function SnakeScroll({
         ctx.fill();
       };
 
-      layer(1, 1.3, "#02100a"); // outline
-      layer(1, 0, vGrad("#3b6a2c", "#6f9a35")); // pale flanks
-      layer(0.8, 0, vGrad("#14452a", "#1b5e35")); // green back
-      layer(0.42, 0, "#06210f"); // dark dorsal stripe
-      layer(0.16, 0, "rgba(200,255,200,0.2)", -0.5); // wet sheen
+      layer(1, 1.3, pal.outline); // outline
+      layer(1, 0, vGrad(pal.flankA, pal.flankB)); // pale flanks
+      layer(0.8, 0, vGrad(pal.backA, pal.backB)); // green back
+      layer(0.42, 0, pal.dorsal); // dark dorsal stripe
+      layer(0.16, 0, pal.sheen, -0.5); // wet sheen
 
       // Diamond pattern along the back
       const gap = 17 * g.u;
@@ -367,10 +512,10 @@ export default function SnakeScroll({
         ctx.lineTo(p.x - p.nx * b, p.y - p.ny * b);
         ctx.closePath();
       }
-      ctx.fillStyle = "rgba(2,16,8,0.85)";
+      ctx.fillStyle = pal.diamondFill;
       ctx.fill();
       ctx.lineWidth = 0.8;
-      ctx.strokeStyle = "rgba(230,190,70,0.55)";
+      ctx.strokeStyle = pal.diamondStroke;
       ctx.stroke();
 
       // Pale flank spots between the diamonds
@@ -388,7 +533,7 @@ export default function SnakeScroll({
           ctx.arc(x, y, dr, 0, TAU);
         }
       }
-      ctx.fillStyle = "rgba(232,205,110,0.75)";
+      ctx.fillStyle = pal.spots;
       ctx.fill();
 
       // Head, oriented along the tangent at the end of the body
@@ -444,12 +589,14 @@ export default function SnakeScroll({
 
     return () => {
       cancelAnimationFrame(raf);
+      observer?.disconnect();
+      reader?.dispose();
       window.removeEventListener("scroll", readScroll);
       window.removeEventListener("resize", resize);
       roWrap.disconnect();
       roDoc.disconnect();
     };
-  }, [width, inset]);
+  }, [width, inset, palette]);
 
   /* Click / drag the track to scrub the page ------------------------ */
   const scrub = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -461,19 +608,17 @@ export default function SnakeScroll({
     const p = clamp((e.clientY - rect.top - inset - g.minLen) / g.span, 0, 1);
     const el = document.documentElement;
     const targetTop = p * (el.scrollHeight - el.clientHeight);
+
+    // Your smooth-scroll (Lenis) owns scrolling, so go through it when it's there.
     const lenis = (
       window as unknown as {
-        lenis?: { scrollTo: (top: number, opts: { immediate: boolean }) => void };
+        lenis?: {
+          scrollTo: (top: number, opts: { immediate: boolean }) => void;
+        };
       }
     ).lenis;
-    if (lenis) {
-      lenis.scrollTo(targetTop, { immediate: true });
-    } else {
-      window.scrollTo({
-        top: targetTop,
-        behavior: "auto",
-      });
-    }
+    if (lenis) lenis.scrollTo(targetTop, { immediate: true });
+    else window.scrollTo({ top: targetTop, behavior: "auto" });
   };
 
   return (
@@ -498,11 +643,6 @@ export default function SnakeScroll({
         e.currentTarget.releasePointerCapture(e.pointerId)
       }
     >
-      {/* the track: a faint rail the snake follows */}
-      {/* <div
-        className="pointer-events-none absolute left-1/2 w-px -translate-x-1/2 rounded-full bg-emerald-900/15 dark:bg-emerald-200/15"
-        style={{ top: inset, bottom: inset }}
-      /> */}
       <canvas
         ref={canvasRef}
         className="block h-full w-full drop-shadow-[0_2px_3px_rgba(0,0,0,0.35)]"

@@ -11,12 +11,53 @@ import { HouseProvider } from "@/components/house-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import { SmoothScroll } from "@/components/smoothScroll";
 import { LeafReveal } from "@/components/leaf-reveal";
-import { houseBootScript } from "@/lib/houses";
+import { getServerSupabase } from "@/lib/supabase/server";
+import {
+  houseAppleIconFor,
+  houseBootScript,
+  houseFromValue,
+  houseIconFor,
+  themeAttributeForHouse,
+  type House,
+} from "@/lib/houses";
 import "lenis/dist/lenis.css";
 import "./globals.css";
 import "./wizarding.css";
 import "./marauders-map.css";
 import "./reference-portals.css";
+import "./houseThemes.css";
+import "./theme-utilities.css";
+
+export const dynamic = "force-dynamic";
+
+async function getInitialTheme(): Promise<{ theme: House; fromDatabase: boolean }> {
+  const supabase = await getServerSupabase();
+  if (!supabase) return { theme: "default", fromDatabase: false };
+
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return { theme: "default", fromDatabase: false };
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("house")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    return {
+      theme:
+        houseFromValue(profile?.house) ??
+        houseFromValue(user.user_metadata?.house) ??
+        "default",
+      fromDatabase: true,
+    };
+  } catch {
+    return { theme: "default", fromDatabase: false };
+  }
+}
 
 const garamond = localFont({
   src: [
@@ -75,7 +116,6 @@ export const metadata: Metadata = {
   authors: [{ name: "Technika — BIT Patna" }],
   creator: "Technika — BIT Patna",
   category: "education",
-  icons: { icon: "/icon.svg", apple: "/apple-icon.png" },
   robots: {
     index: indexable,
     follow: indexable,
@@ -108,33 +148,50 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f0c19",
   colorScheme: "dark",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const { theme, fromDatabase } = await getInitialTheme();
+  const icon = houseIconFor(theme);
+  const appleIcon = houseAppleIconFor(theme);
+
   return (
     <html
       lang="en"
+      data-house={theme}
+      data-theme={themeAttributeForHouse(theme)}
       className={`${garamond.variable} ${outfit.variable} ${handwriting.variable} ${harryP.variable}`}
       suppressHydrationWarning
     >
       <head>
+        <link
+          rel="icon"
+          href={`${icon}?house=${theme}`}
+          type={icon.endsWith(".svg") ? "image/svg+xml" : "image/png"}
+        />
+        <link
+          rel="apple-touch-icon"
+          href={`${appleIcon}?house=${theme}`}
+          type="image/png"
+        />
         <Script
           id="restore-house-theme"
           strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: houseBootScript }}
+          dangerouslySetInnerHTML={{
+            __html: houseBootScript(theme, fromDatabase),
+          }}
         />
       </head>
-      <body>
+      <body className="theme-page transition-colors duration-500">
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
         <LeafReveal />
         <SiteSchema />
-        <HouseProvider>
+        <HouseProvider initialHouse={theme} preferInitialHouse={fromDatabase}>
           <AuthProvider>
             <SmoothScroll>
               <Experience>

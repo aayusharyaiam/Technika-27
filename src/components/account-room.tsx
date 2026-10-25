@@ -5,15 +5,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowUpRight, LogOut, ShieldCheck } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
-import { useAuth } from "./auth-provider";
 import { houseThemes } from "@/lib/houses";
-import { savedProfileHouse } from "@/lib/ceremony-preview";
 import { HouseBanners } from "./house-banners";
+import { useHouse } from "./house-provider";
 
 export function AccountRoom({ name, email }: { name: string; email: string }) {
-  const { user } = useAuth();
-  const house = savedProfileHouse(user?.user_metadata?.house);
-  const theme = houseThemes[house || "default"];
+  const { house: profileHouse } = useHouse();
+  const house = profileHouse === "default" ? null : profileHouse;
+  const theme = houseThemes[profileHouse];
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState("");

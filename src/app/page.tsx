@@ -1,5 +1,3 @@
-import { createClient } from "@/utils/supabase/server";
-
 import { Hero } from "@/components/hero";
 import { Timeline } from "@/components/timeline";
 import {
@@ -14,8 +12,6 @@ import { createPageMetadata } from "@/lib/seo";
 export const metadata = createPageMetadata("/");
 
 export default async function Home() {
-  const supabase = await createClient();
-
   return (
     <div className="home-page">
       <Hero />

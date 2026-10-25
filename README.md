@@ -44,6 +44,7 @@ Open **http://localhost:3000** after either run command.
 | `/login` | Illustrated Sorting Hat sign-in, saved-house greeting, and password-reset request |
 | `/signup` | Full name, college, phone, email, password → same-page Sorting Hat ceremony and reveal |
 | `/sorting` | Sign-in-protected compatibility redirect to the ceremony step inside `/signup` |
+| `/dashboard` | Server-protected member dashboard with profile details, festival shortcuts, and saved house theme |
 | `/account` | Server-protected common room, read-only profile house, and sign-out |
 | `/reset-password` | Password change after opening a verified recovery link |
 | `/auth/callback` | PKCE email-confirmation/recovery callback with allowlisted redirects |
@@ -65,7 +66,7 @@ The five festival portals intentionally announce **coming soon**. Account flows 
 
 ## The Wizarding World components
 
-- **House themes:** Gryffindor scarlet, Slytherin emerald/silver, Ravenclaw blue/bronze, and Hufflepuff yellow/black. Existing profile houses drive the theme; the original gold remains the default for unsorted visitors. Auth screens display all four original crests without allowing house choice.
+- **House themes:** Gryffindor scarlet, Slytherin emerald/silver, Ravenclaw blue/bronze, and Hufflepuff yellow/black. The authenticated user’s `profiles.house` value drives the dark theme (with legacy auth metadata as a fallback); the original gold remains the default for unsorted visitors. The bottom-left house switcher updates the active palette immediately and persists authenticated choices back to `profiles.house`. Auth screens display all four original crests without allowing house choice.
 - **Sorting Hat frontend:** A cinematic, single-page signup journey: create an account, meet the Hat, and see the reveal within `/signup`. The ceremony requires sign-in, including direct `/sorting` and `/signup?step=ceremony` links; login/signup offer no public preview link. For users without a saved house, reveals are explicitly labelled previews, stored only in sessionStorage, and never written as membership. Strict server-side balancing was deferred in the frontend-only scope. See [`docs/ceremony-frontend.md`](docs/ceremony-frontend.md) for the integration boundary and checks.
 - **Goblet of Fire:** a reusable layered tower scene, house-coloured windows/banner, carved bronze chalice, animated blue fire, drifting embers, and scroll parallax (`src/components/goblet-tower.tsx`).
 - **Deathly Hallows:** the wand line, stone circle, and cloak triangle illuminate one at a time, with an accompanying original story. Visitors can choose a relic, use arrow keys, or pause the automatic rotation (`src/components/deathly-hallows.tsx`).
@@ -102,7 +103,7 @@ The supplied local configuration is stored in ignored `.env.local`. No live keys
 - `/account` independently calls server-side `getUser()` before rendering user data. Forged, expired, or missing sessions redirect to `/login`. Public festival pages stay publicly accessible.
 - Email confirmation and recovery use a PKCE code exchange. The callback only redirects to `/account` or `/reset-password`; arbitrary external redirect URLs are ignored.
 - Password recovery changes require a verified Supabase user. Sign-out uses Supabase and returns to the login page.
-- Signup stores `display_name`, `college`, and normalized contact `phone` in user metadata. Legacy cosmetic `house` preferences are read but never assigned or edited by the new frontend. User metadata is browser-editable at the provider level and must never grant permissions or serve as an authoritative balanced assignment ledger. No custom database tables are required for these frontend changes.
+- Signup stores `display_name`, `college`, and normalized contact `phone` in user metadata. The frontend reads the user’s house from the authenticated `profiles` row; legacy auth metadata is only a compatibility fallback. User metadata is browser-editable at the provider level and must never grant permissions or serve as an authoritative balanced assignment ledger.
 - With no Supabase configuration, account submission reports unavailability; it never displays a simulated successful login. The ceremony stays gated until a session is available.
 
 ## Content & assets
