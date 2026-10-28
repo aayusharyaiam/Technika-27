@@ -49,7 +49,7 @@ export function SiteSchema() {
       {
         "@type": "Festival",
         "@id": `${siteUrl}/#event`,
-        name: "Technika 2k27 — The Triwizard Tech Odyssey",
+        name: "Technika 2k27 — BIT Patna Techno-Cultural Festival",
         alternateName: ["Technika 2k27", "Technika '27", "Technika 2027 Fest"],
         startDate: "2027-01-08T09:00:00+05:30",
         endDate: "2027-01-10T22:00:00+05:30",

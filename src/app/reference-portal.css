@@ -1,5 +1,5 @@
 /* =========================================================================
-   REFERENCE COMING SOON PORTAL — PIXEL-ACCURATE STYLING
+   GENERIC TECH-FEST COMING SOON PORTAL STYLING
    ========================================================================= */
 
 .reference-portal-stage {
@@ -10,174 +10,116 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px 24px;
-  background: #08060f;
-  color: var(--text);
+  padding: 48px 20px;
+  background: #08090e;
+  color: #f1f5f9;
   overflow: hidden;
   box-sizing: border-box;
 }
 
-/* Atmospheric Backdrop (Hogwarts Castle, Moon & Night Mist) */
+/* Atmospheric Particle Canvas */
+.reference-particle-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Modern Cybernetic Ambient Background */
 .reference-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
   overflow: hidden;
 }
 
-.reference-castle-img {
-  object-fit: cover;
-  object-position: center 38%;
-  opacity: 0.68;
-  filter: contrast(1.22) brightness(0.85) saturate(1.05);
-}
-
-.reference-full-moon {
+.tech-glow {
   position: absolute;
-  top: 4%;
-  right: 18%;
-  width: 190px;
-  height: 190px;
   border-radius: 50%;
-  background: radial-gradient(
-    circle at 40% 40%,
-    rgba(255, 255, 235, 0.45) 0%,
-    rgba(240, 220, 175, 0.25) 50%,
-    rgba(180, 150, 100, 0.05) 75%,
-    transparent 100%
-  );
-  box-shadow: 0 0 60px 20px rgba(255, 235, 170, 0.15);
-  filter: drop-shadow(0 0 40px rgba(255, 220, 140, 0.2));
+  filter: blur(80px);
   pointer-events: none;
 }
 
-.reference-dark-overlay {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at 50% 45%,
-    rgba(11, 8, 20, 0.42) 0%,
-    rgba(8, 6, 15, 0.78) 65%,
-    #08060f 100%
-  );
-}
-
-/* Floating Candles in the Castle Distance */
-.reference-candles {
-  position: absolute;
-  inset: 0;
-}
-
-.reference-candle {
-  position: absolute;
-  width: 3px;
-  height: 22px;
-  border-radius: 1px;
-  background: linear-gradient(180deg, #f7ecd2, #8b6d3b);
-  opacity: 0.75;
-  animation: candle-bob 6s ease-in-out infinite;
-}
-
-.reference-candle .flame {
-  position: absolute;
-  top: -6px;
+.glow-top {
+  top: -15%;
   left: 50%;
   transform: translateX(-50%);
-  width: 5px;
-  height: 8px;
-  border-radius: 50% 50% 30% 30%;
-  background: #fff4cb;
-  box-shadow:
-    0 0 6px #ffd466,
-    0 0 16px 3px rgba(255, 185, 60, 0.4);
-  animation: flame-flicker 2s infinite alternate;
+  width: 650px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, rgba(56, 189, 248, 0.12) 45%, transparent 70%);
 }
 
-/* Ornamental Golden Frame with Corner Accents */
+.glow-bottom {
+  bottom: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 750px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.16) 0%, rgba(139, 92, 246, 0.1) 50%, transparent 70%);
+}
+
+.tech-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 50px 50px;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+}
+
+/* Minimalist Outer Tech Frame */
 .reference-frame {
   position: fixed;
-  inset: 18px;
-  z-index: 5;
-  border: 1px solid rgba(212, 175, 91, 0.22);
+  inset: 20px;
+  z-index: 4;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   pointer-events: none;
 }
 
 .reference-frame .corner {
   position: absolute;
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
 }
 
 .reference-frame .corner.top-left {
   top: -1px;
   left: -1px;
-  border-top: 2px solid #ffd893;
-  border-left: 2px solid #ffd893;
+  border-top: 2px solid rgba(56, 189, 248, 0.65);
+  border-left: 2px solid rgba(56, 189, 248, 0.65);
 }
 
 .reference-frame .corner.top-right {
   top: -1px;
   right: -1px;
-  border-top: 2px solid #ffd893;
-  border-right: 2px solid #ffd893;
+  border-top: 2px solid rgba(56, 189, 248, 0.65);
+  border-right: 2px solid rgba(56, 189, 248, 0.65);
 }
 
 .reference-frame .corner.bottom-left {
   bottom: -1px;
   left: -1px;
-  border-bottom: 2px solid #ffd893;
-  border-left: 2px solid #ffd893;
+  border-bottom: 2px solid rgba(56, 189, 248, 0.65);
+  border-left: 2px solid rgba(56, 189, 248, 0.65);
 }
 
 .reference-frame .corner.bottom-right {
   bottom: -1px;
   right: -1px;
-  border-bottom: 2px solid #ffd893;
-  border-right: 2px solid #ffd893;
+  border-bottom: 2px solid rgba(56, 189, 248, 0.65);
+  border-right: 2px solid rgba(56, 189, 248, 0.65);
 }
 
-/* Wandering Golden Snitch Realm */
-.reference-snitch-realm {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.reference-snitch {
-  position: absolute;
-  width: 120px;
-  height: 58px;
-  left: -60px;
-  top: -29px;
-  will-change: transform;
-  filter: drop-shadow(0 0 10px #ffca53cc)
-    drop-shadow(0 0 20px rgba(255, 180, 50, 0.4));
-}
-
-.reference-snitch svg {
-  width: 100%;
-  height: auto;
-}
-
-.reference-snitch-halo {
-  position: absolute;
-  width: 32px;
-  height: 32px;
-  left: 44px;
-  top: 13px;
-  background: rgba(255, 218, 128, 0.35);
-  border-radius: 50%;
-  filter: blur(10px);
-}
-
-/* Main Container — Exact Vertical Spacing and Centering */
+/* Main Container */
 .reference-container {
   position: relative;
   z-index: 10;
-  max-width: 900px;
+  max-width: 860px;
   width: 100%;
   margin: 0 auto;
   text-align: center;
@@ -189,22 +131,22 @@
 
 /* ✦ BIT PATNA PRESENTS ✦ */
 .reference-presents {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
   margin-bottom: 24px;
 }
 
-.reference-presents .golden-wing {
-  width: 38px;
+.reference-presents .tech-line {
+  width: 44px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #b89554, transparent);
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.6), transparent);
 }
 
 .reference-presents .star-ornament {
-  font-size: 10px;
-  color: #e5bd68;
+  font-size: 11px;
+  color: #38bdf8;
 }
 
 .reference-presents .presents-text {
@@ -212,18 +154,17 @@
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.32em;
-  color: #edd8b4;
+  color: #cbd5e1;
   margin: 0;
   text-transform: uppercase;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
 }
 
-/* Circular Golden Seal Crest with Snitch & Wand */
+/* Circular Seal Crest / Logo Container */
 .reference-seal-wrap {
   position: relative;
-  width: 86px;
-  height: 86px;
-  margin: 0 auto 18px;
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -231,36 +172,46 @@
 
 .reference-seal-glow {
   position: absolute;
-  inset: -14px;
+  inset: -16px;
   border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 216, 147, 0.28) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, transparent 70%);
   animation: pulse-glow 3.5s ease-in-out infinite alternate;
 }
 
+.reference-seal-circle {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
 .reference-seal-img {
+  position: relative;
+  z-index: 2;
   object-fit: contain;
-  filter: drop-shadow(0 0 12px rgba(239, 188, 85, 0.5));
-  filter: brightness(0) saturate(100%) invert(82%) sepia(32%) saturate(600%)
-    hue-rotate(350deg) brightness(105%) contrast(95%);
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.45));
+}
+
+@keyframes pulse-glow {
+  0% { transform: scale(0.92); opacity: 0.55; }
+  100% { transform: scale(1.15); opacity: 0.95; }
 }
 
 /* Overline: THE NEXT CHAPTER IS BEING WRITTEN */
 .reference-overline {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  color: #c9b48c;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  color: #94a3b8;
   text-transform: uppercase;
   margin-bottom: 12px;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
 }
 
-/* Flagship Title: TECHNIKA '27 — Styled with HarryP font & spacing */
+/* Flagship Title: Technika '27 — Modern Sleek Geometric Typography */
 .reference-title {
   margin: 0;
   padding: 0;
@@ -268,91 +219,140 @@
   align-items: baseline;
   justify-content: center;
   text-align: center;
-  font-family: var(--font-harryp), 'Cinzel Decorative', serif;
-  font-weight: normal;
-  font-size: clamp(74px, 13.5vw, 156px);
-  line-height: 0.98;
-  letter-spacing: 0.12em;
-  text-transform: capitalize;
+  font-family: var(--font-outfit), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 800;
+  font-size: clamp(56px, 11vw, 110px);
+  line-height: 1;
+  letter-spacing: 0.02em;
 }
 
 .reference-title-word {
-  font-family: var(--font-harryp), 'Cinzel Decorative', serif;
-  letter-spacing: 0.12em;
-  background: linear-gradient(
-    180deg,
-    #fff7df 0%,
-    #fad88b 38%,
-    #dfab41 72%,
-    #855919 100%
-  );
+  background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 45%, #94a3b8 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.95))
-    drop-shadow(0 0 28px rgba(220, 165, 50, 0.4));
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 30px rgba(56, 189, 248, 0.25));
 }
 
 .reference-title-year {
-  font-family: var(--font-harryp), 'Cinzel Decorative', serif;
-  font-weight: normal;
-  font-size: 0.82em;
-  margin-left: 14px;
-  letter-spacing: 0.08em;
-  background: linear-gradient(
-    180deg,
-    #fff7df 0%,
-    #fad88b 38%,
-    #dfab41 72%,
-    #855919 100%
-  );
+  font-size: 0.85em;
+  margin-left: 10px;
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 70%, #0369a1 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.95))
-    drop-shadow(0 0 28px rgba(220, 165, 50, 0.4));
+  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 24px rgba(56, 189, 248, 0.45));
 }
 
-/* Curvie Golden Display: COMING SOON */
+/* Modern Glowing Pill Display: COMING SOON */
 .reference-coming-soon {
-  margin-top: 14px;
-  margin-bottom: 22px;
+  margin-top: 18px;
+  margin-bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 22px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
 }
 
-.reference-coming-soon span {
-  font-family: var(--font-garamond), Georgia, serif;
-  font-style: italic;
-  font-weight: 600;
-  font-size: clamp(26px, 4.5vw, 44px);
-  letter-spacing: 0.28em;
+.coming-soon-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 10px #38bdf8;
+  animation: pulse-dot 1.8s infinite ease-in-out;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.75); }
+}
+
+.reference-coming-soon span:last-child {
+  font-family: var(--font-outfit), sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
-  background: linear-gradient(
-    180deg,
-    #fff8e2 0%,
-    #fae0a2 40%,
-    #e0b457 78%,
-    #9a6d21 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 16px rgba(255, 215, 120, 0.45))
-    drop-shadow(0 2px 8px rgba(0, 0, 0, 0.9));
-  display: inline-block;
+  color: #f8fafc;
 }
 
 /* Description Sentence */
 .reference-description {
   font-family: var(--font-outfit), sans-serif;
-  font-size: clamp(13px, 1.8vw, 15px);
-  color: #dfd3c3;
-  margin: 0 auto 34px;
-  max-width: 620px;
+  font-size: clamp(14px, 1.8vw, 16px);
+  color: #94a3b8;
+  margin: 0 auto 28px;
+  max-width: 580px;
   line-height: 1.6;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9);
 }
 
-/* Dual Column Status Box at Bottom */
+/* Interactive Countdown Timer */
+.reference-countdown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 34px;
+}
+
+.countdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.countdown-num {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown-tag {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.countdown-sep {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #475569;
+  user-select: none;
+}
+
+.reference-countdown-skeleton {
+  margin-bottom: 34px;
+}
+
+.countdown-pill {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+/* Dual Column Status Card at Bottom */
 .reference-status-card {
   display: flex;
   align-items: center;
@@ -360,13 +360,11 @@
   width: 100%;
   max-width: 520px;
   padding: 22px 28px;
-  border-radius: 12px;
-  background: rgba(18, 14, 28, 0.72);
-  border: 1px solid rgba(212, 175, 91, 0.24);
-  backdrop-filter: blur(14px);
-  box-shadow:
-    0 12px 35px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(255, 230, 160, 0.08);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .status-col {
@@ -381,21 +379,21 @@
 .status-label {
   display: block;
   font-family: var(--font-outfit), sans-serif;
-  font-size: 8px;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  color: #ad9a82;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #64748b;
   text-transform: uppercase;
   margin-bottom: 6px;
 }
 
 .status-headline {
   margin: 0 0 8px 0;
-  font-family: var(--font-garamond), Georgia, serif;
-  font-weight: 500;
-  font-size: 24px;
-  color: #f7e4be;
-  line-height: 1.15;
+  font-family: var(--font-outfit), sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  color: #f8fafc;
+  line-height: 1.2;
 }
 
 .status-location {
@@ -403,41 +401,35 @@
   align-items: center;
   gap: 6px;
   font-family: var(--font-outfit), sans-serif;
-  font-size: 9px;
+  font-size: 10px;
+  font-weight: 500;
   letter-spacing: 0.16em;
-  color: #a8947a;
+  color: #94a3b8;
   text-transform: uppercase;
   text-decoration: none;
-  transition: color 0.25s ease, transform 0.25s ease, filter 0.25s ease;
+  transition: all 0.25s ease;
   width: fit-content;
 }
 
 .status-location:hover {
-  color: #ffd893;
+  color: #38bdf8;
   transform: translateY(-1px);
-  filter: drop-shadow(0 0 6px rgba(255, 216, 147, 0.45));
 }
 
 .status-location .loc-pin {
-  color: #e5bd68;
+  color: #38bdf8;
   transition: transform 0.25s ease;
 }
 
 .status-location:hover .loc-pin {
-  transform: scale(1.18);
-  color: #ffd893;
+  transform: scale(1.2);
 }
 
-/* Vertical Golden Divider */
+/* Vertical Divider */
 .status-divider {
   width: 1px;
   height: 52px;
-  background: linear-gradient(
-    180deg,
-    transparent,
-    rgba(212, 175, 91, 0.35),
-    transparent
-  );
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.16), transparent);
 }
 
 .status-col.right-col {
@@ -450,39 +442,38 @@
 .status-instagram-link {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   text-decoration: none;
   color: inherit;
-  transition: transform 0.25s ease, filter 0.25s ease;
+  transition: transform 0.25s ease;
   width: 100%;
 }
 
 .status-instagram-link:hover {
   transform: translateY(-2px);
-  filter: drop-shadow(0 0 10px rgba(255, 216, 147, 0.45));
 }
 
 .instagram-icon-box {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  background: rgba(255, 216, 147, 0.08);
-  border: 1px solid rgba(212, 175, 91, 0.35);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.25s ease, border-color 0.25s ease;
+  transition: all 0.25s ease;
 }
 
 .status-instagram-link:hover .instagram-icon-box {
-  background: rgba(255, 216, 147, 0.16);
-  border-color: #ffd893;
+  background: rgba(56, 189, 248, 0.18);
+  border-color: #38bdf8;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
 }
 
 .instagram-glyph {
-  color: #ffd893;
-  filter: drop-shadow(0 0 6px rgba(255, 216, 147, 0.6));
+  color: #38bdf8;
 }
 
 .instagram-text-wrap {
@@ -493,25 +484,25 @@
 
 .instagram-label {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 8px;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  color: #ad9a82;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #64748b;
   text-transform: uppercase;
   margin-bottom: 3px;
 }
 
 .instagram-handle {
-  font-family: var(--font-garamond), Georgia, serif;
-  font-size: 17px;
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 16px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  color: #f7e4be;
-  background: linear-gradient(180deg, #fff7df 0%, #fad88b 45%, #e0ad42 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 12px rgba(255, 216, 147, 0.25);
+  letter-spacing: 0.02em;
+  color: #f8fafc;
+  transition: color 0.25s ease;
+}
+
+.status-instagram-link:hover .instagram-handle {
+  color: #38bdf8;
 }
 
 /* Responsive Breakpoints */
@@ -527,16 +518,25 @@
     letter-spacing: 0.22em;
   }
   .reference-title {
-    font-size: 48px;
+    font-size: 46px;
   }
-  .reference-coming-soon span {
-    font-size: 22px;
-    letter-spacing: 0.2em;
+  .reference-countdown {
+    gap: 8px;
+  }
+  .countdown-item {
+    min-width: 48px;
+    padding: 8px 10px;
+  }
+  .countdown-num {
+    font-size: 20px;
+  }
+  .countdown-sep {
+    font-size: 18px;
   }
   .reference-status-card {
     flex-direction: column;
     gap: 16px;
-    padding: 18px 18px;
+    padding: 18px;
     text-align: center;
   }
   .status-col.left-col {
@@ -549,12 +549,7 @@
   .status-divider {
     width: 60%;
     height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(212, 175, 91, 0.35),
-      transparent
-    );
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
   }
   .status-col.right-col {
     padding-left: 0;

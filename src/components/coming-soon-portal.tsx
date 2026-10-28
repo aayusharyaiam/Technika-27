@@ -3,84 +3,140 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Instagram, MapPin } from "lucide-react";
-import { SnitchArtwork } from "./ornaments";
 
-function WanderingSnitch() {
-  const snitchRef = useRef<HTMLDivElement>(null);
+function TechParticleCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const el = snitchRef.current;
-    if (!el) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    let posX = window.innerWidth * 0.5;
-    let posY = window.innerHeight * 0.35;
-    let heading = Math.random() * Math.PI * 2;
-    let bankAngle = 0;
-    const speed = 2.8; // consistent cruising speed
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
 
-    let time = 0;
+    const onResize = () => {
+      if (!canvas) return;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener("resize", onResize);
+
+    const count = Math.min(48, Math.max(24, Math.floor((width * height) / 28000)));
+    const particles = Array.from({ length: count }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      radius: Math.random() * 1.5 + 0.8,
+      alpha: Math.random() * 0.45 + 0.25,
+    }));
+
     let rafId: number;
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
 
-    const animate = () => {
-      time += 0.008; // slow time progression for wide sweeping curves, preventing small loops
-
-      // Gentle, broad sweeping undulation (wavelength is very long, cannot loop into small circles)
-      const gentleCurve =
-        Math.sin(time * 0.7) * 0.012 + Math.cos(time * 0.35) * 0.009;
-      heading += gentleCurve;
-
-      // Strict boundaries with snitch half-width/height consideration (cannot leave screen)
-      const minX = 70;
-      const maxX = window.innerWidth - 70;
-      const minY = 60;
-      const maxY = window.innerHeight - 60;
-
-      // Smooth geometric reflection off the screen walls:
-      // When heading towards the left wall and crossing boundary, redirect inward
-      let vx = Math.cos(heading);
-      let vy = Math.sin(heading);
-
-      if (posX <= minX && vx < 0) {
-        vx = Math.abs(vx);
-        heading = Math.atan2(vy, vx);
-      } else if (posX >= maxX && vx > 0) {
-        vx = -Math.abs(vx);
-        heading = Math.atan2(vy, vx);
+      // Draw subtle connecting constellation lines
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 115) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(125, 185, 255, ${0.12 * (1 - dist / 115)})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
       }
 
-      if (posY <= minY && vy < 0) {
-        vy = Math.abs(vy);
-        heading = Math.atan2(vy, vx);
-      } else if (posY >= maxY && vy > 0) {
-        vy = -Math.abs(vy);
-        heading = Math.atan2(vy, vx);
+      // Draw floating nodes
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0) p.x = width;
+        else if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        else if (p.y > height) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(180, 215, 255, ${p.alpha})`;
+        ctx.fill();
       }
 
-      // Hard clamp positions to absolutely guarantee it never leaves website boundaries
-      posX = Math.max(minX, Math.min(maxX, posX + Math.cos(heading) * speed));
-      posY = Math.max(minY, Math.min(maxY, posY + Math.sin(heading) * speed));
-
-      // Natural banking tilt proportional to horizontal velocity and curvature
-      const targetBank = Math.max(-28, Math.min(28, Math.cos(heading) * 18 + gentleCurve * 800));
-      bankAngle += (targetBank - bankAngle) * 0.08;
-
-      el.style.transform = `translate3d(${posX}px, ${posY}px, 0) rotate(${bankAngle}deg)`;
-
-      rafId = requestAnimationFrame(animate);
+      rafId = requestAnimationFrame(render);
     };
 
-    rafId = requestAnimationFrame(animate);
+    render();
 
     return () => {
+      window.removeEventListener("resize", onResize);
       cancelAnimationFrame(rafId);
     };
   }, []);
 
+  return <canvas ref={canvasRef} className="reference-particle-canvas" aria-hidden="true" />;
+}
+
+function FestivalCountdown() {
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const target = new Date("2027-01-08T09:00:00+05:30").getTime();
+    const update = () => {
+      const now = Date.now();
+      const diff = Math.max(0, target - now);
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+      });
+    };
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (!timeLeft) {
+    return (
+      <div className="reference-countdown-skeleton" aria-hidden="true">
+        <span className="countdown-pill">Opening January 2027</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="reference-snitch-realm" aria-hidden="true">
-      <div className="reference-snitch" ref={snitchRef}>
-        <span className="reference-snitch-halo" />
-        <SnitchArtwork />
+    <div className="reference-countdown" aria-label="Countdown to Technika '27">
+      <div className="countdown-item">
+        <span className="countdown-num">{String(timeLeft.days).padStart(2, "0")}</span>
+        <span className="countdown-tag">DAYS</span>
+      </div>
+      <span className="countdown-sep" aria-hidden="true">:</span>
+      <div className="countdown-item">
+        <span className="countdown-num">{String(timeLeft.hours).padStart(2, "0")}</span>
+        <span className="countdown-tag">HOURS</span>
+      </div>
+      <span className="countdown-sep" aria-hidden="true">:</span>
+      <div className="countdown-item">
+        <span className="countdown-num">{String(timeLeft.minutes).padStart(2, "0")}</span>
+        <span className="countdown-tag">MINS</span>
+      </div>
+      <span className="countdown-sep" aria-hidden="true">:</span>
+      <div className="countdown-item">
+        <span className="countdown-num">{String(timeLeft.seconds).padStart(2, "0")}</span>
+        <span className="countdown-tag">SECS</span>
       </div>
     </div>
   );
@@ -89,27 +145,17 @@ function WanderingSnitch() {
 export function ComingSoonPortal() {
   return (
     <div className="reference-portal-stage">
-      {/* Dynamic Wandering Golden Snitch */}
-      <WanderingSnitch />
+      {/* Dynamic Ambient Particle Field */}
+      <TechParticleCanvas />
 
-      {/* Atmospheric Hogwarts Castle and Night Sky Backdrop */}
+      {/* Atmospheric Cybernetic Background */}
       <div className="reference-backdrop" aria-hidden="true">
-        <Image
-          src="/images/hogwarts.webp"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          quality={90}
-          className="reference-castle-img"
-        />
-        {/* Full moon overlay */}
-        <div className="reference-full-moon" />
-        {/* Vignette & mystical darkness gradient */}
-        <div className="reference-dark-overlay" />
+        <div className="tech-glow glow-top" />
+        <div className="tech-glow glow-bottom" />
+        <div className="tech-grid-overlay" />
       </div>
 
-      {/* Elegant Golden Border Frame with Ornamental Corners */}
+      {/* Modern Minimalist Frame */}
       <div className="reference-frame" aria-hidden="true">
         <span className="corner top-left" />
         <span className="corner top-right" />
@@ -121,23 +167,24 @@ export function ComingSoonPortal() {
       <main className="reference-container">
         {/* Top Header: ✦ BIT PATNA PRESENTS ✦ */}
         <div className="reference-presents">
-          <span className="golden-wing left" />
-          <span className="star-ornament">✦</span>
+          <span className="tech-line left" aria-hidden="true" />
+          <span className="star-ornament" aria-hidden="true">✦</span>
           <p className="presents-text">BIT PATNA PRESENTS</p>
-          <span className="star-ornament">✦</span>
-          <span className="golden-wing right" />
+          <span className="star-ornament" aria-hidden="true">✦</span>
+          <span className="tech-line right" aria-hidden="true" />
         </div>
 
-        {/* Golden Circular Seal / Crest */}
+        {/* Circular Seal / Logo Container */}
         <div className="reference-seal-wrap">
           <div className="reference-seal-glow" aria-hidden="true" />
+          <div className="reference-seal-circle" aria-hidden="true" />
           <Image
             src="/technika.png"
             alt="Technika Logo"
-            width={96}
-            height={96}
+            width={72}
+            height={72}
             priority
-            className="reference-seal-img brightness-0 invert"
+            className="reference-seal-img"
           />
         </div>
 
@@ -146,28 +193,32 @@ export function ComingSoonPortal() {
           THE NEXT CHAPTER IS BEING WRITTEN
         </div>
 
-        {/* Flagship Title: TECHNIKA '27 */}
+        {/* Flagship Title: Technika ’27 */}
         <h1 className="reference-title" aria-label="Technika 27">
           <span className="reference-title-word">Technika</span>
           <span className="reference-title-year">’27</span>
         </h1>
 
-        {/* Curvie Golden Display: COMING SOON */}
+        {/* Modern Pill Display: COMING SOON */}
         <div className="reference-coming-soon">
+          <span className="coming-soon-dot" aria-hidden="true" />
           <span>COMING SOON</span>
         </div>
 
-        {/* Lore / Description */}
+        {/* Description */}
         <p className="reference-description">
-          A new spell of technology, creativity, and wonder is taking shape at
-          BIT Patna.
+          A celebration of technology, innovation, and creativity is taking shape at
+          Birla Institute of Technology, Patna.
         </p>
+
+        {/* Live Countdown */}
+        <FestivalCountdown />
 
         {/* Bottom Dual Card Box */}
         <div className="reference-status-card">
-          {/* Left Column: The gates are preparing / Opening soon */}
+          {/* Left Column: The stage is being set / Opening soon */}
           <div className="status-col left-col">
-            <span className="status-label">THE GATES ARE PREPARING</span>
+            <span className="status-label">THE STAGE IS BEING SET</span>
             <h2 className="status-headline">Opening soon</h2>
             <a
               href="https://maps.app.goo.gl/eBPKaTah37o2mWLM6"
@@ -177,7 +228,7 @@ export function ComingSoonPortal() {
               title="View BIT Patna on Google Maps"
               aria-label="View BIT Patna on Google Maps"
             >
-              <MapPin size={12} className="loc-pin" />
+              <MapPin size={13} className="loc-pin" />
               <span>BIT PATNA · INDIA</span>
             </a>
           </div>
