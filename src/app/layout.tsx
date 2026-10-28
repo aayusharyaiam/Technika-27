@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
 import { Experience } from "@/components/experience";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { PageTransition } from "@/components/page-transition";
 import { SiteSchema } from "@/components/structured-data";
-import { indexable, siteUrl } from "@/lib/seo";
+import { absoluteUrl, googleSiteVerification, indexable, siteDescription, siteName, siteUrl, socialImage } from "@/lib/seo";
 import { HouseProvider } from "@/components/house-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import { SmoothScroll } from "@/components/smoothScroll";
@@ -96,26 +97,18 @@ const harryP = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: {
-    default: "Technika 2K26 — BIT Patna Technical Festival",
-    template: "%s | Technika 2K26",
-  },
-  description:
-    "Step into Technika 2K26, the annual technical festival of BIT Patna. Three days of innovation, creativity, competitions, and extraordinary possibilities. January 16–18, 2026.",
-  applicationName: "Technika 2K26",
-  keywords: [
-    "Technika 2K26",
-    "Technika 2026",
-    "BIT Patna fest",
-    "BIT Patna technical festival",
-    "college fest Bihar",
-    "Dev Conquest hackathon",
-    "BIT Patna robotics",
-    "E-Sports festival Patna",
-  ],
-  authors: [{ name: "Technika — BIT Patna" }],
+  title: { default: "Technika '27 | BIT Patna Techno-Cultural Festival", template: "%s | Technika '27" },
+  description: siteDescription,
+  applicationName: siteName,
+  keywords: ["Technika 27", "Technika 2027", "BIT Patna fest", "BIT Patna techno-cultural festival", "college fest Bihar", "tech fest Patna", "hackathon Patna", "robotics festival Patna"],
+  authors: [{ name: "Technika — BIT Patna", url: absoluteUrl("/") }],
   creator: "Technika — BIT Patna",
+  publisher: "Birla Institute of Technology, Patna",
   category: "education",
+  classification: "Technology and cultural festival",
+  referrer: "origin-when-cross-origin",
+  formatDetection: { email: false, address: false, telephone: false },
+  alternates: { canonical: absoluteUrl("/") },
   robots: {
     index: indexable,
     follow: indexable,
@@ -127,27 +120,21 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
-  verification: { google: process.env.GOOGLE_SITE_VERIFICATION },
+  verification: { google: googleSiteVerification },
   openGraph: {
-    title: "Technika 2K26 — BIT Patna",
-    description:
-      "Technology, creativity, and hands-on engineering excellence at BIT Patna.",
+    title: "Technika '27 | BIT Patna Techno-Cultural Festival",
+    description: siteDescription,
+    url: absoluteUrl("/"),
     type: "website",
     locale: "en_IN",
-    siteName: "Technika 2K26 — BIT Patna",
-    images: [
-      {
-        url: "/images/social-card.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Technika 2K26 — BIT Patna Technical Festival",
-      },
-    ],
+    siteName,
+    images: [{ url: absoluteUrl(socialImage), width: 1200, height: 630, alt: "Technika '27 — BIT Patna techno-cultural festival" }],
   },
-  twitter: { card: "summary_large_image", images: ["/images/social-card.jpg"] },
+  twitter: { card: "summary_large_image", title: "Technika '27 | BIT Patna Techno-Cultural Festival", description: siteDescription, images: [absoluteUrl(socialImage)] },
 };
 
 export const viewport: Viewport = {
+  themeColor: "#0f0c19",
   colorScheme: "dark",
 };
 
@@ -190,7 +177,7 @@ export default async function RootLayout({
           Skip to content
         </a>
         <LeafReveal />
-        <SiteSchema />
+        <SiteSchema /><Analytics />
         <HouseProvider initialHouse={theme} preferInitialHouse={fromDatabase}>
           <AuthProvider>
             <SmoothScroll>
