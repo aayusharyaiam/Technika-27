@@ -1,16 +1,26 @@
 /* =========================================================================
-   GENERIC TECH-FEST COMING SOON PORTAL STYLING
+   GENERIC TECH-FEST COMING SOON PORTAL — SINGLE VIEWPORT NO-SCROLL
    ========================================================================= */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden !important;
+  background: #08090e;
+}
 
 .reference-portal-stage {
   position: relative;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px 20px;
+  padding: clamp(10px, 2vh, 24px) clamp(12px, 3vw, 24px);
   background: #08090e;
   color: #f1f5f9;
   overflow: hidden;
@@ -49,7 +59,7 @@
   transform: translateX(-50%);
   width: 650px;
   height: 450px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, rgba(56, 189, 248, 0.12) 45%, transparent 70%);
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, rgba(56, 189, 248, 0.1) 45%, transparent 70%);
 }
 
 .glow-bottom {
@@ -58,16 +68,16 @@
   transform: translateX(-50%);
   width: 750px;
   height: 500px;
-  background: radial-gradient(circle, rgba(14, 165, 233, 0.16) 0%, rgba(139, 92, 246, 0.1) 50%, transparent 70%);
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.14) 0%, rgba(139, 92, 246, 0.08) 50%, transparent 70%);
 }
 
 .tech-grid-overlay {
   position: absolute;
   inset: 0;
   background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-  background-size: 50px 50px;
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
   mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
   -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
 }
@@ -75,51 +85,51 @@
 /* Minimalist Outer Tech Frame */
 .reference-frame {
   position: fixed;
-  inset: 20px;
+  inset: clamp(8px, 1.8vh, 16px);
   z-index: 4;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   pointer-events: none;
 }
 
 .reference-frame .corner {
   position: absolute;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
 }
 
 .reference-frame .corner.top-left {
   top: -1px;
   left: -1px;
-  border-top: 2px solid rgba(56, 189, 248, 0.65);
-  border-left: 2px solid rgba(56, 189, 248, 0.65);
+  border-top: 2px solid rgba(56, 189, 248, 0.6);
+  border-left: 2px solid rgba(56, 189, 248, 0.6);
 }
 
 .reference-frame .corner.top-right {
   top: -1px;
   right: -1px;
-  border-top: 2px solid rgba(56, 189, 248, 0.65);
-  border-right: 2px solid rgba(56, 189, 248, 0.65);
+  border-top: 2px solid rgba(56, 189, 248, 0.6);
+  border-right: 2px solid rgba(56, 189, 248, 0.6);
 }
 
 .reference-frame .corner.bottom-left {
   bottom: -1px;
   left: -1px;
-  border-bottom: 2px solid rgba(56, 189, 248, 0.65);
-  border-left: 2px solid rgba(56, 189, 248, 0.65);
+  border-bottom: 2px solid rgba(56, 189, 248, 0.6);
+  border-left: 2px solid rgba(56, 189, 248, 0.6);
 }
 
 .reference-frame .corner.bottom-right {
   bottom: -1px;
   right: -1px;
-  border-bottom: 2px solid rgba(56, 189, 248, 0.65);
-  border-right: 2px solid rgba(56, 189, 248, 0.65);
+  border-bottom: 2px solid rgba(56, 189, 248, 0.6);
+  border-right: 2px solid rgba(56, 189, 248, 0.6);
 }
 
-/* Main Container */
+/* Main Container — Balanced to Fit Strictly in 1 Viewport */
 .reference-container {
   position: relative;
   z-index: 10;
-  max-width: 860px;
+  max-width: 820px;
   width: 100%;
   margin: 0 auto;
   text-align: center;
@@ -127,6 +137,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  max-height: 100%;
 }
 
 /* ✦ BIT PATNA PRESENTS ✦ */
@@ -134,26 +145,26 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 10px;
+  margin-bottom: clamp(6px, 1.4vh, 16px);
 }
 
 .reference-presents .tech-line {
-  width: 44px;
+  width: clamp(24px, 4vw, 40px);
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.6), transparent);
 }
 
 .reference-presents .star-ornament {
-  font-size: 11px;
+  font-size: 10px;
   color: #38bdf8;
 }
 
 .reference-presents .presents-text {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 11px;
+  font-size: clamp(9px, 1.3vh, 11px);
   font-weight: 600;
-  letter-spacing: 0.32em;
+  letter-spacing: 0.28em;
   color: #cbd5e1;
   margin: 0;
   text-transform: uppercase;
@@ -162,9 +173,9 @@
 /* Circular Seal Crest / Logo Container */
 .reference-seal-wrap {
   position: relative;
-  width: 90px;
-  height: 90px;
-  margin: 0 auto 20px;
+  width: clamp(52px, 8.5vh, 72px);
+  height: clamp(52px, 8.5vh, 72px);
+  margin: 0 auto clamp(6px, 1.2vh, 14px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -172,7 +183,7 @@
 
 .reference-seal-glow {
   position: absolute;
-  inset: -16px;
+  inset: -12px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, transparent 70%);
   animation: pulse-glow 3.5s ease-in-out infinite alternate;
@@ -192,6 +203,8 @@
   position: relative;
   z-index: 2;
   object-fit: contain;
+  width: 70%;
+  height: 70%;
   filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.45));
 }
 
@@ -203,15 +216,15 @@
 /* Overline: THE NEXT CHAPTER IS BEING WRITTEN */
 .reference-overline {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 11px;
+  font-size: clamp(8px, 1.1vh, 10px);
   font-weight: 600;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.26em;
   color: #94a3b8;
   text-transform: uppercase;
-  margin-bottom: 12px;
+  margin-bottom: clamp(3px, 0.8vh, 8px);
 }
 
-/* Flagship Title: Technika '27 — Modern Sleek Geometric Typography */
+/* Flagship Title: Technika '27 */
 .reference-title {
   margin: 0;
   padding: 0;
@@ -221,7 +234,7 @@
   text-align: center;
   font-family: var(--font-outfit), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-weight: 800;
-  font-size: clamp(56px, 11vw, 110px);
+  font-size: clamp(38px, 6.8vh, 82px);
   line-height: 1;
   letter-spacing: 0.02em;
 }
@@ -231,40 +244,40 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 30px rgba(56, 189, 248, 0.25));
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 24px rgba(56, 189, 248, 0.2));
 }
 
 .reference-title-year {
   font-size: 0.85em;
-  margin-left: 10px;
+  margin-left: clamp(4px, 1vw, 8px);
   background: linear-gradient(180deg, #38bdf8 0%, #0284c7 70%, #0369a1 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 24px rgba(56, 189, 248, 0.45));
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 20px rgba(56, 189, 248, 0.4));
 }
 
 /* Modern Glowing Pill Display: COMING SOON */
 .reference-coming-soon {
-  margin-top: 18px;
-  margin-bottom: 20px;
+  margin-top: clamp(6px, 1.2vh, 14px);
+  margin-bottom: clamp(6px, 1.2vh, 14px);
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 22px;
+  gap: 8px;
+  padding: clamp(4px, 0.7vh, 6px) clamp(14px, 2.2vw, 20px);
   border-radius: 9999px;
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid rgba(56, 189, 248, 0.35);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
 }
 
 .coming-soon-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #38bdf8;
-  box-shadow: 0 0 10px #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
   animation: pulse-dot 1.8s infinite ease-in-out;
 }
 
@@ -276,8 +289,8 @@
 .reference-coming-soon span:last-child {
   font-family: var(--font-outfit), sans-serif;
   font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.24em;
+  font-size: clamp(10px, 1.4vh, 12px);
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: #f8fafc;
 }
@@ -285,11 +298,11 @@
 /* Description Sentence */
 .reference-description {
   font-family: var(--font-outfit), sans-serif;
-  font-size: clamp(14px, 1.8vw, 16px);
+  font-size: clamp(11px, 1.5vh, 14px);
   color: #94a3b8;
-  margin: 0 auto 28px;
-  max-width: 580px;
-  line-height: 1.6;
+  margin: 0 auto clamp(8px, 1.4vh, 18px);
+  max-width: 520px;
+  line-height: 1.45;
 }
 
 /* Interactive Countdown Timer */
@@ -297,26 +310,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  margin-bottom: 34px;
+  gap: clamp(6px, 1.2vw, 12px);
+  margin-bottom: clamp(10px, 2vh, 22px);
 }
 
 .countdown-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 60px;
-  padding: 10px 14px;
-  border-radius: 10px;
+  min-width: clamp(42px, 6vw, 54px);
+  padding: clamp(5px, 0.8vh, 8px) clamp(6px, 1vw, 10px);
+  border-radius: 8px;
   background: rgba(15, 23, 42, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .countdown-num {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 26px;
+  font-size: clamp(16px, 2.5vh, 22px);
   font-weight: 700;
   color: #ffffff;
   line-height: 1.1;
@@ -325,29 +338,29 @@
 
 .countdown-tag {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   color: #64748b;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .countdown-sep {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 22px;
+  font-size: clamp(14px, 2vh, 18px);
   font-weight: 600;
   color: #475569;
   user-select: none;
 }
 
 .reference-countdown-skeleton {
-  margin-bottom: 34px;
+  margin-bottom: clamp(10px, 2vh, 22px);
 }
 
 .countdown-pill {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.18em;
+  font-size: 10px;
+  letter-spacing: 0.16em;
   color: #64748b;
   text-transform: uppercase;
 }
@@ -358,13 +371,13 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: 520px;
-  padding: 22px 28px;
-  border-radius: 14px;
+  max-width: 460px;
+  padding: clamp(10px, 1.6vh, 16px) clamp(14px, 2.5vw, 22px);
+  border-radius: 12px;
   background: rgba(15, 23, 42, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(16px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .status-col {
@@ -373,42 +386,43 @@
 
 .status-col.left-col {
   text-align: left;
-  padding-right: 20px;
+  padding-right: 14px;
 }
 
 .status-label {
   display: block;
   font-family: var(--font-outfit), sans-serif;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   color: #64748b;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
 }
 
 .status-headline {
-  margin: 0 0 8px 0;
+  margin: 0 0 4px 0;
   font-family: var(--font-outfit), sans-serif;
   font-weight: 600;
-  font-size: 20px;
+  font-size: clamp(14px, 2vh, 17px);
   color: #f8fafc;
-  line-height: 1.2;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 
 .status-location {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-family: var(--font-outfit), sans-serif;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   color: #94a3b8;
   text-transform: uppercase;
   text-decoration: none;
   transition: all 0.25s ease;
-  width: fit-content;
+  white-space: nowrap;
 }
 
 .status-location:hover {
@@ -428,13 +442,13 @@
 /* Vertical Divider */
 .status-divider {
   width: 1px;
-  height: 52px;
+  height: clamp(32px, 4.5vh, 44px);
   background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.16), transparent);
 }
 
 .status-col.right-col {
   text-align: left;
-  padding-left: 20px;
+  padding-left: 14px;
   display: flex;
   align-items: center;
 }
@@ -442,7 +456,7 @@
 .status-instagram-link {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   text-decoration: none;
   color: inherit;
   transition: transform 0.25s ease;
@@ -454,9 +468,9 @@
 }
 
 .instagram-icon-box {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: clamp(32px, 4.2vh, 38px);
+  height: clamp(32px, 4.2vh, 38px);
+  border-radius: 10px;
   background: rgba(56, 189, 248, 0.08);
   border: 1px solid rgba(56, 189, 248, 0.25);
   display: flex;
@@ -469,11 +483,13 @@
 .status-instagram-link:hover .instagram-icon-box {
   background: rgba(56, 189, 248, 0.18);
   border-color: #38bdf8;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
 }
 
 .instagram-glyph {
   color: #38bdf8;
+  width: 18px;
+  height: 18px;
 }
 
 .instagram-text-wrap {
@@ -484,78 +500,32 @@
 
 .instagram-label {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   color: #64748b;
   text-transform: uppercase;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .instagram-handle {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 16px;
+  font-size: clamp(12px, 1.8vh, 15px);
   font-weight: 600;
   letter-spacing: 0.02em;
   color: #f8fafc;
   transition: color 0.25s ease;
+  white-space: nowrap;
 }
 
 .status-instagram-link:hover .instagram-handle {
   color: #38bdf8;
 }
 
-/* Responsive Breakpoints */
-@media (max-width: 640px) {
-  .reference-portal-stage {
-    padding: 32px 16px;
-  }
-  .reference-frame {
-    inset: 10px;
-  }
-  .reference-presents .presents-text {
-    font-size: 9px;
-    letter-spacing: 0.22em;
-  }
-  .reference-title {
-    font-size: 46px;
-  }
-  .reference-countdown {
-    gap: 8px;
-  }
-  .countdown-item {
-    min-width: 48px;
-    padding: 8px 10px;
-  }
-  .countdown-num {
-    font-size: 20px;
-  }
-  .countdown-sep {
-    font-size: 18px;
-  }
-  .reference-status-card {
-    flex-direction: column;
-    gap: 16px;
-    padding: 18px;
-    text-align: center;
-  }
-  .status-col.left-col {
-    text-align: center;
-    padding-right: 0;
-  }
-  .status-location {
-    justify-content: center;
-  }
-  .status-divider {
-    width: 60%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
-  }
-  .status-col.right-col {
-    padding-left: 0;
-    justify-content: center;
-  }
-  .status-instagram-link {
-    justify-content: center;
-  }
+/* Ensure no scrolling on small viewports */
+@media (max-height: 600px) {
+  .reference-seal-wrap { display: none; }
+  .reference-description { margin-bottom: 6px; }
+  .reference-countdown { margin-bottom: 8px; }
+  .reference-coming-soon { margin-top: 4px; margin-bottom: 6px; }
 }
