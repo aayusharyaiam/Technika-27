@@ -4,29 +4,15 @@ import { SiteSchema } from "@/components/structured-data";
 import { indexable, siteUrl } from "@/lib/seo";
 import { SeoVault } from "@/components/seo-vault";
 import { ComingSoonPortal } from "@/components/coming-soon-portal";
-import "lenis/dist/lenis.css";
 import "./globals.css";
 import "./reference-portal.css";
 
-const garamond = localFont({
-  src: [
-    { path: "../../public/fonts/garamond.woff2", weight: "400 800", style: "normal" },
-    { path: "../../public/fonts/garamond-italic.woff2", weight: "400 800", style: "italic" },
-  ],
-  variable: "--font-garamond",
-  display: "swap",
-});
 const outfit = localFont({
   src: "../../public/fonts/outfit.woff2",
   variable: "--font-outfit",
   display: "swap",
   weight: "300 700",
-});
-const handwriting = localFont({
-  src: "../../public/fonts/caveat.woff2",
-  variable: "--font-handwriting",
-  display: "swap",
-  weight: "400 700",
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -106,9 +92,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${garamond.variable} ${outfit.variable} ${handwriting.variable}`}
+      className={outfit.variable}
       suppressHydrationWarning
     >
+      <head>
+        <link rel="preload" href="/technika.webp" as="image" type="image/webp" />
+      </head>
       <body>
         <SiteSchema />
         <SeoVault />

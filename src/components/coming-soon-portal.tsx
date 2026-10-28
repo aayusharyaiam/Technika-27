@@ -179,11 +179,12 @@ export function ComingSoonPortal() {
           <div className="reference-seal-glow" aria-hidden="true" />
           <div className="reference-seal-circle" aria-hidden="true" />
           <Image
-            src="/technika.png"
+            src="/technika.webp"
             alt="Technika Logo"
             width={72}
             height={72}
             priority
+            sizes="72px"
             className="reference-seal-img"
           />
         </div>
