@@ -71,10 +71,15 @@ const mkPt = (): Pt => ({
 
 /* Door layout inside the 400 x 400 SVG viewBox (outer rim radius 190). */
 const CX = 200;
+const round = (v: number) => Math.round(v * 100) / 100;
 const ringPts = (n: number, r: number, off = 0) =>
   Array.from({ length: n }, (_, i) => {
     const a = (i / n) * TAU + off;
-    return { x: CX + Math.cos(a) * r, y: CX + Math.sin(a) * r, a };
+    return {
+      x: round(CX + Math.cos(a) * r),
+      y: round(CX + Math.sin(a) * r),
+      a,
+    };
   });
 
 const RIVETS = ringPts(32, 181);
@@ -82,18 +87,18 @@ const BOLTS = ringPts(8, 181, TAU / 16);
 const STUDS_A = ringPts(54, 150);
 const STUDS_B = ringPts(40, 136, 0.04);
 const SEAMS = ringPts(8, 1, TAU / 16).map(({ a }) => ({
-  x1: CX + Math.cos(a) * 172,
-  y1: CX + Math.sin(a) * 172,
-  x2: CX + Math.cos(a) * 190,
-  y2: CX + Math.sin(a) * 190,
+  x1: round(CX + Math.cos(a) * 172),
+  y1: round(CX + Math.sin(a) * 172),
+  x2: round(CX + Math.cos(a) * 190),
+  y2: round(CX + Math.sin(a) * 190),
 }));
 const DASHES = [-64, -22, 36, 76].map((deg) => {
   const a = (deg * Math.PI) / 180;
   return {
-    x1: CX + Math.cos(a) * 70,
-    y1: CX + Math.sin(a) * 70,
-    x2: CX + Math.cos(a) * 148,
-    y2: CX + Math.sin(a) * 148,
+    x1: round(CX + Math.cos(a) * 70),
+    y1: round(CX + Math.sin(a) * 70),
+    x2: round(CX + Math.cos(a) * 148),
+    y2: round(CX + Math.sin(a) * 148),
   };
 });
 const PLATE = (() => {

@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     qualities: [75, 90],
   },
-  experimental: { cpus: 2, webpackMemoryOptimizations: true },
+  experimental: { cpus: 2, webpackMemoryOptimizations: true, agentUpgrade: "security" },
 };
 
 export default nextConfig;

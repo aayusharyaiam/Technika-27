@@ -1,17 +1,26 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
 import { Experience } from "@/components/experience";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { PageTransition } from "@/components/page-transition";
 import { SiteSchema } from "@/components/structured-data";
-import { indexable, siteName, siteUrl, socialImage, socialImageAlt } from "@/lib/seo";
+import {
+  absoluteUrl,
+  googleSiteVerification,
+  indexable,
+  siteDescription,
+  siteName,
+  siteUrl,
+  socialImage,
+} from "@/lib/seo";
 import { HouseProvider } from "@/components/house-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import { SmoothScroll } from "@/components/smoothScroll";
 import { getServerSupabase } from "@/lib/supabase/server";
-import { Analytics } from "@/components/analytics";
+
 import {
   houseAppleIconFor,
   houseBootScript,
@@ -31,7 +40,10 @@ import "./home-experience.css";
 
 export const dynamic = "force-dynamic";
 
-async function getInitialTheme(): Promise<{ theme: House; fromDatabase: boolean }> {
+async function getInitialTheme(): Promise<{
+  theme: House;
+  fromDatabase: boolean;
+}> {
   const supabase = await getServerSupabase();
   if (!supabase) return { theme: "default", fromDatabase: false };
 
@@ -97,26 +109,30 @@ const harryP = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-    title: {
-    default: siteName,
-    template: "%s | Technika 2K26",
+  title: {
+    default: "Technika '27 | BIT Patna Techno-Cultural Festival",
+    template: "%s | Technika '27",
   },
-  description:
-    "Step into Technika 2K26, the annual technical festival of BIT Patna. Three days of innovation, creativity, competitions, and extraordinary possibilities. January 16–18, 2026.",
-   applicationName: siteName,
+  description: siteDescription,
+  applicationName: siteName,
   keywords: [
-    "Technika 2K26",
-    "Technika 2026",
+    "Technika 27",
+    "Technika 2027",
     "BIT Patna fest",
-    "BIT Patna technical festival",
+    "BIT Patna techno-cultural festival",
     "college fest Bihar",
-    "Dev Conquest hackathon",
-    "BIT Patna robotics",
-    "E-Sports festival Patna",
+    "tech fest Patna",
+    "hackathon Patna",
+    "robotics festival Patna",
   ],
-   authors: [{ name: "Technika — BIT Patna" }],
+  authors: [{ name: "Technika — BIT Patna", url: absoluteUrl("/") }],
   creator: "Technika — BIT Patna",
+  publisher: "Birla Institute of Technology, Patna",
   category: "education",
+  classification: "Technology and cultural festival",
+  referrer: "origin-when-cross-origin",
+  formatDetection: { email: false, address: false, telephone: false },
+  alternates: { canonical: absoluteUrl("/") },
   robots: {
     index: indexable,
     follow: indexable,
@@ -128,27 +144,33 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
-  verification: { google: process.env.GOOGLE_SITE_VERIFICATION },
-   openGraph: {
-     title: siteName,
-    description:
-      "Technology, creativity, and hands-on engineering excellence at BIT Patna.",
+  verification: { google: googleSiteVerification },
+  openGraph: {
+    title: "Technika '27 | BIT Patna Techno-Cultural Festival",
+    description: siteDescription,
+    url: absoluteUrl("/"),
     type: "website",
     locale: "en_IN",
-     siteName,
+    siteName,
     images: [
       {
-         url: socialImage,
+        url: absoluteUrl(socialImage),
         width: 1200,
         height: 630,
-         alt: socialImageAlt,
+        alt: "Technika '27 — BIT Patna techno-cultural festival",
       },
     ],
   },
-   twitter: { card: "summary_large_image", images: [socialImage], title: siteName, description: "Technology, creativity, and hands-on engineering excellence at BIT Patna." },
+  twitter: {
+    card: "summary_large_image",
+    title: "Technika '27 | BIT Patna Techno-Cultural Festival",
+    description: siteDescription,
+    images: [absoluteUrl(socialImage)],
+  },
 };
 
 export const viewport: Viewport = {
+  themeColor: "#0f0c19",
   colorScheme: "dark",
 };
 
@@ -197,7 +219,7 @@ export default async function RootLayout({
             <SmoothScroll>
               <Experience>
                 <Header />
-        <main id="main-content" tabIndex={-1}>
+                <main id="main-content" tabIndex={-1}>
                   <PageTransition>{children}</PageTransition>
                 </main>
                 <Footer />
