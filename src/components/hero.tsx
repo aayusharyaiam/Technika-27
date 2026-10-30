@@ -7,7 +7,7 @@
  * so the whole hero recolours with the active theme.
  */
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   ArrowDown,
   MapPin,
@@ -21,8 +21,8 @@ import { useMagic } from "./experience";
 import { HouseBanners } from "./house-banners";
 import Link from "next/link";
 
-/** Your castle illustration (what the old .hero-castle used as its background-image). */
-const CASTLE_IMAGE = "/images/hogwarts.webp";
+/** Timestamp in base.mp4 where the castle and moon are fully revealed after the flythrough */
+const CASTLE_SCENE_TIME = 3.75;
 
 /* Gradients that need CSS functions Tailwind can't express in a class. */
 const FX = {
@@ -161,9 +161,103 @@ function GoldenSnitch() {
 
 export function Hero() {
   const ref = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const introDoneRef = useRef(false);
   const entered = useRef(false);
-  const { enabled, ready } = useMagic();
+  const { enabled, ready, setReady } = useMagic();
 
+  const finishIntro = useCallback(() => {
+    if (introDoneRef.current) return;
+    introDoneRef.current = true;
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      try {
+        video.currentTime = CASTLE_SCENE_TIME;
+      } catch {
+        // ignore seeking errors
+      }
+    }
+    setReady(true);
+  }, [setReady]);
+
+  // Video intro controller: autoplays base.mp4 from 0s and halts at castle scene (3.75s)
+  useEffect(() => {
+    if (ready) {
+      introDoneRef.current = true;
+      const video = videoRef.current;
+      if (video) {
+        video.pause();
+        try {
+          video.currentTime = CASTLE_SCENE_TIME;
+        } catch {
+          // ignore
+        }
+      }
+      return;
+    }
+
+    // If page is already scrolled on load, skip intro directly
+    if (typeof window !== "undefined" && window.scrollY > 30) {
+      finishIntro();
+      return;
+    }
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.currentTime = 0;
+    video.play().catch(() => {
+      // Autoplay with muted is usually allowed, but if blocked, user interaction will resume
+    });
+
+    let rafId = 0;
+    const trackTime = () => {
+      if (introDoneRef.current) return;
+      if (video.currentTime >= CASTLE_SCENE_TIME || video.ended) {
+        finishIntro();
+        return;
+      }
+      rafId = requestAnimationFrame(trackTime);
+    };
+    rafId = requestAnimationFrame(trackTime);
+
+    const onTimeUpdate = () => {
+      if (introDoneRef.current) return;
+      if (video.currentTime >= CASTLE_SCENE_TIME || video.ended) {
+        finishIntro();
+      }
+    };
+
+    const onEnded = () => {
+      finishIntro();
+    };
+
+    video.addEventListener("timeupdate", onTimeUpdate);
+    video.addEventListener("ended", onEnded);
+
+    // Skip intro on user scroll
+    const onSkipScroll = () => {
+      finishIntro();
+    };
+
+    window.addEventListener("wheel", onSkipScroll, { passive: true, once: true });
+    window.addEventListener("touchmove", onSkipScroll, { passive: true, once: true });
+
+    // Safety fallback: if video stalls or takes too long, reveal elements
+    const fallbackTimer = window.setTimeout(finishIntro, 4500);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(fallbackTimer);
+      video.removeEventListener("timeupdate", onTimeUpdate);
+      video.removeEventListener("ended", onEnded);
+      window.removeEventListener("wheel", onSkipScroll);
+      window.removeEventListener("touchmove", onSkipScroll);
+    };
+  }, [ready, finishIntro]);
+
+  // GSAP scroll trigger & entrance animations once castle scene is reached
   useEffect(() => {
     const hero = ref.current;
     if (!hero || !ready) return;
@@ -179,16 +273,10 @@ export function Hero() {
         const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
         intro
           .fromTo(
-            ".hero-castle",
-            { scale: 1.14, opacity: 0.45 },
-            { scale: 1, opacity: 1, duration: 2.4 },
-            0,
-          )
-          .fromTo(
             ".hero-presents, .hero-edition",
             { opacity: 0, y: 22 },
             { opacity: 1, y: 0, duration: 1, stagger: 0.15 },
-            0.25,
+            0.15,
           )
           .fromTo(
             ".title-letter",
@@ -202,37 +290,58 @@ export function Hero() {
               stagger: 0.065,
               clearProps: "transform,filter",
             },
-            0.38,
+            0.28,
           )
           .fromTo(
             ".hero-subtitle",
             { opacity: 0, y: 25 },
             { opacity: 1, y: 0, duration: 1 },
-            1,
+            0.8,
           )
           .fromTo(
             ".hero-details",
             { opacity: 0, y: 30 },
             { opacity: 1, y: 0, duration: 1 },
-            1.25,
+            1.05,
           )
           .fromTo(
             ".hero-bottom",
             { opacity: 0, y: 15 },
             { opacity: 1, y: 0, duration: 0.8 },
-            1.55,
+            1.3,
           );
         entered.current = true;
       }
+
       const scroll = {
         trigger: hero,
         start: "top top",
         end: "bottom top",
-        scrub: 1.1,
+        scrub: 0.7,
         invalidateOnRefresh: true,
       };
+
+      // Video timeline scrub: starts at CASTLE_SCENE_TIME (3.75s),
+      // scrubs backwards towards 0.05s as user scrolls down, and back to 3.75s on scroll up
+      const videoPlayhead = { time: CASTLE_SCENE_TIME };
+      gsap.to(videoPlayhead, {
+        time: 0.05,
+        ease: "none",
+        scrollTrigger: scroll,
+        onUpdate: () => {
+          const video = videoRef.current;
+          if (video && !isNaN(video.duration) && video.readyState >= 2) {
+            try {
+              video.currentTime = videoPlayhead.time;
+            } catch {
+              // ignore
+            }
+          }
+        },
+      });
+
       gsap.to(".hero-castle", {
-        y: () => hero.clientHeight * 0.36,
+        y: () => hero.clientHeight * 0.22,
         ease: "none",
         scrollTrigger: scroll,
       });
@@ -266,35 +375,58 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="hero relative isolate min-h-[100svh] overflow-hidden bg-bg text-fg"
+      className="hero relative isolate min-h-[100svh] overflow-hidden bg-bg text-fg select-none"
       aria-labelledby="hero-title"
     >
       <style dangerouslySetInnerHTML={{ __html: HERO_CSS }} />
 
-      {/* sky + castle layers (no translate classes on anything GSAP moves) */}
-      <div
-        className="hero-castle absolute inset-0 bg-cover bg-bottom bg-no-repeat will-change-transform"
-        style={{ backgroundImage: `url(${CASTLE_IMAGE})` }}
+      {/* Video Background with GSAP Scroll scrubbing */}
+      <video
+        ref={videoRef}
+        src="/videos/base.mp4"
+        className="hero-castle absolute inset-0 h-full w-full object-cover object-center scale-[1.06] will-change-transform pointer-events-none"
+        playsInline
+        muted
+        autoPlay
+        preload="auto"
+        disablePictureInPicture
+        disableRemotePlayback
+        aria-hidden="true"
       />
+
+      {/* Atmosphere overlays (smoothly illuminate when castle scene is reached) */}
       <div
         className="hero-shade pointer-events-none absolute inset-0 z-[1]"
         style={{ backgroundImage: FX.shade }}
       />
       <div
-        className="hero-moon-aura pointer-events-none absolute inset-x-0 -top-[14%] z-[1] mx-auto aspect-square w-[min(92vw,85vh)] rounded-full"
+        className={`hero-moon-aura pointer-events-none absolute inset-x-0 -top-[14%] z-[1] mx-auto aspect-square w-[min(92vw,85vh)] rounded-full transition-opacity duration-1000 ${
+          ready ? "opacity-100" : "opacity-0"
+        }`}
         style={{ backgroundImage: FX.moon }}
         aria-hidden="true"
       />
       <div
-        className="castle-house-light pointer-events-none absolute inset-0 z-[2] mix-blend-screen"
+        className={`castle-house-light pointer-events-none absolute inset-0 z-[2] mix-blend-screen transition-opacity duration-1000 ${
+          ready ? "opacity-100" : "opacity-0"
+        }`}
         style={{ backgroundImage: FX.windows }}
         aria-hidden="true"
       />
-      <HouseBanners />
+
+      <div
+        className={`transition-opacity duration-1000 ${
+          ready ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <HouseBanners />
+      </div>
       <AmbientParticles count={46} />
 
       <div
-        className="floating-candles pointer-events-none absolute inset-0 z-[3]"
+        className={`floating-candles pointer-events-none absolute inset-0 z-[3] transition-opacity duration-1000 ${
+          ready ? "opacity-100" : "opacity-0"
+        }`}
         aria-hidden="true"
       >
         {[9, 18, 29, 72, 83, 93].map((left, i) => (
@@ -315,19 +447,30 @@ export function Hero() {
         ))}
       </div>
 
-      <GoldenSnitch />
+      <div
+        className={`transition-opacity duration-700 ${
+          ready ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <GoldenSnitch />
+      </div>
 
-      <div className="hero-tilt-layer relative z-[6] flex min-h-[100svh] items-center justify-center px-4 pb-24 pt-28 sm:pt-32">
+      {/* Hero Typography & Content (Reveals after video hits castle scene) */}
+      <div
+        className={`hero-tilt-layer relative z-[6] flex min-h-[100svh] items-center justify-center px-4 pb-24 pt-28 sm:pt-32 transition-opacity duration-700 ${
+          ready ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      >
         <div className="hero-content mx-auto flex w-full max-w-5xl flex-col items-center text-center">
           <div className="hero-presents flex items-center justify-center gap-4 text-[10px] uppercase tracking-[0.3em] text-fg-muted sm:text-xs sm:tracking-[0.35em]">
             <span className="h-px w-8 bg-gradient-to-r from-transparent to-primary-400/70 sm:w-16" />
-            BIRLA INSTITUTE OF TECHNOLOGY, PATNA PRESENTS
+            BIRLA INSTITUTE OF TECHNOLOGY · PATNA
             <span className="h-px w-8 bg-gradient-to-l from-transparent to-primary-400/70 sm:w-16" />
           </div>
 
           <div className="hero-heading mt-6 flex flex-col items-center">
             <span className="hero-edition inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand-soft px-4 py-1.5 text-[10px] font-medium uppercase tracking-[0.25em] text-fg-brand backdrop-blur-md sm:text-[11px]">
-              <Sparkles size={12} /> TECHNIKA 2K26 · BIT PATNA{" "}
+              <Sparkles size={12} /> TECHNIKA 2K26 · THE MAKERS&apos; CHAPTER{" "}
               <Sparkles size={12} />
             </span>
             <h1
@@ -397,7 +540,11 @@ export function Hero() {
         aria-hidden="true"
       />
 
-      <div className="hero-bottom absolute inset-x-0 bottom-0 z-[7] grid grid-cols-3 items-end px-5 pb-6 text-[10px] uppercase tracking-[0.3em] text-fg-subtle sm:px-10">
+      <div
+        className={`hero-bottom absolute inset-x-0 bottom-0 z-[7] grid grid-cols-3 items-end px-5 pb-6 text-[10px] uppercase tracking-[0.3em] text-fg-subtle sm:px-10 transition-opacity duration-700 ${
+          ready ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      >
         <span className="hero-volume max-sm:invisible">
           VOL. XVI <i className="px-1 not-italic text-fg-brand">✦</i> A NEW
           CHAPTER
@@ -416,6 +563,22 @@ export function Hero() {
           BUILD WHAT COMES NEXT.
         </span>
       </div>
+
+      {/* Skip button during intro video flythrough */}
+      {!ready && (
+        <button
+          type="button"
+          onClick={finishIntro}
+          className="group absolute bottom-6 right-6 z-30 inline-flex items-center gap-2 rounded-full border border-primary-400/30 bg-bg-sunken/70 px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-fg-muted backdrop-blur-md transition-all hover:border-primary-400 hover:text-fg-brand active:scale-95 cursor-pointer shadow-lg"
+          aria-label="Skip to castle scene"
+        >
+          <span>Skip Intro</span>
+          <ArrowUpRight
+            size={13}
+            className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+          />
+        </button>
+      )}
     </section>
   );
 }

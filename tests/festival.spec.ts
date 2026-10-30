@@ -229,7 +229,7 @@ test("cards and buttons have visible hover microinteractions", async ({ page }, 
 
 test("public routes ship unique server-side SEO and crawler documents", async ({ request }) => {
   const titles: string[] = [];
-  const publicRoutes = ["/", "/marauders-map", "/events", "/technical", "/cultural", "/art-craft", "/frame-focus", "/esports", "/merchandise", "/core", "/devs", "/timeline", "/event-timeline", "/accommodation", "/registrations", "/members", "/delegate", "/alumni", "/contact"];
+  const publicRoutes = ["/", "/marauders-map", "/events", "/technical", "/cultural", "/art-craft", "/frame-focus", "/esports", "/merchandise", "/core", "/devs", "/timeline", "/event-timeline", "/accommodation", "/registrations", "/members", "/delegate", "/delegate-registration", "/delegate-group-registration", "/alumni", "/contact", "/privacy-policy"];
   for (const route of publicRoutes) {
     const response = await request.get(route);
     expect(response.ok()).toBe(true);

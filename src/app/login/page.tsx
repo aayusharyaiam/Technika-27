@@ -1,10 +1,7 @@
-import type { Metadata } from "next";
 import { AuthForm } from "@/components/auth-form";
 import { AuthScene } from "@/components/auth-scene";
-export const metadata: Metadata = {
-  title: "Sign In — Return to the Common Room",
-  robots: { index: false, follow: false },
-};
+import { createPrivateMetadata } from "@/lib/seo";
+export const metadata = createPrivateMetadata("Sign In — Return to the Common Room", "Sign in to your Technika 2K26 account and return to your common room.", "/login");
 
 type LoginPageProps = {
   searchParams: Promise<{ error?: string | string[] }>;

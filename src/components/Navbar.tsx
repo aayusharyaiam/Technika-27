@@ -284,10 +284,11 @@ function Crest({ size }: { size: number }) {
 function Avatar({ p, size }: { p: Profile; size: number }) {
   return p.avatar ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={p.avatar}
-      alt=""
-      referrerPolicy="no-referrer"
+     <img
+       src={p.avatar}
+       alt=""
+       loading="lazy"
+       referrerPolicy="no-referrer"
       className="rounded-full object-cover ring-1 ring-brand/50"
       style={{ width: size, height: size }}
     />

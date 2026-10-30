@@ -1,27 +1,25 @@
 import { Hero } from "@/components/hero";
 import { Timeline } from "@/components/timeline";
 import {
-  About,
-  Campus,
-  Invitation,
-  PreviousTechnika,
-  PrizePool,
-  Sponsors,
-} from "@/components/home-sections";
+  WizardingCampus,
+  WizardingInvitation,
+  WizardingJourney,
+  WizardingManifesto,
+  WizardingSponsors,
+} from "@/components/wizarding-home";
 import { createPageMetadata } from "@/lib/seo";
 export const metadata = createPageMetadata("/");
 
 export default async function Home() {
   return (
-    <div className="home-page">
+    <div className="home-page home-atelier">
       <Hero />
-      <PrizePool />
+      <WizardingJourney />
       <Timeline />
-      <PreviousTechnika />
-      <About />
-      <Campus />
-      <Sponsors />
-      <Invitation />
+      <WizardingManifesto />
+      <WizardingCampus />
+      <WizardingSponsors />
+      <WizardingInvitation />
     </div>
   );
 }

@@ -22,6 +22,7 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
+  useState,
   type ReactNode,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -41,6 +42,20 @@ const useIsoLayoutEffect =
 
 type Phase = "idle" | "closing" | "waiting" | "opening";
 
+function BrickTransition({ phase }: { phase: "closing" | "opening" }) {
+  return (
+    <div className="brick-transition" data-phase={phase} aria-hidden="true">
+      {Array.from({ length: 35 }, (_, index) => (
+        <span
+          className="brick-transition__brick"
+          key={index}
+          style={{ "--brick-index": index } as React.CSSProperties}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -50,6 +65,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
   const phase = useRef<Phase>("idle");
   const closedAt = useRef(0);
   const giveUp = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [brickPhase, setBrickPhase] = useState<"idle" | "closing" | "opening">("idle");
   const { enabled, ready } = useMagic();
 
   const clearGiveUp = () => {
@@ -60,6 +76,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
   /** Door unlocks, new page rises into view. */
   const reveal = useCallback(async () => {
     phase.current = "opening";
+    setBrickPhase("opening");
     const wait = MIN_HOLD * 1000 - (performance.now() - closedAt.current);
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     if (pageRef.current) {
@@ -77,6 +94,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
       );
     }
     await door.current?.open();
+    setBrickPhase("idle");
     phase.current = "idle";
     ScrollTrigger.refresh();
   }, []);
@@ -89,6 +107,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
         return;
       }
       phase.current = "closing";
+      setBrickPhase("closing");
       await door.current.close();
       phase.current = "waiting";
       closedAt.current = performance.now();
@@ -166,6 +185,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
     clearGiveUp();
     if (phase.current === "idle") {
       // back/forward or router.push: hide the swap instantly, then open
+      setBrickPhase("closing");
       door.current?.cover();
       closedAt.current = performance.now();
     }
@@ -176,6 +196,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
 
   return (
     <>
+      {brickPhase !== "idle" && <BrickTransition phase={brickPhase} />}
       <ChamberDoor ref={door} speed={SPEED} />
       <div ref={pageRef} className="page-transition">
         {children}

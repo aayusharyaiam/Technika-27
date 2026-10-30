@@ -1,12 +1,9 @@
-import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import DashboardClient from "./dashboard-client";
+import { createPrivateMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Dashboard — Your Technika Command Centre",
-  robots: { index: false, follow: false },
-};
+export const metadata = createPrivateMetadata("Dashboard — Your Technika Command Centre", "Your private Technika 2K26 account dashboard.", "/dashboard");
 
 export const dynamic = "force-dynamic";
 

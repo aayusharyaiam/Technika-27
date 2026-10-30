@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, ChevronDown, Menu, X, UserRound } from "lucide-react";
+import { ArrowUpRight, ChevronDown, UserRound } from "lucide-react";
 import { navigation } from "@/lib/festival";
 import { houseLogoFor } from "@/lib/houses";
 import { useAuth } from "./auth-provider";
@@ -65,6 +65,7 @@ export function Header() {
   return (
     <header
       className={`
+    header-wrap site-header
     fixed inset-x-0 top-5 z-50
     pointer-events-none
     transition-[opacity,transform,filter]
@@ -78,27 +79,7 @@ export function Header() {
       data-arrival-ready={ready ? "true" : "false"}
     >
       <nav
-        className="=
-      mx-auto flex min-h-[69px]
-      w-[calc(100%-64px)] max-w-[1220px]
-      items-center gap-[22px]
-      rounded-full border border-brand/30
-      bg-surface/80 px-5 py-2.5
-      text-fg
-      shadow-2xl
-      backdrop-blur-sm
-      backdrop-saturate-150
-      pointer-events-auto
-      transition-colors duration-300
-      max-[900px]:top-[14px]
-      max-[900px]:min-h-[65px]
-      max-[900px]:w-[calc(100%-40px)]
-      max-[900px]:gap-3
-      max-[900px]:px-[17px]
-      max-[900px]:py-2
-
-      max-[360px]:gap-[5px]
-    "
+        className="main-nav"
         aria-label="Main navigation"
       >
         <Link
@@ -166,7 +147,7 @@ export function Header() {
         )}
         <Link
           href={user ? "/registrations" : "/signup"}
-          className="border border-brand-border bg-brand text-brand-on shadow-glow-brand transition-colors hover:bg-brand-hover active:bg-brand-active focus-visible:ring-2 focus-visible:ring-ring rounded-full px-4 py-2 flex items-center justify-center text-lg font-medium"
+          className="nav-cta button button-gold"
         >
           {user ? "Register now" : "Join the magic"} <ArrowUpRight size={16} />
         </Link>
@@ -179,7 +160,11 @@ export function Header() {
           aria-controls="mobile-navigation"
           onClick={() => setOpen(!open)}
         >
-          {open ? <X size={21} /> : <Menu size={21} />}
+          <span className={`book-menu-icon ${open ? "is-open" : ""}`} aria-hidden="true">
+            <span className="book book-bottom" />
+            <span className="book book-middle" />
+            <span className="book book-top" />
+          </span>
         </button>
       </nav>
       {open && (

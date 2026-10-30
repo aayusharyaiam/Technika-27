@@ -5,6 +5,9 @@ const origin = process.env.NEXT_PUBLIC_SITE_URL
 
 export const siteUrl = new URL(origin).origin;
 export const indexable = process.env.VERCEL_ENV !== "preview";
+export const siteName = "Technika 2K26 — BIT Patna";
+export const socialImage = "/images/social-card.jpg";
+export const socialImageAlt = "Technika 2K26 — BIT Patna technical festival at the crossroads of technology and creativity";
 
 export const pageSeo = {
   "/": {
@@ -51,8 +54,23 @@ export const pageSeo = {
   },
   "/contact": {
     title: "Contact & Campus Directions — The Owlery",
-    description: "Find BIT Patna campus directions and upcoming official enquiry channels for Technika ’27. The Owlery will connect participants, college delegates, and festival partners soon.",
+    description: "Contact the Technika ’27 team at BIT Patna for participant, delegate, alumni, partnership, and campus enquiries through the official Owlery.",
     label: "Contact",
+  },
+  "/privacy-policy": {
+    title: "Privacy Policy",
+    description: "Read the Technika 2K26 privacy policy for website, account, contact, and analytics data.",
+    label: "Privacy Policy",
+  },
+  "/delegate-registration": {
+    title: "Delegate Registration — Technika ’27",
+    description: "Prepare your college delegation for Technika ’27 at BIT Patna. Delegate registration details will be published when the official portal opens.",
+    label: "Delegate Registration",
+  },
+  "/delegate-group-registration": {
+    title: "Group Delegate Registration — Technika ’27",
+    description: "Bring your full college contingent to Technika ’27 at BIT Patna. Group registration details will be announced with the delegate portal.",
+    label: "Group Registration",
   },
 } as const;
 
@@ -64,13 +82,29 @@ export function createPageMetadata(path: SitePath): Metadata {
   return {
     title: { absolute: title },
     description: page.description,
-    alternates: { canonical: path },
-    openGraph: {
-      title, description: page.description, url: path, siteName: "Technika ’27 — BIT Patna",
-      type: "website", locale: "en_IN",
-      images: [{ url: "/images/social-card.jpg", width: 1200, height: 630, alt: "Technika 27 — BIT Patna, The Triwizard Tech Odyssey" }],
+    alternates: { canonical: `${siteUrl}${path === "/" ? "/" : path}` },
+    robots: {
+      index: indexable,
+      follow: indexable,
+      googleBot: { index: indexable, follow: indexable, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
     },
-    twitter: { card: "summary_large_image", title, description: page.description, images: ["/images/social-card.jpg"] },
+    openGraph: {
+      title, description: page.description, url: `${siteUrl}${path === "/" ? "/" : path}`, siteName,
+      type: "website", locale: "en_IN",
+      images: [{ url: socialImage, width: 1200, height: 630, alt: socialImageAlt }],
+    },
+    twitter: { card: "summary_large_image", title, description: page.description, images: [socialImage] },
+  };
+}
+
+export function createPrivateMetadata(title: string, description: string, path?: string): Metadata {
+  return {
+    title,
+    description,
+    ...(path ? { alternates: { canonical: `${siteUrl}${path}` } } : {}),
+    robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+    openGraph: { title, description, url: path ? `${siteUrl}${path}` : siteUrl, siteName, type: "website", images: [{ url: socialImage, width: 1200, height: 630, alt: socialImageAlt }] },
+    twitter: { card: "summary_large_image", title, description, images: [socialImage] },
   };
 }
 
@@ -79,7 +113,7 @@ export function breadcrumbSchema(path: SitePath) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Technika 2K26", item: `${siteUrl}/` },
+      { "@type": "ListItem", position: 1, name: siteName, item: `${siteUrl}/` },
       ...(path === "/" ? [] : [{ "@type": "ListItem", position: 2, name: pageSeo[path].label, item: `${siteUrl}${path}` }]),
     ],
   };

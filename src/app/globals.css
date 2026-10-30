@@ -146,6 +146,23 @@ summary {
 main:focus {
   outline: none;
 }
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-top: 112px;
+  color: var(--fg-subtle);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.breadcrumbs a {
+  color: var(--fg-brand);
+}
+.breadcrumbs a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 h1,
 h2,
 h3,
@@ -4465,6 +4482,18 @@ body.snake-scroll-enabled::-webkit-scrollbar {
   }
   .owl-letter > p {
     font-size: 12px;
+  }
+  .contact-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .contact-form .button {
+    width: 100%;
+  }
+  .legal-card {
+    padding: 31px 25px;
+  }
+  .legal-card h2 {
+    font-size: 25px;
   }
   .letter-signoff > span {
     font-size: 15px;

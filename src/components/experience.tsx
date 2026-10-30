@@ -2,22 +2,30 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useRef,
   useState,
 } from "react";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion, MotionConfig } from "motion/react";
+import { MotionConfig } from "motion/react";
 import { ScrollTrigger } from "@/lib/gsap";
 import { MagicInteractions } from "./magic-interactions";
 import { WandCursor } from "./wand-cursor";
-import { LoadingScene } from "./loading-scene";
 import SnakeScroll from "@/components/snake-scroll";
 import { HouseSwitcher } from "./house-switcher";
 
-const MagicContext = createContext({ enabled: true, ready: false });
+interface MagicContextValue {
+  enabled: boolean;
+  ready: boolean;
+  setReady: (ready: boolean) => void;
+}
+
+const MagicContext = createContext<MagicContextValue>({
+  enabled: true,
+  ready: false,
+  setReady: () => {},
+});
 export const useMagic = () => useContext(MagicContext);
 
 type Spark = {
@@ -123,203 +131,43 @@ function WandSparks({ enabled }: { enabled: boolean }) {
   return <canvas className="wand-sparks" ref={canvasRef} aria-hidden="true" />;
 }
 
-function LoadingScreen({ dismiss }: { dismiss: () => void }) {
-  const [progress, setProgress] = useState(0);
-  const finishTimer = useRef<number | null>(null);
-  const screenRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let active = true;
-    let frame = 0;
-    let finished = false;
-    const startedAt = performance.now();
-    const duration = 3400;
-    const animate = (now: number) => {
-      if (!active) return;
-      const elapsed = now - startedAt;
-      const ratio = Math.min(1, elapsed / duration);
-      const eased = 1 - Math.pow(1 - ratio, 2);
-      const next = ratio >= 1 ? 100 : Math.min(99, Math.floor(eased * 100));
-      setProgress((current) => (current === next ? current : next));
-      if (ratio >= 1) {
-        if (!finished) {
-          finished = true;
-          finishTimer.current = window.setTimeout(dismiss, 220);
-        }
-        return;
-      }
-      frame = requestAnimationFrame(animate);
-    };
-    frame = requestAnimationFrame(animate);
-    return () => {
-      active = false;
-      cancelAnimationFrame(frame);
-      if (finishTimer.current) window.clearTimeout(finishTimer.current);
-    };
-  }, [dismiss]);
-
-  useEffect(() => {
-    const screen = screenRef.current;
-    if (
-      !screen ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    )
-      return;
-
-    let frame = 0;
-    let currentX = 0;
-    let currentY = 0;
-    let targetX = 0;
-    let targetY = 0;
-    const paintParallax = () => {
-      currentX += (targetX - currentX) * 0.09;
-      currentY += (targetY - currentY) * 0.09;
-      const layers = {
-        far: 0.24,
-        mid: 0.48,
-        near: 0.8,
-      };
-      for (const [name, depth] of Object.entries(layers)) {
-        screen.style.setProperty(
-          `--loading-x-${name}`,
-          `${(currentX * depth).toFixed(2)}px`,
-        );
-        screen.style.setProperty(
-          `--loading-y-${name}`,
-          `${(currentY * depth).toFixed(2)}px`,
-        );
-      }
-      if (
-        Math.abs(targetX - currentX) > 0.1 ||
-        Math.abs(targetY - currentY) > 0.1
-      ) {
-        frame = requestAnimationFrame(paintParallax);
-      } else {
-        frame = 0;
-      }
-    };
-    const move = (event: PointerEvent) => {
-      targetX = (event.clientX / window.innerWidth - 0.5) * 44;
-      targetY = (event.clientY / window.innerHeight - 0.5) * 26;
-      if (!frame) frame = requestAnimationFrame(paintParallax);
-    };
-    const reset = () => {
-      targetX = 0;
-      targetY = 0;
-      if (!frame) frame = requestAnimationFrame(paintParallax);
-    };
-
-    window.addEventListener("pointermove", move, { passive: true });
-    window.addEventListener("blur", reset);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("blur", reset);
-    };
-  }, []);
-
-  return (
-    <motion.div
-      ref={screenRef}
-      className="loading-screen"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Entering the wizarding world"
-      initial={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 1.05, ease: "easeInOut" }}
-    >
-      <LoadingScene progress={progress} />
-      <motion.div
-        className="loading-mark"
-        role="progressbar"
-        aria-label="Loading Technika"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={progress}
-        initial={{ opacity: 0, scale: 0.92 }}
-        animate={{ opacity: 1, scale: 1 }}
-      >
-        <span className="loading-percent">{progress}%</span>
-        <span className="loading-status" role="status" aria-live="polite">
-          {progress < 100
-            ? "Tracing the castle in moonlight"
-            : "The gates are open"}
-        </span>
-        <span className="loading-progress-track" aria-hidden="true">
-          <span
-            className="loading-progress-fill"
-            style={{ width: `${progress}%` }}
-          />
-        </span>
-      </motion.div>
-    </motion.div>
-  );
-}
-
 export function Experience({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const authExperience = [
-    "/login",
-    "/signup",
-    "/reset-password",
-    "/sorting",
-    "/account",
-  ].includes(pathname);
-  const [loading, setLoading] = useState(true);
-  // Auth/ceremony routes use the supplied hat artwork and open immediately, without the arrival loader.
-  const showLoader = loading && !authExperience;
-  // The wizarding experience is intentionally always active; there is no pause
-  // control so the arrival scene and all page interactions stay in sync.
+  const isHome = pathname === "/";
+  // On the home page, the intro video controls when ready becomes true (at the castle scene).
+  // On all other routes, ready is immediately true.
+  const [ready, setReady] = useState(() => !isHome);
   const enabled = true;
-  const dismiss = useCallback(() => setLoading(false), []);
 
   useEffect(() => {
-    if (!showLoader) return;
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    // Pause Lenis smooth scrolling while arrival loading scene is displayed
-    const globalLenis = (
-      window as unknown as { lenis?: { stop: () => void; start: () => void } }
-    ).lenis;
-    globalLenis?.stop();
-    return () => {
-      document.body.style.overflow = overflow;
-      globalLenis?.start();
-    };
-  }, [showLoader]);
+    if (pathname !== "/") {
+      setReady(true);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     document.documentElement.dataset.magic = enabled ? "on" : "off";
-    if (showLoader) return;
-    // When loader finishes, ensure Lenis recalculates dimensions and ScrollTrigger refreshes
+    if (!ready) return;
     const globalLenis = (
       window as unknown as { lenis?: { start: () => void; resize: () => void } }
     ).lenis;
     globalLenis?.start();
     globalLenis?.resize();
     ScrollTrigger.refresh();
-  }, [enabled, showLoader]);
+  }, [enabled, ready]);
 
   return (
     <MotionConfig reducedMotion={enabled ? "never" : "always"}>
-      <MagicContext.Provider value={{ enabled, ready: !showLoader }}>
-        <div className="experience-content" inert={showLoader || undefined}>
+      <MagicContext.Provider value={{ enabled, ready, setReady }}>
+        <div className="experience-content">
           {children}
         </div>
-        <AnimatePresence>
-          {showLoader && <LoadingScreen dismiss={dismiss} />}
-        </AnimatePresence>
         <WandSparks enabled={enabled} />
         <WandCursor />
         <SnakeScroll />
         <MagicInteractions />
         <HouseSwitcher />
-        {!showLoader && (
-          <>
-            <div className="scroll-progress" aria-hidden="true" />
-          </>
-        )}
+        <div className="scroll-progress" aria-hidden="true" />
       </MagicContext.Provider>
     </MotionConfig>
   );

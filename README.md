@@ -120,14 +120,22 @@ The original references are preserved in `image refs/`. Optimised versions of th
 
 ## SEO & crawl management
 
-- Every page has a unique title, description, canonical URL, Open Graph card, and Twitter preview through `src/lib/seo.ts`.
-- `/sitemap.xml` contains the six public pages. `/robots.txt` allows production crawling and advertises the sitemap. Vercel preview environments are marked `noindex` and disallow crawling.
+- Every public page has a unique title, description, canonical URL, Open Graph card, Twitter preview, server-rendered breadcrumbs, and JSON-LD through `src/lib/seo.ts`.
+- `/sitemap.xml` includes the indexable festival, delegate, contact, and privacy pages. `/robots.txt` allows production crawling, blocks private account routes, and advertises the sitemap. Vercel preview environments are marked `noindex` and disallow crawling.
 - Login, sign-up, password recovery, and private account pages have `noindex` metadata and are excluded from the public sitemap.
-- Server-rendered JSON-LD describes the website, festival organisation, BIT Patna, and page breadcrumbs.
+- Server-rendered JSON-LD describes the website, festival organisation, BIT Patna, and page breadcrumbs. The site is intentionally dynamic/server-rendered because the root layout reads the current authenticated house theme on the server.
 - The provisional dates are **not** advertised as a confirmed Event rich result.
 - Set `NEXT_PUBLIC_SITE_URL` in Vercel to the final public origin, especially for a custom domain. Otherwise Vercel’s production URL is used automatically.
 - Optionally set `GOOGLE_SITE_VERIFICATION` to your Search Console HTML verification token, then submit the production `/sitemap.xml` URL in Search Console.
+- Optionally set `NEXT_PUBLIC_GA_MEASUREMENT_ID` to enable Google Analytics 4 page-view tracking. Analytics is not loaded when the variable is absent.
 - Keep page descriptions, content, dates, and the sponsor list current when the festival details are confirmed.
+
+## Contact form
+
+- `/contact` now has a validated, accessible contact form with a honeypot field and a server route at `/api/contact`.
+- Run the migration in `supabase/migrations/202610250001_contact_messages.sql` against the configured Supabase project to store messages securely with insert-only RLS.
+- Alternatively set `CONTACT_FORM_WEBHOOK_URL` to deliver the validated payload to an approved email/automation provider without storing it in Supabase.
+- Set `NEXT_PUBLIC_CONTACT_EMAIL` only when you want the organisation schema to publish a contact email address.
 
 ## Checks
 
