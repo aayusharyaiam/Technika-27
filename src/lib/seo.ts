@@ -197,10 +197,10 @@ export function createPageMetadata(path: SitePath): Metadata {
   };
 }
 
-export function createPrivatePageMetadata(
-  path: string,
+export function createPrivateMetadata(
   title: string,
   description: string,
+  path: string,
 ): Metadata {
   return {
     title: { absolute: title },

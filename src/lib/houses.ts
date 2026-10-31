@@ -1,19 +1,69 @@
 export const HOUSE_STORAGE_KEY = "technika:house:v1";
 
 export const houseThemes = {
-  default: { name: "The enchanted realm", motto: "A little magic belongs to everyone.", quality: "Unsorted · original gold", initial: "T", accent: "var(--primary-300)", deep: "var(--primary-600)", flag: "var(--primary-800)", second: "var(--secondary-300)" },
-  gryffindor: { name: "Gryffindor", motto: "Where courage becomes creation.", quality: "Courage · daring · determination", initial: "G", accent: "var(--primary-300)", deep: "var(--primary-600)", flag: "var(--primary-800)", second: "var(--secondary-300)" },
-  slytherin: { name: "Slytherin", motto: "Greatness begins with ambition.", quality: "Ambition · resourcefulness · resolve", initial: "S", accent: "var(--primary-300)", deep: "var(--primary-600)", flag: "var(--primary-800)", second: "var(--secondary-300)" },
-  ravenclaw: { name: "Ravenclaw", motto: "Let curiosity open every door.", quality: "Wit · wisdom · wonder", initial: "R", accent: "var(--primary-300)", deep: "var(--primary-600)", flag: "var(--primary-800)", second: "var(--secondary-300)" },
-  hufflepuff: { name: "Hufflepuff", motto: "A shared dream is the strongest spell.", quality: "Loyalty · patience · heart", initial: "H", accent: "var(--primary-300)", deep: "var(--primary-600)", flag: "var(--primary-800)", second: "var(--secondary-300)" },
+  default: {
+    name: "The enchanted realm",
+    motto: "A little magic belongs to everyone.",
+    quality: "Unsorted · original gold",
+    initial: "T",
+    accent: "var(--primary-300)",
+    deep: "var(--primary-600)",
+    flag: "var(--primary-800)",
+    second: "var(--secondary-300)",
+  },
+  gryffindor: {
+    name: "Gryffindor",
+    motto: "Where courage becomes creation.",
+    quality: "Courage · daring · determination",
+    initial: "G",
+    accent: "var(--primary-300)",
+    deep: "var(--primary-600)",
+    flag: "var(--primary-800)",
+    second: "var(--secondary-300)",
+  },
+  slytherin: {
+    name: "Slytherin",
+    motto: "Greatness begins with ambition.",
+    quality: "Ambition · resourcefulness · resolve",
+    initial: "S",
+    accent: "var(--primary-300)",
+    deep: "var(--primary-600)",
+    flag: "var(--primary-800)",
+    second: "var(--secondary-300)",
+  },
+  ravenclaw: {
+    name: "Ravenclaw",
+    motto: "Let curiosity open every door.",
+    quality: "Wit · wisdom · wonder",
+    initial: "R",
+    accent: "var(--primary-300)",
+    deep: "var(--primary-600)",
+    flag: "var(--primary-800)",
+    second: "var(--secondary-300)",
+  },
+  hufflepuff: {
+    name: "Hufflepuff",
+    motto: "A shared dream is the strongest spell.",
+    quality: "Loyalty · patience · heart",
+    initial: "H",
+    accent: "var(--primary-300)",
+    deep: "var(--primary-600)",
+    flag: "var(--primary-800)",
+    second: "var(--secondary-300)",
+  },
 } as const;
 
 export type House = keyof typeof houseThemes;
-export const selectableHouses = ["gryffindor", "slytherin", "ravenclaw", "hufflepuff"] as const;
+export const selectableHouses = [
+  "gryffindor",
+  "slytherin",
+  "ravenclaw",
+  "hufflepuff",
+] as const;
 
 /** The crest used by the shared brand surfaces for each equipped house. */
 export const houseLogoPaths: Record<House, string> = {
-  default: "/images/crest.webp",
+  default: "/images/hufflepuff.png",
   gryffindor: "/images/gryffindor.png",
   slytherin: "/images/slytherin.png",
   ravenclaw: "/images/ravenclaw.png",
