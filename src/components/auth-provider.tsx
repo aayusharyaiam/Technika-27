@@ -1,25 +1,30 @@
 "use client";
 
-
-
 import { createContext, useContext, useEffect, useState } from "react";
 
 import type { User } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase/client";
 import { houseFromValue } from "@/lib/houses";
 import { useHouse } from "./house-provider";
+import { assignHouseIfUnassigned } from "@/lib/assign-house";
 
-const AuthContext = createContext<{ user: User | null; loading: boolean }>({ user: null, loading: true });
+const AuthContext = createContext<{ user: User | null; loading: boolean }>({
+  user: null,
+  loading: true,
+});
+
 export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { setHouse } = useHouse();
+
   useEffect(() => {
     let active = true;
     let requestId = 0;
     const client = getSupabase();
+
     const resolveHouse = async (value: User | null) => {
       if (!value) return "default" as const;
 
@@ -33,10 +38,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .maybeSingle();
         const profileHouse = houseFromValue(data?.house);
         if (profileHouse) return profileHouse;
+
+        // If no house is assigned, assign one randomly on first login
+        if (data && !data.house) {
+          const { house: assignedHouse } = await assignHouseIfUnassigned(
+            value.id
+          );
+          if (assignedHouse) return assignedHouse;
+        }
       }
 
       return houseFromValue(value.user_metadata?.house) || "default";
     };
+
     const apply = async (value: User | null) => {
       const currentRequest = ++requestId;
       if (!active) return;
@@ -52,17 +66,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setHouse(house);
       setLoading(false);
     };
+
     if (!client) {
       const timer = window.setTimeout(() => void apply(null), 0);
-      return () => { active = false; window.clearTimeout(timer); };
+      return () => {
+        active = false;
+        window.clearTimeout(timer);
+      };
     }
 
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
-      // Let Supabase finish its auth callback before making the profile query.
-      window.setTimeout(() => void apply(session?.user || null), 0);
-    });
-    void client.auth.getUser().then(({ data }) => apply(data.user)).catch(() => apply(null));
-    return () => { active = false; requestId += 1; subscription.unsubscribe(); };
+    const { data: { subscription } } = client.auth.onAuthStateChange(
+      (_event, session) => {
+        // Let Supabase finish its auth callback before making the profile query.
+        window.setTimeout(() => void apply(session?.user || null), 0);
+      }
+    );
+
+    void client.auth
+      .getUser()
+      .then(({ data }) => apply(data.user))
+      .catch(() => apply(null));
+
+    return () => {
+      active = false;
+      requestId += 1;
+      subscription.unsubscribe();
+    };
   }, [setHouse]);
-  return <AuthContext.Provider value={{ user, loading }}>{children}</AuthContext.Provider>;
+
+  return (
+    <AuthContext.Provider value={{ user, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }

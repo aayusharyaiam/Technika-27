@@ -5722,6 +5722,107 @@ body.snake-scroll-enabled::-webkit-scrollbar {
   }
 }
 
+/* House Assignment Status Component */
+.house-status,
+.house-status-card {
+  padding: 20px;
+  border: 1px solid #c8ad763d;
+  border-radius: 12px;
+  background: linear-gradient(130deg, #27212d, #1d1827);
+}
+
+.house-status.guest {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.house-status-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.house-status-header h3 {
+  font-size: 24px;
+  margin: 0 0 4px;
+  color: var(--fg);
+}
+
+.house-status-header p {
+  font-size: 11px;
+  color: var(--fg-muted);
+  margin: 0;
+}
+
+.house-status-quality {
+  font-size: 12px;
+  color: var(--fg-strong);
+  font-style: italic;
+  margin: 0 0 16px;
+}
+
+.house-status-details {
+  margin-top: 16px;
+}
+
+.house-status-details summary {
+  cursor: pointer;
+  font-size: 11px;
+  color: #c8a76c;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.house-status-details summary:hover {
+  background-color: #c8ad761a;
+}
+
+.house-reassign-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #c8ad763d;
+}
+
+.button-small {
+  font-size: 11px;
+  padding: 10px 12px;
+  border: 1px solid #c8ad763d;
+  border-radius: 6px;
+  background: #0f0c12;
+  color: var(--fg-strong);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.button-small:hover:not(:disabled) {
+  border-color: #c8a76c;
+  background: #1a1620;
+  color: #c8a76c;
+}
+
+.button-small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-small svg {
+  flex-shrink: 0;
+}
+
 /* Mobile form optimization */
 @media (max-width: 768px) {
   .contact-form {
@@ -5747,6 +5848,18 @@ body.snake-scroll-enabled::-webkit-scrollbar {
 
   .contact-form .form-message {
     font-size: 13px;
+  }
+
+  .house-status-card {
+    padding: 16px;
+  }
+
+  .house-status-header {
+    gap: 12px;
+  }
+
+  .house-status-header h3 {
+    font-size: 18px;
   }
 }
 
@@ -5793,6 +5906,12 @@ body.snake-scroll-enabled::-webkit-scrollbar {
   .owl-art {
     min-height: 300px;
   }
+
+  .house-reassign-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
 }
 
 @media (max-width: 360px) {
@@ -5806,6 +5925,10 @@ body.snake-scroll-enabled::-webkit-scrollbar {
 
   .contact-form button {
     font-size: 12px;
+  }
+
+  .house-reassign-options {
+    grid-template-columns: 1fr;
   }
 }
 
