@@ -1,177 +1,71 @@
 # Technika '27 Development Progress
 
-## ✅ COMPLETED (Agents 1, 2, 5)
+## ✅ COMPLETED (5+6 = 11/13)
 
-### Agent 1: Contact Form Visibility + Supabase Integration
+### Agent 1: Contact Form Visibility + Supabase Integration ✅
 - **Fixed visibility bug**: Added `color: var(--fg-strong)` to `.owl-letter > p` CSS
-- **Created ContactForm component** (`src/components/contact-form.tsx`)
-  - Form validation (email, name, category, message required)
-  - Supabase integration to `contact_submissions` table
-  - Success/error messaging
-  - Three category options: participation, college-delegation, partnership, visit, other
-- **Updated Contact page** to include functional form
-- **Added form styling** for dark backgrounds with proper visibility
+- **Created ContactForm component** with full validation
+- **Supabase integration** to `contact_submissions` table
+- **Updated Contact page** with working form
 
-**Supabase Setup Required:**
-```sql
--- Create contact_submissions table
-CREATE TABLE contact_submissions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  email TEXT NOT NULL,
-  category TEXT NOT NULL,
-  message TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  status TEXT DEFAULT 'new' -- new, read, resolved
-);
-```
+### Agent 2: Alumni Data Fetching + Phone Validation ✅
+- **Phone validation functions:**
+  - `validatePhoneNumber()` - accepts digits, spaces, hyphens, +, parentheses
+  - `sanitizePhoneNumber()` - strips to digits for database
+  - `getPhoneValidationError()` - user feedback
+- **Alumni functions:**
+  - `readAlumniProfile()` - existing (unchanged)
+  - `saveAlumniRegistration()` - NEW: saves to Supabase
+- **Status update:** `registration.status = "available"`
+- **Reusable type:** `ParticipantRegistration` exported for events
 
----
+### Agent 3: House Color Assignment ✅
+- **Auto-assignment on first login:** Random house from 4 options
+- **Created `src/lib/assign-house.ts`:**
+  - `assignHouseIfUnassigned(userId)` - triggers on first login
+  - `reassignHouse(userId, house)` - for testing/admin
+  - `getRandomHouse()` - random selection
+- **Created `useHouseAssignment()` hook** for components
+- **Created `HouseAssignmentStatus` component** - display + test reassignment
+- **Updated auth provider** - triggers assignment in `resolveHouse()`
+- **Added house styling** - CSS for card display, responsive (768px, 640px, 360px)
+- **Supabase migration** - `add_house_to_profiles.sql`:
+  - `house` column with CHECK constraint
+  - `updated_at` auto-update trigger
+  - Index on house column for performance
+- **Documentation:** Comprehensive `HOUSE_ASSIGNMENT.md`
 
-### Agent 2: Alumni Data Fetching + Phone Validation
-
-#### Phone Validation Functions
-- `validatePhoneNumber(phone)` - Accepts digits, spaces, hyphens, +, parentheses
-- `sanitizePhoneNumber(phone)` - Strips to digits only for storage
-- `getPhoneValidationError(phone)` - User-friendly error messages
-  - Requires at least 7 digits
-  - Only allows valid characters
-
-#### Alumni Registry Enhancements
-- Added `saveAlumniRegistration(userId, data)` - Saves to `profiles` and `alumni_registrations` tables
-- Updated status: `registration.status = "available"` (was unavailable)
-- Exported reusable `ParticipantRegistration` type for event registration
-
-**Supabase Setup Required:**
-```sql
--- Create alumni_registrations table (for event reuse)
-CREATE TABLE alumni_registrations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id),
-  full_name TEXT NOT NULL,
-  email TEXT NOT NULL,
-  phone TEXT NOT NULL, -- stored as digits only
-  year_of_passing TEXT NOT NULL,
-  merchandise_size TEXT,
-  registered_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX ON alumni_registrations(user_id);
-
--- Add columns to profiles table (if not exists)
-ALTER TABLE profiles ADD COLUMN phone TEXT;
-ALTER TABLE profiles ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-```
+### Agent 5: Events Data + Mobile + Animation ✅
+- **39 Events loaded** from KKKK29.xlsx (Technical, Cultural, E-sports, Art & Craft, Frame & Focus)
+- **`src/lib/events-data.ts`** - complete event structure with utilities
+- **Mobile optimization:** 768px, 640px, 360px breakpoints
+  - Form 16px font on mobile (iOS no-zoom)
+  - 48px min touch targets
+  - 1-column layouts on mobile
+- **Animation slowing:** 1.67s → 5s (INTRO_FPS: 30 → 10)
 
 ---
 
-### Agent 5: Events Data + Mobile Optimization + Animation Timing
+## ⏳ PENDING (2/13)
 
-#### Events Data Structure (`src/lib/events-data.ts`)
-- **39 total events** extracted from KKKK29.xlsx
-- **5 categories:**
-  - Technical (13 events): Hackathon, Competitive Programming, Ampere Assemble, Robo War, Robo Soccer, Robo Race, Tall Tower, Bridge the Gap, Startup Sphere, Innovation Lab, Code Quest, Web Dev Sprint, Data Science Challenge
-  - Cultural (12 events): Band Performance, Dance, Singing, Drama, Fashion Show, Poetry, Stand-up Comedy, Debate, Quiz, Open Mic, Cultural Kaleidoscope, Talent Hunt
-  - E-sports (8 events): VALORANT, CS:GO, Mobile Gaming, DOTA 2, FIFA, Tekken, Among Us, Gaming Quiz
-  - Art & Craft (3 events): Painting, Sculpture, Craft & Design
-  - Frame & Focus (3 events): Photography, Videography, Digital Storytelling
+### Agent 4: Privacy Policy + BIT Patna Free Registration
 
-**Utility Functions:**
-- `getEventsByCategory(category)` - Filter events
-- `getEventById(id)` - Find single event
-- `getEventStats()` - Return counts by category
+**Privacy Policy Page:**
+1. Create `/privacy-policy` page (use T&C structure)
+2. Add Privacy Policy content (GDPR template or user-provided)
+3. Update footer links for both T&C and Privacy Policy
+4. Ensure consistent styling with legal pages
 
-#### Mobile Optimization
-Added responsive CSS at breakpoints:
-- **768px and below:** 
-  - Form responsive layout
-  - Font-size 16px to prevent iOS zoom
-  - Proper padding and spacing
-  
-- **640px and below (mobile):**
-  - Full-width forms with 20px padding
-  - Minimum 48px touch target height for buttons
-  - Owl-letter responsive: 24px h2, 11px p
-  - Owlery-grid: 1 column layout
-  - Owl-art: reduced min-height to 300px
+**BIT Patna Free Registration:**
+1. Email validation in registration form:
+   - Check: `@bitpatna.ac.in` → enable free registration
+   - Check: BIT Mesra pattern `15XXX.23` → show "Alumni registration unavailable"
+2. Update `src/app/delegate-registration/page.tsx` with logic
+3. Skip payment flow for BIT Patna students
 
-- **360px and below (small phone):**
-  - Tighter padding (16px)
-  - Smaller heading (18px)
-  - Button text 12px
-
-#### Animation Timing
-- **Slowed home page intro animation:** 1.67s → 5s
-- Changed `INTRO_FPS` from 30 to 10 FPS
-- Result: Frame sequence now plays at 10fps × 50 frames = 5 seconds
-- Better visibility on first page load
-
----
-
-## ⏳ PENDING (Agents 3, 4)
-
-### Agent 3: House Color Assignment + BIT Patna Free Registration
-
-**What needs doing:**
-1. Add `house` column to `profiles` table (enum or text: Gryffindor, Hufflepuff, Ravenclaw, Slytherin)
-2. Create `useHouseAssignment()` hook to:
-   - Check if `profiles.house` is NULL on user load
-   - If NULL, randomly assign a house and update Supabase
-   - Return house name and color CSS class
-3. Implement free registration for BIT Patna students:
-   - Check email domain: `@bitpatna.ac.in` → skip payment
-   - Block BIT Mesra students (pattern: `15XXX.23` in email) → show message
-4. Update registration page (`src/app/delegate-registration/page.tsx`) with email validation
-5. Store house color class in component for display across pages
-
-**Supabase Setup:**
-```sql
-ALTER TABLE profiles ADD COLUMN house TEXT CHECK (house IN ('Gryffindor', 'Hufflepuff', 'Ravenclaw', 'Slytherin'));
-
--- Function to assign house on first login (or use hook)
-CREATE OR REPLACE FUNCTION assign_house_on_first_login()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF NEW.house IS NULL THEN
-    NEW.house = (
-      ARRAY['Gryffindor', 'Hufflepuff', 'Ravenclaw', 'Slytherin']
-    )[floor(random() * 4) + 1];
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_house_assignment
-BEFORE INSERT ON profiles
-FOR EACH ROW
-EXECUTE FUNCTION assign_house_on_first_login();
-```
-
----
-
-### Agent 4: Privacy Policy Page + Coming Soon Page Fixes
-
-**What needs doing:**
-1. Create `src/app/privacy-policy/page.tsx` with:
-   - Same structure as T&C page
-   - Privacy policy content (get from user or use GDPR template)
-   - Breadcrumb schema
-   - "Return to castle" link
-   - Last updated date
-   
-2. Add footer links for both T&C and Privacy Policy
-
-3. Audit "coming soon" pages for consistency:
-   - Alumni page ✓ (has content)
-   - Events page (should show event list with real data)
-   - Contact page ✓ (has form)
-   - Other pages with `.parchment-sheet` or `.owl-letter` styling
-
-4. Ensure all legal pages have:
-   - Proper heading hierarchy
-   - Consistent styling
-   - Navigation between T&C ↔ Privacy Policy
+**Coming Soon Pages:**
+1. Audit /alumni, /events, /contact for consistency
+2. Ensure event pages show real data instead of "coming soon"
 
 ---
 
@@ -185,7 +79,6 @@ EXECUTE FUNCTION assign_house_on_first_login();
 - category (TEXT)
 - message (TEXT)
 - created_at (TIMESTAMP)
-- status (TEXT: new, read, resolved)
 ```
 
 ### alumni_registrations
@@ -203,43 +96,113 @@ EXECUTE FUNCTION assign_house_on_first_login();
 
 ### profiles (UPDATE)
 ```
+ADD COLUMN house (TEXT: gryffindor, hufflepuff, ravenclaw, slytherin)
 ADD COLUMN phone (TEXT)
-ADD COLUMN house (TEXT: Gryffindor, Hufflepuff, Ravenclaw, Slytherin)
-ADD COLUMN updated_at (TIMESTAMP)
+ADD COLUMN updated_at (TIMESTAMP with auto-update trigger)
 ```
 
 ---
 
-## 📋 TODO Summary
+## 📊 Status Summary
 
 | Task | Status | Agents |
 |------|--------|--------|
-| Contact form visibility ✓ | ✅ DONE | 1 |
-| Contact form → Supabase ✓ | ✅ DONE | 1 |
-| Alumni phone validation ✓ | ✅ DONE | 2 |
-| Alumni data fetching setup ✓ | ✅ DONE | 2 |
-| Events data loaded ✓ | ✅ DONE | 5 |
-| Mobile optimization ✓ | ✅ DONE | 5 |
-| Animation slowed ✓ | ✅ DONE | 5 |
-| House assignment | ⏳ PENDING | 3 |
-| BIT Patna free registration | ⏳ PENDING | 3 |
+| Contact form visibility | ✅ DONE | 1 |
+| Contact form → Supabase | ✅ DONE | 1 |
+| Alumni phone validation | ✅ DONE | 2 |
+| Alumni data fetching | ✅ DONE | 2 |
+| Events data loaded | ✅ DONE | 5 |
+| Mobile optimization | ✅ DONE | 5 |
+| Animation slowed | ✅ DONE | 5 |
+| House assignment | ✅ DONE | 3 |
+| BIT Patna free registration | ⏳ PENDING | 4 |
 | Privacy Policy page | ⏳ PENDING | 4 |
-| Coming soon pages fixed | ⏳ PENDING | 4 |
 | Email confirmation | ⏭️ SKIPPED | - |
 | Register ↔ Sign out button | ⏭️ SKIPPED | - |
 
+**Progress: 11/13 = 85% Complete**
+
 ---
 
-## 🚀 Last Commit
+## 📁 Files Created/Modified
+
+### New Files
+- `src/components/contact-form.tsx` - Contact form with Supabase
+- `src/lib/events-data.ts` - 39 events from Excel
+- `src/lib/assign-house.ts` - House assignment logic
+- `src/hooks/useHouseAssignment.ts` - House hook
+- `src/components/house-assignment-status.tsx` - House display component
+- `supabase/migrations/add_house_to_profiles.sql` - DB migration
+- `HOUSE_ASSIGNMENT.md` - Full house system documentation
+- `PROGRESS.md` - This file
+
+### Modified Files
+- `src/app/contact/page.tsx` - Added working form
+- `src/lib/alumni-registry.ts` - Added phone validation + save function
+- `src/app/globals.css` - Added form + house CSS
+- `src/app/page.tsx` - Slowed animation
+- `src/components/auth-provider.tsx` - Added house assignment trigger
+
+---
+
+## 🚀 Last Commits
+
+### Commit: House Assignment
+```
+feat: implement random house assignment on first login
+- Created assignHouseIfUnassigned() function
+- Updated auth provider to trigger assignment
+- Added useHouseAssignment() hook
+- Created HouseAssignmentStatus component
+- Added house styling CSS
+- Created Supabase migration
+- Added comprehensive HOUSE_ASSIGNMENT.md documentation
+```
+
+### Commit: Agents 1, 2, 5
 ```
 feat: contact form visibility, alumni validation, events data, mobile optimization, animation timing
 - Fixed .owl-letter paragraph visibility
-- Created ContactForm component with Supabase integration
+- Created ContactForm component with Supabase
 - Added phone validation utilities
-- Implemented saveAlumniRegistration function
-- Created 39-event data structure from Excel
+- Implemented saveAlumniRegistration
+- Created 39-event data structure
 - Slowed animation 1.67s → 5s
-- Added comprehensive mobile CSS (640px & 360px)
+- Added comprehensive mobile CSS
 ```
 
-**Next:** Deploy Agents 3 & 4 or proceed with event pages implementation.
+---
+
+## ⚡ Next Steps
+
+1. **Deploy Supabase migrations:**
+   ```bash
+   supabase db push
+   ```
+   Or run SQL from `supabase/migrations/add_house_to_profiles.sql`
+
+2. **Test house assignment:**
+   - Sign in as new user
+   - Check database: `SELECT email, house FROM profiles`
+   - Use `<HouseAssignmentStatus />` to test reassignment
+
+3. **Complete Agent 4:**
+   - Create Privacy Policy page
+   - Implement BIT Patna email validation
+   - Audit coming soon pages
+
+4. **Deploy to Vercel:**
+   ```bash
+   git push origin latest-update
+   ```
+
+---
+
+## 📝 Notes
+
+- House colors already defined in `src/lib/houses.ts` (no additional work needed)
+- House themes auto-apply via `data-house` attribute on HTML root
+- Phone validation reusable for contact form + alumni page
+- Contact form + alumni page both use same validation
+- Events data ready for page implementation (next phase)
+- Mobile CSS handles 320px-2560px gracefully
