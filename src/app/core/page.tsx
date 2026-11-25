@@ -1,5 +1,11 @@
-import { ReferencePortalPage } from "@/components/reference-portals";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft, ArrowUpRight, Feather, ScrollText } from "lucide-react";
 import { createPageMetadata } from "@/lib/seo";
+import { BreadcrumbsSchema } from "@/components/structured-data";
+import { CoreTeamGallery } from "@/components/core-team-gallery";
+import { Divider, Eyebrow } from "@/components/ornaments";
+import { SoonBadge } from "@/components/coming-soon";
 import styles from "@/components/core-team-gallery.module.css";
 
 export const metadata = createPageMetadata("/core");
@@ -86,4 +92,11 @@ export default function CorePage() {
     </div>
   );
 }
-*/
+
+function SnitchArtwork({ className }: { className: string }) {
+  return (
+    <div className={className} aria-hidden="true">
+      <div className={styles.snitch} />
+    </div>
+  );
+}
