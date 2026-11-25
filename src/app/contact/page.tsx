@@ -31,9 +31,8 @@ export default function ContactPage() {
             Questions about participation, college delegates, partnerships, or
             visiting BIT Patna?
             <br />
-            Official enquiry channels are being prepared.
+            Use the form below to send us your enquiry.
           </p>
-          <SoonBadge>Contact channels coming soon</SoonBadge>
         </Reveal>
         <Reveal>
           <ContactForm />
