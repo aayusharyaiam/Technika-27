@@ -18,8 +18,8 @@ const FRAME_COUNT = 234;
 const INTRO_START_FRAME = 0;
 const INTRO_END_FRAME = 50; // First 50 frames (0 to 50)
 const SCROLL_START_FRAME = 50;
-const INTRO_FPS = 30; // 30 FPS cleanly syncs with 60Hz/120Hz displays, eliminating judder
-const INTRO_DURATION_MS = ((INTRO_END_FRAME - INTRO_START_FRAME) / INTRO_FPS) * 1000; // ~1666ms
+const INTRO_FPS = 10; // Reduced from 30 to 10 FPS to slow animation to 5s for better visibility
+const INTRO_DURATION_MS = ((INTRO_END_FRAME - INTRO_START_FRAME) / INTRO_FPS) * 1000; // ~5000ms (5 seconds)
 
 const clampIndex = (i: number): number => {
   if (isNaN(i)) return 0;

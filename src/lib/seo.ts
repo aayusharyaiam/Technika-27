@@ -152,6 +152,12 @@ export const pageSeo = {
       "Read the Technika 2K26 privacy policy for website, account, contact, and analytics data.",
     label: "Privacy Policy",
   },
+  "/terms-conditions": {
+    title: "Terms & Conditions",
+    description:
+      "Read the Technika '27 terms and conditions for festival participation, website usage, and code of conduct.",
+    label: "Terms & Conditions",
+  },
   "/delegate-registration": {
     title: "Delegate Registration — Technika ’27",
     description:

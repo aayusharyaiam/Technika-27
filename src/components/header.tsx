@@ -8,10 +8,13 @@ import {
   ArrowUpRight,
   ChevronDown,
   LayoutDashboard,
+  LogOut,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { navigation } from "@/lib/festival";
+import { getSupabase } from "@/lib/supabase/client";
 import { houseLogoFor } from "@/lib/houses";
 import { useAuth } from "./auth-provider";
 import { useHouse } from "./house-provider";
@@ -112,14 +115,32 @@ function BookBurger({
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const dropdownTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { user } = useAuth();
   const { house, theme } = useHouse();
   const { ready } = useMagic();
+
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      const client = getSupabase();
+      if (client) {
+        await client.auth.signOut();
+        router.refresh();
+      }
+    } catch {
+      // Silent fail - user can retry
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   // Filter central links (dashboard is shown separately in action area if logged in)
   const navItems = navigation.filter((item) => item.href !== "/dashboard");
@@ -318,7 +339,7 @@ export function Header() {
              ========================================================= */}
           <div className="hidden lg:flex items-center gap-3">
             {user ? (
-              // Signed In State: Dashboard button + Register button
+              // Signed In State: Dashboard button + Sign Out button + Common Room
               <>
                 <Link
                   href="/dashboard"
@@ -328,13 +349,15 @@ export function Header() {
                   <span>Dashboard</span>
                 </Link>
 
-                <Link
-                  href="/registrations"
-                  className="px-5 py-2 rounded-full text-[14px] font-semibold tracking-wide bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 text-neutral-950 hover:brightness-110 shadow-lg shadow-amber-500/25 transition-all duration-300 flex items-center gap-1.5"
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={signingOut}
+                  className="px-5 py-2 rounded-full text-[14px] font-semibold tracking-wide bg-gradient-to-r from-red-600 via-red-500 to-red-700 text-white hover:brightness-110 shadow-lg shadow-red-500/25 transition-all duration-300 flex items-center gap-1.5 disabled:opacity-60"
                 >
-                  <span>Register</span>
-                  <ArrowUpRight size={15} />
-                </Link>
+                  <LogOut size={15} />
+                  <span>{signingOut ? "Signing out..." : "Sign Out"}</span>
+                </button>
 
                 {/* Common Room Quick Pill */}
                 <Link
@@ -451,14 +474,15 @@ export function Header() {
                     <span>Dashboard</span>
                   </Link>
 
-                  <Link
-                    href="/registrations"
-                    onClick={() => setOpen(false)}
-                    className="w-full py-3 px-4 rounded-xl text-sm font-semibold tracking-wider uppercase bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 text-neutral-950 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
+                  <button
+                    type="button"
+                    onClick={() => { setOpen(false); handleSignOut(); }}
+                    disabled={signingOut}
+                    className="w-full py-3 px-4 rounded-xl text-sm font-semibold tracking-wider uppercase bg-gradient-to-r from-red-600 via-red-500 to-red-700 text-white flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 disabled:opacity-60"
                   >
-                    <span>Register Now</span>
-                    <ArrowUpRight size={16} />
-                  </Link>
+                    <LogOut size={16} />
+                    <span>{signingOut ? "Signing out..." : "Sign Out"}</span>
+                  </button>
                 </>
               ) : (
                 <>

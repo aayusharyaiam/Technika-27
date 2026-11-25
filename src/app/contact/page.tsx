@@ -8,9 +8,10 @@ import {
   ScrollText,
   Send,
 } from "lucide-react";
-import { BackLink, SoonBadge } from "@/components/coming-soon";
+import { BackLink } from "@/components/coming-soon";
 import { Divider, Eyebrow } from "@/components/ornaments";
 import { Reveal } from "@/components/reveal";
+import { ContactForm } from "@/components/contact-form";
 
 export const metadata = createPageMetadata("/contact");
 
@@ -34,25 +35,28 @@ export default function ContactPage() {
           </p>
           <SoonBadge>Contact channels coming soon</SoonBadge>
         </Reveal>
+        <Reveal>
+          <ContactForm />
+        </Reveal>
         <div className="owlery-grid">
           <Reveal className="owl-letter parchment-sheet">
             <span className="letter-corner corner-tl" />
             <span className="letter-corner corner-br" />
             <div className="letter-top">
               <ScrollText size={24} strokeWidth={1} />
-              <span>OWL POST · TECHNIKA ’27</span>
+              <span>OWL POST · TECHNIKA '27</span>
             </div>
             <h2>
               Dear <em>future wizard,</em>
             </h2>
             <p>
-              We’re putting the final touches on our Owlery. The festival’s
-              official contacts and enquiry channels will be unveiled here soon.
+              Our owlery is now open! Use the form above to send us your enquiry,
+              and we'll get back to you as soon as possible.
             </p>
             <p>
-              Whether you’re looking for a place in the tournament, planning
-              your college’s grand arrival, or dreaming of a partnership — we
-              can’t wait to hear from you.
+              Whether you're looking for a place in the tournament, planning
+              your college's grand arrival, or dreaming of a partnership — we
+              can't wait to hear from you.
             </p>
             <Divider />
             <div className="letter-signoff">
@@ -63,7 +67,7 @@ export default function ContactPage() {
               </span>
               <div className="wax-seal">
                 <span>T</span>
-                <small>’27</small>
+                <small>'27</small>
               </div>
             </div>
             <BackLink />

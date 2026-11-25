@@ -24,14 +24,14 @@ export function Reveal({ children, className = "", delay = 0 }: {
       const children = element.querySelectorAll(".sponsor-card, .house-card, .academy-card, .memory-card, .about-features > span, .campus-points > span");
       const reveal = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
       reveal.fromTo(element, { opacity: 0, y: 58, filter: "blur(5px)" }, {
-        opacity: 1, y: 0, filter: "blur(0px)", duration: 1.05, delay,
+        opacity: 1, y: 0, filter: "blur(0px)", duration: 1.6, delay,
         onComplete: () => { gsap.set(element, { clearProps: "filter,transform" }); },
       });
       if (children.length) {
         reveal.fromTo(children, { opacity: 0, y: 28, scale: .94 }, {
-          opacity: 1, y: 0, scale: 1, duration: .85, stagger: .11,
+          opacity: 1, y: 0, scale: 1, duration: 1.2, stagger: .18,
           clearProps: "transform",
-        }, .16);
+        }, .22);
       }
       ScrollTrigger.create({ trigger: element, start: "top 90%", once: true, onEnter: () => { reveal.play(); } });
     }, element);
