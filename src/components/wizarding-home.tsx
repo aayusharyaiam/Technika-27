@@ -114,39 +114,6 @@ function useJourneyMotion(ref: React.RefObject<HTMLElement | null>) {
   }, [ref]);
 }
 
-function StationArt() {
-  return (
-    <div className="station-art" aria-hidden="true">
-      <div className="station-arch station-arch-one">
-        <span />
-      </div>
-      <div className="station-arch station-arch-two">
-        <span />
-      </div>
-      <div className="station-sign">
-        <small>PLATFORM</small>
-        <strong>9¾</strong>
-        <span>THE NEXT CHAPTER</span>
-      </div>
-      <div className="station-lamp station-lamp-one">
-        <i />
-      </div>
-      <div className="station-lamp station-lamp-two">
-        <i />
-      </div>
-      <div className="station-tracks">
-        <span />
-        <span />
-      </div>
-      <div className="journey-steam">
-        <i />
-        <i />
-        <i />
-        <i />
-      </div>
-    </div>
-  );
-}
 
 export function WizardingJourney() {
   const ref = useRef<HTMLElement>(null);

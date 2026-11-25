@@ -109,7 +109,7 @@ export function ContactForm() {
       {state === "success" && (
         <div className="form-message success-message" role="status">
           <CheckCircle size={16} />
-          <span>Message sent! We'll be in touch shortly.</span>
+          <span>Message sent! We&apos;ll be in touch shortly.</span>
         </div>
       )}
 

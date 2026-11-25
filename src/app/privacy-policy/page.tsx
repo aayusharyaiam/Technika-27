@@ -166,7 +166,7 @@ export default function PrivacyPolicyPage() {
             information provided below.
           </p>
 
-          <h2>Children's Privacy</h2>
+          <h2>Children&apos;s Privacy</h2>
           <p>
             Technika &apos;27 is intended for college and university students
             (typically 18 years or older). We do not knowingly collect personal

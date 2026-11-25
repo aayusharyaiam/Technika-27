@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { useHouse } from "@/components/house-provider";
 import { assignHouseIfUnassigned, reassignHouse } from "@/lib/assign-house";
-import type { House } from "@/lib/houses";
+import type { House, selectableHouses } from "@/lib/houses";
 
 export type HouseAssignmentState =
   | { status: "loading" }
@@ -19,55 +19,61 @@ export type HouseAssignmentState =
 export function useHouseAssignment() {
   const { user, loading: authLoading } = useAuth();
   const { house: currentHouse } = useHouse();
-  const [state, setState] = useState<HouseAssignmentState>({
-    status: "loading",
+  const [state, setState] = useState<HouseAssignmentState>(() => {
+    // Initialize based on current state
+    if (!authLoading && currentHouse !== "default") {
+      return { status: "ready", house: currentHouse };
+    }
+    return { status: "loading" };
   });
 
   useEffect(() => {
     if (authLoading) return;
 
-    if (!user) {
-      setState({ status: "ready", house: "default" });
-      return;
-    }
+    // Set up promise-based state updates
+    const updateState = async () => {
+      if (!user) {
+        setState({ status: "ready", house: "default" });
+        return;
+      }
 
-    // House is already assigned by auth provider
-    if (currentHouse !== "default") {
-      setState({ status: "ready", house: currentHouse });
-      return;
-    }
+      // House is already assigned by auth provider
+      if (currentHouse !== "default") {
+        setState({ status: "ready", house: currentHouse });
+        return;
+      }
 
-    // Try to assign a house if not already assigned
-    assignHouseIfUnassigned(user.id)
-      .then(({ house, error }) => {
-        if (error) {
-          setState({ status: "error", error });
-        } else if (house) {
-          setState({ status: "ready", house });
-        } else {
-          setState({ status: "ready", house: "default" });
-        }
-      })
-      .catch((err) => {
-        setState({
-          status: "error",
-          error: err instanceof Error ? err.message : "Unknown error",
-        });
+      // Try to assign a house if not already assigned
+      const { house, error } = await assignHouseIfUnassigned(user.id);
+      if (error) {
+        setState({ status: "error", error });
+      } else if (house) {
+        setState({ status: "ready", house });
+      } else {
+        setState({ status: "ready", house: "default" });
+      }
+    };
+
+    updateState().catch((err) => {
+      setState({
+        status: "error",
+        error: err instanceof Error ? err.message : "Unknown error",
       });
+    });
   }, [user, authLoading, currentHouse]);
 
-  const reassign = async (house?: string) => {
+  const reassign = async (house?: (typeof selectableHouses)[number]) => {
     if (!user) {
       return { success: false, error: "No user logged in" };
     }
 
     const result = await reassignHouse(
       user.id,
-      house as any
+      house
     );
 
     if (result.success && result.house) {
-      setState({ status: "ready", house: result.house });
+      setState({ status: "ready", house: result.house as House });
     } else if (result.error) {
       setState({ status: "error", error: result.error });
     }

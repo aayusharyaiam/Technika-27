@@ -8,7 +8,7 @@ import Link from "next/link";
  * so the whole hero recolours with the active theme.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   ArrowDown,
   ArrowUpRight,
