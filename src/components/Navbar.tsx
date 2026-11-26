@@ -286,7 +286,7 @@ export const HOUSE_LOGOS: Record<string, string> = {
 };
 
 const LINK =
-  "relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.07em] outline-none transition-all duration-200 text-white/70 hover:text-white hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-amber-400/40 min-[1280px]:px-3.5 min-[1280px]:text-[11.5px]";
+  "relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.07em] outline-none transition-all duration-200 text-white/70 hover:text-white hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring/50 min-[1280px]:px-3.5 min-[1280px]:text-[11.5px]";
 
 const MENU_ITEM =
   "block rounded-xl px-3 py-2 text-[12px] text-white/70 transition-colors hover:bg-white/[0.08] hover:text-white";
@@ -294,7 +294,7 @@ const MENU_ITEM =
 const ActiveDot = () => (
   <span
     aria-hidden
-    className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]"
+    className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-brand shadow-[0_0_8px_var(--brand)]"
   />
 );
 
@@ -311,12 +311,12 @@ function RegisterButton({
     <Link
       href={href}
       onClick={onClick}
-      className={`group relative inline-flex shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full border border-amber-400/35 bg-amber-400/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-300 shadow-[0_0_18px_rgba(251,191,36,0.12)] outline-none transition-all duration-300 hover:scale-[1.03] hover:border-amber-400/60 hover:bg-amber-400/20 hover:shadow-[0_0_24px_rgba(251,191,36,0.22)] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-amber-400/50 min-[1280px]:px-4.5 min-[1280px]:py-2 min-[1280px]:text-[11.5px] ${className}`}
+      className={`group relative inline-flex shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full border border-brand/35 bg-brand-soft px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-brand shadow-[0_0_18px_color-mix(in_oklab,var(--brand)_14%,transparent)] outline-none transition-all duration-300 hover:scale-[1.03] hover:border-brand/60 hover:bg-brand/20 hover:shadow-[0_0_24px_color-mix(in_oklab,var(--brand)_26%,transparent)] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring/50 min-[1280px]:px-4.5 min-[1280px]:py-2 min-[1280px]:text-[11.5px] ${className}`}
     >
       <span className="relative">
         Register<span className="max-[1180px]:hidden"> now</span>
       </span>
-      <ArrowUpRight className="relative h-3 w-3 text-amber-400/90 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+      <ArrowUpRight className="relative h-3 w-3 text-fg-brand/90 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
     </Link>
   );
 }
@@ -476,7 +476,7 @@ function DesktopNav({ pathname }: { pathname: string }) {
           : groupActive(pathname, item);
 
         if (!item.children) {
-          const cls = `${LINK} ${active ? "text-amber-300 font-semibold bg-white/[0.08]" : "text-white/70 hover:text-white hover:bg-white/[0.05]"}`;
+          const cls = `${LINK} ${active ? "text-fg-brand font-semibold bg-white/[0.08]" : "text-white/70 hover:text-white hover:bg-white/[0.05]"}`;
           return (
             <li key={item.label}>
               <Link
@@ -493,7 +493,7 @@ function DesktopNav({ pathname }: { pathname: string }) {
 
         const isOpen = open === item.label;
         const isHighlighted = active || isOpen;
-        const btnCls = `${LINK} ${isHighlighted ? "text-amber-300 font-semibold bg-white/[0.08]" : "text-white/70 hover:text-white hover:bg-white/[0.05]"}`;
+        const btnCls = `${LINK} ${isHighlighted ? "text-fg-brand font-semibold bg-white/[0.08]" : "text-white/70 hover:text-white hover:bg-white/[0.05]"}`;
         return (
           <li
             key={item.label}
@@ -542,7 +542,7 @@ function DesktopNav({ pathname }: { pathname: string }) {
                         className="block rounded-xl px-3 py-2 transition-colors hover:bg-white/[0.08]"
                       >
                         <span
-                          className={`block text-[12px] font-medium tracking-wide ${isActive(pathname, c.href) ? "text-amber-300 font-semibold" : "text-white/85"}`}
+                          className={`block text-[12px] font-medium tracking-wide ${isActive(pathname, c.href) ? "text-fg-brand font-semibold" : "text-white/85"}`}
                         >
                           {c.label}
                         </span>
@@ -584,10 +584,10 @@ function ProfileMenu({
         aria-expanded={open}
         aria-haspopup="true"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-1 pr-2.5 outline-none transition-colors hover:border-amber-400/40 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-amber-400"
+        className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-1 pr-2.5 outline-none transition-colors hover:border-brand/40 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Avatar p={profile} size={28} />
-        <span className="max-w-[6.5rem] truncate text-[11px] font-medium text-amber-300/90 max-[1180px]:hidden">
+        <span className="max-w-[6.5rem] truncate text-[11px] font-medium text-fg-brand/90 max-[1180px]:hidden">
           {profile.first}
         </span>
         <ChevronDown
@@ -692,7 +692,7 @@ function MobilePanel(props: {
                 ? isActive(pathname, item.href)
                 : groupActive(pathname, item);
               const tone = active
-                ? "bg-white/[0.08] text-amber-300 font-semibold"
+                ? "bg-white/[0.08] text-fg-brand font-semibold"
                 : "text-white/70 hover:bg-white/[0.04] hover:text-white";
 
               if (!item.children) {
@@ -712,7 +712,7 @@ function MobilePanel(props: {
                       {active && (
                         <span
                           aria-hidden
-                          className="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]"
+                          className="h-1.5 w-1.5 rounded-full bg-brand shadow-[0_0_8px_var(--brand)]"
                         />
                       )}
                     </Link>
@@ -747,7 +747,7 @@ function MobilePanel(props: {
                             onClick={onNavigate}
                             className={`block rounded-lg px-3 py-2 text-xs transition-colors hover:text-white ${
                               isActive(pathname, c.href)
-                                ? "text-amber-300 font-medium"
+                                ? "text-fg-brand font-medium"
                                 : "text-white/60"
                             }`}
                           >
@@ -965,7 +965,7 @@ export default function TechnikaNavbar({
                 <Link
                   href="/"
                   aria-label="Technika Home"
-                  className="group relative flex shrink-0 items-center outline-none transition-transform duration-300 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-amber-400"
+                  className="group relative flex shrink-0 items-center outline-none transition-transform duration-300 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Image
                     src={activeLogo}
@@ -996,7 +996,7 @@ export default function TechnikaNavbar({
                       <Link
                         href={AUTH.signIn}
                         aria-label="Sign in to the common room"
-                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-medium tracking-wide text-white/70 outline-none transition-colors hover:text-white hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-amber-400/50"
+                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-medium tracking-wide text-white/70 outline-none transition-colors hover:text-white hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-ring/50"
                       >
                         <UserIcon className="h-3.5 w-3.5 opacity-70" />
                         <span className="max-[1180px]:hidden">Common room</span>

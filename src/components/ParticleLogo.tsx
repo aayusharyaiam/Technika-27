@@ -26,7 +26,7 @@ import type { CSSProperties } from "react";
 
 const TAU = Math.PI * 2;
 const CAM = 3.2; // camera distance, in logo-heights
-const DAMP = 0.8; // per-frame velocity damping for the dots
+const DAMP = 0.84; // per-frame velocity damping for smoother, slower drift
 const THICKNESS = 0.05; // how deep the logo slab is (so it has an edge when spun edge-on)
 
 /* ------------------------------- types ---------------------------------- */
@@ -149,9 +149,9 @@ function extractPoints(
     P.hx[i] = (px + Math.random() - cx) / bh; // logo height = 1 unit
     P.hy[i] = (py + Math.random() - cy) / bh;
     P.hz[i] = (Math.random() - 0.5) * THICKNESS;
-    P.ks[i] = 0.025 + Math.random() * 0.05; // varied stiffness = organic trailing
+    P.ks[i] = 0.012 + Math.random() * 0.024; // varied low stiffness = slow, graceful trailing
     const o = idx * 4;
-    const jitter = 0.82 + Math.random() * 0.3; // grain
+    const jitter = 0.6 + Math.random() * 0.55; // grain
     P.cr[i] = Math.min(255, data[o] * jitter);
     P.cg[i] = Math.min(255, data[o + 1] * jitter);
     P.cb[i] = Math.min(255, data[o + 2] * jitter);
@@ -160,7 +160,14 @@ function extractPoints(
 }
 
 // Put every dot in a loose 3D dust cloud, each with its own start delay.
-function scatter(P: ParticleSet, formed: boolean): void {
+// Put every dot in a loose 3D dust cloud that fits inside the canvas.
+// halfWu / halfHu = half the canvas size in logo units.
+function scatter(
+  P: ParticleSet,
+  formed: boolean,
+  halfWu = 2,
+  halfHu = 1.5,
+): void {
   for (let i = 0; i < P.n; i++) {
     P.vx[i] = P.vy[i] = P.vz[i] = 0;
     if (formed) {
@@ -171,14 +178,17 @@ function scatter(P: ParticleSet, formed: boolean): void {
       continue;
     }
     const a = Math.random() * TAU;
-    const b = Math.acos(2 * Math.random() - 1);
-    const r = 0.7 + Math.pow(Math.random(), 0.6) * 1.9;
-    P.x[i] = Math.sin(b) * Math.cos(a) * r * 1.5;
-    P.y[i] = Math.sin(b) * Math.sin(a) * r;
-    P.z[i] = Math.cos(b) * r;
-    P.vx[i] = (Math.random() - 0.5) * 0.004;
-    P.vy[i] = (Math.random() - 0.5) * 0.004;
-    P.vz[i] = (Math.random() - 0.5) * 0.004;
+    // soft Gaussian cloud: flat in the middle, fading out toward the canvas edge
+    let rr = 0.34 * Math.sqrt(-2 * Math.log(1 - Math.random()));
+    if (rr > 0.95) rr = Math.random() * 0.95; // rare strays go inside instead
+    const z = (Math.random() * 2 - 1) * 1.2;
+    const persp = CAM / (CAM - z);
+    P.x[i] = (Math.cos(a) * rr * halfWu) / persp;
+    P.y[i] = (Math.sin(a) * rr * halfHu) / persp;
+    P.z[i] = z;
+    P.vx[i] = (Math.random() - 0.5) * 0.003;
+    P.vy[i] = (Math.random() - 0.5) * 0.003;
+    P.vz[i] = (Math.random() - 0.5) * 0.003;
     P.delay[i] = Math.random() * 70; // frames at 60fps, so about 1.2s of staggering
   }
 }
@@ -285,6 +295,7 @@ function render(
   const halfW = W * 0.5,
     halfH = H * 0.5,
     halfDot = dot * 0.5;
+  const fade = Math.max(1, Math.min(W, H) * 0.1); // px over which dots fade out at the border
 
   for (let i = 0; i < P.n; i++) {
     const dz = CAM - P.z[i];
@@ -300,9 +311,11 @@ function render(
       vy = P.vy[i],
       vz = P.vz[i];
     const speed = Math.sqrt(vx * vx + vy * vy + vz * vz);
-    let shade = 0.45 + (persp - 0.8) * 1.5; // nearer = brighter
-    shade = shade < 0.35 ? 0.35 : shade > 1.2 ? 1.2 : shade;
-    const k = shade * weight * (1 + Math.min(speed * 14, 1) * 0.7); // moving dots flare up
+    let shade = 1 + (persp - 1) * 1.5; // nearer = brighter
+    shade = shade < 0.45 ? 0.45 : shade > 1.25 ? 1.25 : shade;
+    let edge = Math.min(fx, fy, W - dot - fx, H - dot - fy) / fade;
+    edge = edge >= 1 ? 1 : edge * edge * (3 - 2 * edge); // smooth fade near the border
+    const k = shade * weight * edge * (1 + Math.min(speed * 14, 1) * 0.7); // moving dots flare up
     const r = P.cr[i] * k,
       g = P.cg[i] * k,
       b = P.cb[i] * k;
@@ -333,13 +346,31 @@ function parseColor(input: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
+// Turns the additive glow into real transparency: brightness becomes alpha.
+function resolveAlpha(frame: Frame): void {
+  const { u8, u32 } = frame;
+  for (let i = 0; i < u32.length; i++) {
+    if (u32[i] === 0) continue; // empty pixel, stays transparent
+    const o = i * 4;
+    const r = u8[o],
+      g = u8[o + 1],
+      b = u8[o + 2];
+    const m = r > g ? (r > b ? r : b) : g > b ? g : b;
+    if (m === 0) continue;
+    const s = 255 / m;
+    u8[o] = r * s;
+    u8[o + 1] = g * s;
+    u8[o + 2] = b * s;
+    u8[o + 3] = m;
+  }
+}
 /* ----------------------------- component -------------------------------- */
 
 export default function ParticleLogo({
   src = "/hufflepuff.png",
   particles,
-  dotSize = 1.5,
-  background = "#000000",
+  dotSize = 1,
+  background = "transparent",
   className,
   style,
   ariaLabel = "Logo made of gathering particles",
@@ -347,9 +378,11 @@ export default function ParticleLogo({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
+    const transparent = background === "transparent";
+
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d", { alpha: false });
+    const ctx = canvas.getContext("2d", { alpha: transparent });
     if (!ctx) return;
 
     const reduceMotion = window.matchMedia(
@@ -393,7 +426,9 @@ export default function ParticleLogo({
         u8: imageData.data,
         u32: new Uint32Array(imageData.data.buffer),
         imageData,
-        bg: ((255 << 24) | (bgB << 16) | (bgG << 8) | bgR) >>> 0,
+        bg: transparent
+          ? 0
+          : ((255 << 24) | (bgB << 16) | (bgG << 8) | bgR) >>> 0,
       };
 
       const aspect = P ? P.aspect : 1.26;
@@ -426,11 +461,11 @@ export default function ParticleLogo({
       octx.drawImage(img, 0, 0, off.width, off.height);
 
       const rect = canvas.getBoundingClientRect();
-      const count = particles || (rect.width < 640 ? 38000 : 70000);
+      const count = particles || (rect.width < 640 ? 8000 : 14000);
       P = extractPoints(octx.getImageData(0, 0, off.width, off.height), count);
       if (!P) return;
-      scatter(P, reduceMotion);
-      layout();
+      layout(); // works out the scale from the logo's shape
+      scatter(P, reduceMotion, W / (2 * S), H / (2 * S));
     };
     img.onerror = () => console.warn(`ParticleLogo: could not load "${src}"`);
     img.src = src;
@@ -455,14 +490,36 @@ export default function ParticleLogo({
     const onLeave = (): void => {
       ptr.active = false;
     };
+    const MAX_STEP = 60; // max px counted per move event, so a jump can't fling the logo
+    const clamp = (v: number, m: number): number =>
+      Math.max(-m, Math.min(m, v));
+
+    // one place that always ends a drag cleanly
+    const endDrag = (): void => {
+      if (!ptr.down) return;
+      ptr.down = false;
+      canvas.style.cursor = "grab";
+      rot.vy = clamp(rot.vy, 0.3); // cap the fling so it can't spin away
+      rot.vx = clamp(rot.vx, 0.3);
+    };
+
     const onDown = (e: PointerEvent): void => {
+      if (e.pointerType === "mouse" && e.button !== 0) return; // right-click must not start a drag
       ptr.down = true;
-      canvas.setPointerCapture(e.pointerId);
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
       canvas.style.cursor = "grabbing";
       [ptr.x, ptr.y] = toDevice(e);
       rot.vy = rot.vx = 0;
     };
+
     const onMove = (e: PointerEvent): void => {
+      // the button was released somewhere we never heard about
+      if (ptr.down && e.buttons === 0) endDrag();
+
       const [x, y] = toDevice(e);
       const dx = x - ptr.x,
         dy = y - ptr.y;
@@ -472,23 +529,27 @@ export default function ParticleLogo({
       ptr.y = y;
       ptr.active = true;
       if (ptr.down) {
-        const ay = (dx / dpr) * 0.009;
-        const ax = -(dy / dpr) * 0.006;
+        const ay = clamp(dx / dpr, MAX_STEP) * 0.009;
+        const ax = -clamp(dy / dpr, MAX_STEP) * 0.006;
         rot.y += ay;
         rot.x = Math.max(-1.1, Math.min(1.1, rot.x + ax));
         rot.vy = rot.vy * 0.5 + ay * 0.5;
         rot.vx = rot.vx * 0.5 + ax * 0.5;
       }
     };
+
     const onUp = (e: PointerEvent): void => {
-      ptr.down = false;
-      canvas.style.cursor = "grab";
-      if (canvas.hasPointerCapture(e.pointerId))
-        canvas.releasePointerCapture(e.pointerId);
+      endDrag();
+      try {
+        if (canvas.hasPointerCapture(e.pointerId))
+          canvas.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
     };
-    const onDouble = (): void => {
-      if (P) burst(P);
-    };
+    // const onDouble = (): void => {
+    //   if (P) burst(P);
+    // };
 
     canvas.addEventListener("pointerenter", onEnter);
     canvas.addEventListener("pointerleave", onLeave);
@@ -496,7 +557,12 @@ export default function ParticleLogo({
     canvas.addEventListener("pointermove", onMove);
     canvas.addEventListener("pointerup", onUp);
     canvas.addEventListener("pointercancel", onUp);
-    canvas.addEventListener("dblclick", onDouble);
+    // canvas.addEventListener("dblclick", onDouble);
+    canvas.addEventListener("lostpointercapture", endDrag);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+    window.addEventListener("blur", endDrag);
+    document.addEventListener("visibilitychange", endDrag);
 
     // main loop
     let last = performance.now();
@@ -508,14 +574,14 @@ export default function ParticleLogo({
       clock += dtn;
       if (!P || !frame) return;
 
-      // rotation: follow the drag, then coast and spring back to facing front
+      // rotation: follow the drag, then coast and gently spring back to facing front
       if (!ptr.down) {
         const turns = Math.round((rot.y + rot.vy * 18) / TAU); // land on the nearest front-facing turn
         const targetY =
-          turns * TAU + (reduceMotion ? 0 : Math.sin(clock * 0.012) * 0.05);
-        rot.vy += (targetY - rot.y) * 0.015 * dtn;
-        rot.vx += (0 - rot.x) * 0.02 * dtn;
-        const d = Math.pow(0.88, dtn);
+          turns * TAU + (reduceMotion ? 0 : Math.sin(clock * 0.008) * 0.045);
+        rot.vy += (targetY - rot.y) * 0.009 * dtn;
+        rot.vx += (0 - rot.x) * 0.012 * dtn;
+        const d = Math.pow(0.9, dtn);
         rot.vy *= d;
         rot.vx *= d;
         rot.y += rot.vy * dtn;
@@ -526,6 +592,7 @@ export default function ParticleLogo({
 
       step(P, dtn, rot.y, rot.x, ptr, S, W, H);
       render(P, frame, W, H, S, dot, weight);
+      if (transparent) resolveAlpha(frame);
       ctx.putImageData(frame.imageData, 0, 0);
     };
     raf = requestAnimationFrame(tick);
@@ -540,7 +607,12 @@ export default function ParticleLogo({
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerup", onUp);
       canvas.removeEventListener("pointercancel", onUp);
-      canvas.removeEventListener("dblclick", onDouble);
+      // canvas.removeEventListener("dblclick", onDouble);
+      canvas.removeEventListener("lostpointercapture", endDrag);
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
+      window.removeEventListener("blur", endDrag);
+      document.removeEventListener("visibilitychange", endDrag);
     };
   }, [src, particles, dotSize, background]);
 
@@ -555,7 +627,8 @@ export default function ParticleLogo({
         width: "100%",
         height: "100%",
         cursor: "grab",
-        touchAction: "pan-y", // vertical swipes still scroll the page on touch screens
+        touchAction: "pan-y",
+        backgroundImage: "transparent", // vertical swipes still scroll the page on touch screens
         ...style,
       }}
     />

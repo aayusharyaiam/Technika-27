@@ -62,6 +62,12 @@ const harryP = localFont({
   display: "swap",
   weight: "400",
 });
+const tasaOrbiter = localFont({
+  src: "../../public/fonts/TASAOrbiter-Regular.ttf",
+  variable: "--font-tasa-orbiter",
+  display: "swap",
+  weight: "400",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -149,7 +155,7 @@ export default function RootLayout({
       lang="en"
       data-house={theme}
       data-theme={themeAttributeForHouse(theme)}
-      className={`${garamond.variable} ${outfit.variable} ${handwriting.variable} ${harryP.variable}`}
+      className={`${garamond.variable} ${outfit.variable} ${handwriting.variable} ${harryP.variable} ${tasaOrbiter.variable}`}
       suppressHydrationWarning
     >
       <head>

@@ -1,5 +1,10 @@
+"use client";
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useMotionValueEvent, useScroll, useSpring } from "motion/react";
 import { CDN_BASE_URL, FRAME_CONFIG, ANIMATION_CONFIG } from "@/lib/config";
+import { useMagic } from "@/components/experience";
+import { setHomeIntroCompleted } from "@/lib/intro-state";
 
 const {
   COUNT: FRAME_COUNT,
@@ -163,3 +168,215 @@ function startProgressivePreload(
     }
   }, 80);
 }
+
+export interface HogwartsScrollProps {
+  children?: React.ReactNode;
+  className?: string;
+  trackHeight?: string;
+}
+
+export function HogwartsScroll({
+  children,
+  className = "",
+  trackHeight = "h-[300vh]",
+}: HogwartsScrollProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const imagesRef = useRef<(HTMLImageElement | undefined)[]>([]);
+  const targetFrameRef = useRef<number>(START_FRAME);
+  const currentFrameRef = useRef<number>(START_FRAME);
+  const lastDrawnFrameRef = useRef<number>(-1);
+  const rafRef = useRef<number | null>(null);
+
+  const [loaded, setLoaded] = useState(false);
+  const { setReady } = useMagic();
+
+  // Scroll tracking is scoped strictly to this component's track
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"],
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, SPRING_CONFIG);
+
+  const drawFrame = useCallback((index: number) => {
+    const ctx = ctxRef.current;
+    const canvas = canvasRef.current;
+    if (!ctx || !canvas) return;
+
+    let img = imagesRef.current[index];
+    if (!img || !img.complete || img.naturalWidth === 0) {
+      for (let offset = 1; offset < FRAME_COUNT; offset++) {
+        const lower = index - offset;
+        if (
+          lower >= 0 &&
+          imagesRef.current[lower]?.complete &&
+          imagesRef.current[lower]!.naturalWidth > 0
+        ) {
+          img = imagesRef.current[lower];
+          break;
+        }
+        const higher = index + offset;
+        if (
+          higher < FRAME_COUNT &&
+          imagesRef.current[higher]?.complete &&
+          imagesRef.current[higher]!.naturalWidth > 0
+        ) {
+          img = imagesRef.current[higher];
+          break;
+        }
+      }
+    }
+
+    drawImageToCanvas(ctx, canvas, img, DPR_LIMIT);
+  }, []);
+
+  const lookaheadBuffer = useCallback((centerFrame: number) => {
+    const ahead = 20;
+    for (let offset = 1; offset <= ahead; offset++) {
+      const idx = centerFrame + offset;
+      if (idx < FRAME_COUNT && !imagesRef.current[idx]) {
+        preloadFrame(idx, imagesRef);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) return;
+    ctxRef.current = ctx;
+
+    const handleResize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, DPR_LIMIT);
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      canvas.width = Math.floor(vw * dpr);
+      canvas.height = Math.floor(vh * dpr);
+      canvas.style.width = "100%";
+      canvas.style.height = "100%";
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawFrame(Math.round(currentFrameRef.current));
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
+  }, [drawFrame]);
+
+  useEffect(() => {
+    const cancelledRef = { current: false };
+    imagesRef.current = new Array(FRAME_COUNT);
+
+    startProgressivePreload(
+      imagesRef,
+      START_FRAME,
+      () => {
+        if (cancelledRef.current) return;
+        drawFrame(START_FRAME);
+        setLoaded(true);
+        setReady(true);
+        setHomeIntroCompleted(true);
+      },
+      cancelledRef,
+    );
+
+    const fallbackTimer = setTimeout(() => {
+      if (cancelledRef.current) return;
+      setLoaded(true);
+      setReady(true);
+      setHomeIntroCompleted(true);
+      drawFrame(START_FRAME);
+    }, 1200);
+
+    return () => {
+      cancelledRef.current = true;
+      clearTimeout(fallbackTimer);
+    };
+  }, [drawFrame, setReady]);
+
+  useMotionValueEvent(smoothProgress, "change", (v) => {
+    const nextTarget = Math.max(
+      0,
+      Math.min(FRAME_COUNT - 1, START_FRAME + v * (END_FRAME - START_FRAME)),
+    );
+    targetFrameRef.current = nextTarget;
+    lookaheadBuffer(Math.round(nextTarget));
+  });
+
+  useEffect(() => {
+    const tick = () => {
+      const curr = currentFrameRef.current;
+      const target = targetFrameRef.current;
+      const diff = target - curr;
+
+      if (Math.abs(diff) > LERP_THRESHOLD) {
+        const step = diff * LERP_FACTOR;
+        const next = Math.abs(diff) < 0.005 ? target : curr + step;
+        currentFrameRef.current = next;
+
+        const nextFrame = Math.round(next);
+        if (nextFrame !== lastDrawnFrameRef.current) {
+          drawFrame(nextFrame);
+          lastDrawnFrameRef.current = nextFrame;
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [drawFrame]);
+
+  return (
+    <section
+      ref={containerRef}
+      className={`relative w-full ${trackHeight} bg-transparent ${className}`}
+      data-hogwarts-scroll="true"
+    >
+      {/* Sticky Viewport pinned inside this component only */}
+      <div
+        className="sticky top-0 left-0 w-full h-screen h-[100dvh] overflow-hidden pointer-events-none z-0"
+        style={{
+          height: "100dvh",
+        }}
+        aria-hidden="true"
+      >
+        <canvas
+          ref={canvasRef}
+          className="wizarding-canvas block w-full h-full"
+          style={{ width: "100%", height: "100%", display: "block" }}
+        />
+
+        {/* Ambient subtle vignette overlay to match dark wizarding theme */}
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none"
+        />
+      </div>
+
+      {/* Optional Overlay Content / Children */}
+      {children && (
+        <div className="relative z-10 w-full -mt-[100dvh] pointer-events-auto">
+          {children}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export default HogwartsScroll;
