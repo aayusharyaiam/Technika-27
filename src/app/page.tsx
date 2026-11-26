@@ -14,11 +14,11 @@ import {
   WizardingSponsors,
 } from "@/components/wizarding-home";
 
-const FRAME_COUNT = 234;
+const FRAME_COUNT = 473;
 const INTRO_START_FRAME = 0;
-const INTRO_END_FRAME = 50; // First 50 frames (0 to 50)
-const SCROLL_START_FRAME = 50;
-const INTRO_FPS = 30; // 30 FPS cleanly syncs with 60Hz/120Hz displays, eliminating judder
+const INTRO_END_FRAME = 100; // First ~21% of frames (0 to 100), matching castle reveal across 473 frames
+const SCROLL_START_FRAME = 100;
+const INTRO_FPS = 60; // 60 FPS smoothly matches the new frame density
 const INTRO_DURATION_MS = ((INTRO_END_FRAME - INTRO_START_FRAME) / INTRO_FPS) * 1000; // ~1666ms
 
 const clampIndex = (i: number): number => {
@@ -28,7 +28,7 @@ const clampIndex = (i: number): number => {
 
 function currentFrame(index: number): string {
   const safeIndex = clampIndex(index);
-  const padded = String(safeIndex + 1).padStart(4, "0");
+  const padded = String(safeIndex + 1).padStart(5, "0");
   return `/images/frames/${padded}.jpg`;
 }
 
@@ -79,7 +79,7 @@ export default function Home() {
       .catch(() => img);
   }, []);
 
-  // Render the given frame using aspect-ratio cover math and sub-frame cross-dissolve interpolation for 60fps/120fps motion
+  // Render the given discrete frame at 100% opacity using aspect-ratio cover math (no translucent blending)
   const render = useCallback(
     (targetFrame?: number, force = false) => {
       const canvas = canvasRef.current;
@@ -91,30 +91,27 @@ export default function Home() {
       const safeFrame = isNaN(rawFrame)
         ? 0
         : Math.max(0, Math.min(FRAME_COUNT - 1, rawFrame));
+      const targetIndex = clampIndex(Math.round(safeFrame));
 
-      if (!force && Math.abs(safeFrame - lastDrawnFrameRef.current) < 0.005) {
-        return; // Skip if virtually no visual change
+      if (!force && targetIndex === lastDrawnFrameRef.current) {
+        return; // Skip duplicate redraws when the frame hasn't changed
       }
 
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
       if (canvasWidth === 0 || canvasHeight === 0) return;
 
-      const baseIndex = Math.floor(safeFrame);
-      const nextIndex = Math.min(FRAME_COUNT - 1, baseIndex + 1);
-      const fraction = safeFrame - baseIndex;
-
       // Base image
-      let baseImg = imagesRef.current[baseIndex];
+      let baseImg = imagesRef.current[targetIndex];
       if (!baseImg || !baseImg.complete || baseImg.naturalWidth === 0) {
-        preloadImage(baseIndex).catch(() => {});
+        preloadImage(targetIndex).catch(() => {});
         for (let offset = 1; offset < FRAME_COUNT; offset++) {
-          const lower = baseIndex - offset;
+          const lower = targetIndex - offset;
           if (lower >= 0 && imagesRef.current[lower]?.complete && imagesRef.current[lower]!.naturalWidth > 0) {
             baseImg = imagesRef.current[lower];
             break;
           }
-          const higher = baseIndex + offset;
+          const higher = targetIndex + offset;
           if (higher < FRAME_COUNT && imagesRef.current[higher]?.complete && imagesRef.current[higher]!.naturalWidth > 0) {
             baseImg = imagesRef.current[higher];
             break;
@@ -161,25 +158,13 @@ export default function Home() {
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = "medium";
 
-        // Draw base image fully opaque
+        // Draw image fully opaque - NO translucent opacity fading
         ctx.globalAlpha = 1.0;
         ctx.drawImage(baseImg, drawX, drawY, drawWidth, drawHeight);
 
-        // Sub-frame cross-dissolve: seamlessly blend next frame for silky 60fps/120fps continuity
-        if (fraction > 0.02 && nextIndex !== baseIndex) {
-          const nextImg = imagesRef.current[nextIndex];
-          if (nextImg && nextImg.complete && nextImg.naturalWidth > 0) {
-            ctx.globalAlpha = fraction;
-            ctx.drawImage(nextImg, drawX, drawY, drawWidth, drawHeight);
-            ctx.globalAlpha = 1.0;
-          } else {
-            preloadImage(nextIndex).catch(() => {});
-          }
-        }
-
         // On mobile view where drawY > 0, feather the top and bottom into the background
         if (drawY > 0 || drawY + drawHeight < canvasHeight) {
-          const featherHeight = Math.round(drawHeight * 0.3);
+          const featherHeight = Math.min(80, Math.round(drawHeight * 0.2));
 
           // Soft top feather into obsidian void
           const topFeather = ctx.createLinearGradient(0, drawY, 0, drawY + featherHeight);
@@ -213,7 +198,7 @@ export default function Home() {
           }
         }
 
-        lastDrawnFrameRef.current = safeFrame;
+        lastDrawnFrameRef.current = targetIndex;
       }
     },
     [preloadImage]
@@ -252,8 +237,8 @@ export default function Home() {
       pump();
     };
 
-    // Setup GSAP tween + ScrollTrigger starting from frame 50 to 233 (total 234 frames)
-    // Using a GSAP tween with scrub ensures updates fire on GSAP's 60fps ticker with smooth sub-frame interpolation
+    // Setup GSAP tween + ScrollTrigger starting from frame 100 to 472 (total 473 frames)
+    // Using a GSAP tween with scrub ensures updates fire on GSAP's 60fps ticker
     const initScrollTrigger = () => {
       if (scrollTriggerInstance) return;
 
@@ -300,11 +285,8 @@ export default function Home() {
         if (isMounted) render(SCROLL_START_FRAME, true);
       });
 
-      queueMicrotask(() => {
-        if (!isMounted) return;
-        setIsLoaded(true);
-        setReady(true);
-      });
+      setIsLoaded(true);
+      setReady(true);
       initScrollTrigger();
       preloadScrollFrames();
 
@@ -326,7 +308,7 @@ export default function Home() {
     const lenis = (window as unknown as { lenis?: { stop: () => void; start: () => void } }).lenis;
     lenis?.stop();
 
-    // Called when frame 50 finishes: reveals all UI elements and sets up ScrollTrigger from frame 50
+    // Called when intro finishes: reveals all UI elements and sets up ScrollTrigger
     const finishIntro = () => {
       if (!isMounted) return;
 
@@ -348,7 +330,7 @@ export default function Home() {
       preloadScrollFrames();
     };
 
-    // Playback loop locked to display refresh rate via performance.now() with sub-frame cross-dissolve
+    // Playback loop locked to display refresh rate via performance.now()
     let introStarted = false;
     const startIntroPlayback = () => {
       if (introStarted || !isMounted) return;
@@ -363,12 +345,14 @@ export default function Home() {
         if (!isMounted) return;
         const elapsed = Math.max(0, now - startTime);
         const progress = Math.min(elapsed / INTRO_DURATION_MS, 1);
-        const floatFrame =
+        const targetFrame =
           INTRO_START_FRAME +
-          progress * (INTRO_END_FRAME - INTRO_START_FRAME);
+          Math.round(progress * (INTRO_END_FRAME - INTRO_START_FRAME));
 
-        frameRef.current = floatFrame;
-        render(floatFrame);
+        if (targetFrame !== frameRef.current) {
+          frameRef.current = targetFrame;
+          render(targetFrame);
+        }
 
         if (progress < 1) {
           introRafId = requestAnimationFrame(tick);
@@ -380,9 +364,9 @@ export default function Home() {
       introRafId = requestAnimationFrame(tick);
     };
 
-    // Preload the first 50 frames (0 to 50) and begin continuous video playback
+    // Preload intro frames (0 to INTRO_END_FRAME) and begin continuous video playback
     let loadedIntroCount = 0;
-    const requiredIntroBuffer = 20; // 20 frames buffer before starting playback
+    const requiredIntroBuffer = Math.min(30, Math.round(INTRO_END_FRAME * 0.4)); // ~30 frames buffer before starting playback
 
     for (let i = INTRO_START_FRAME; i <= INTRO_END_FRAME; i++) {
       preloadImage(i)
