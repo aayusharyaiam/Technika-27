@@ -21,12 +21,9 @@ import {
   ShieldCheck,
   Sparkles,
   User,
-  ExternalLink,
-  Layers,
   Palette,
 } from "lucide-react";
 import { useHouse } from "@/components/house-provider";
-import { HouseCrest } from "@/components/house-crest";
 import {
   houseThemes,
   selectableHouses,

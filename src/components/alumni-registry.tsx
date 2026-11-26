@@ -104,7 +104,7 @@ function RegistrationParchment({ user, authLoading }: { user: User | null; authL
               </div>
               <div className={styles.field}>
                 <div className={styles.fieldLabel}><label htmlFor="alumni-phone">Contact Number</label>{savedPhone && <small><LockKeyhole size={10} />Profile</small>}</div>
-                <input id="alumni-phone" name="phone" type="tel" autoComplete="tel" placeholder="Your contact number" value={savedPhone || draft.phone} onChange={update} readOnly={Boolean(savedPhone)} disabled={loading} required />
+                <input id="alumni-phone" name="phone" type="tel" inputMode="numeric" autoComplete="tel" pattern="[0-9+\-\s]+" maxLength={15} placeholder="e.g. +91 98765 43210" title="Enter a valid phone number (digits only)" value={savedPhone || draft.phone} onChange={(e) => { const val = e.target.value.replace(/[^0-9+\-\s]/g, ''); e.target.value = val; update(e); }} readOnly={Boolean(savedPhone)} disabled={loading} required />
               </div>
               <div className={`${styles.field} ${styles.fullField}`}>
                 <div className={styles.fieldLabel}><label htmlFor="alumni-email">Email Address</label>{savedEmail && <small><LockKeyhole size={10} />Account record</small>}</div>

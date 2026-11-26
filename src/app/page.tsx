@@ -19,7 +19,8 @@ const INTRO_START_FRAME = 0;
 const INTRO_END_FRAME = 100; // First ~21% of frames (0 to 100), matching castle reveal across 473 frames
 const SCROLL_START_FRAME = 100;
 const INTRO_FPS = 60; // 60 FPS smoothly matches the new frame density
-const INTRO_DURATION_MS = ((INTRO_END_FRAME - INTRO_START_FRAME) / INTRO_FPS) * 1000; // ~1666ms
+const INTRO_DURATION_MS =
+  ((INTRO_END_FRAME - INTRO_START_FRAME) / INTRO_FPS) * 1000; // ~1666ms
 
 const clampIndex = (i: number): number => {
   if (isNaN(i)) return 0;
@@ -34,11 +35,17 @@ function currentFrame(index: number): string {
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(FRAME_COUNT).fill(null));
-  const frameRef = useRef<number>(isHomeIntroCompleted() ? SCROLL_START_FRAME : INTRO_START_FRAME);
+  const imagesRef = useRef<(HTMLImageElement | null)[]>(
+    new Array(FRAME_COUNT).fill(null),
+  );
+  const frameRef = useRef<number>(
+    isHomeIntroCompleted() ? SCROLL_START_FRAME : INTRO_START_FRAME,
+  );
   const lastDrawnFrameRef = useRef<number>(-1);
   const tweenRef = useRef<gsap.core.Tween | null>(null);
-  const [isLoaded, setIsLoaded] = useState<boolean>(() => isHomeIntroCompleted());
+  const [isLoaded, setIsLoaded] = useState<boolean>(() =>
+    isHomeIntroCompleted(),
+  );
   const { setReady } = useMagic();
 
   // Resize canvas according to device pixel ratio for sharp rendering without overwhelming GPU.
@@ -61,23 +68,26 @@ export default function Home() {
   }, []);
 
   // Preload and decode a single frame off-thread so drawImage doesn't hitch
-  const preloadImage = useCallback((index: number): Promise<HTMLImageElement> => {
-    const safeIndex = clampIndex(index);
-    const existing = imagesRef.current[safeIndex];
-    if (existing && existing.complete && existing.naturalWidth > 0) {
-      return Promise.resolve(existing);
-    }
-    const img = existing || new Image();
-    if (!existing) {
-      img.decoding = "async";
-      img.src = currentFrame(safeIndex);
-      imagesRef.current[safeIndex] = img;
-    }
-    return img
-      .decode()
-      .then(() => img)
-      .catch(() => img);
-  }, []);
+  const preloadImage = useCallback(
+    (index: number): Promise<HTMLImageElement> => {
+      const safeIndex = clampIndex(index);
+      const existing = imagesRef.current[safeIndex];
+      if (existing && existing.complete && existing.naturalWidth > 0) {
+        return Promise.resolve(existing);
+      }
+      const img = existing || new Image();
+      if (!existing) {
+        img.decoding = "async";
+        img.src = currentFrame(safeIndex);
+        imagesRef.current[safeIndex] = img;
+      }
+      return img
+        .decode()
+        .then(() => img)
+        .catch(() => img);
+    },
+    [],
+  );
 
   // Render the given discrete frame at 100% opacity using aspect-ratio cover math (no translucent blending)
   const render = useCallback(
@@ -87,7 +97,8 @@ export default function Home() {
       const ctx = canvas.getContext("2d", { alpha: false });
       if (!ctx) return;
 
-      const rawFrame = targetFrame !== undefined ? targetFrame : frameRef.current;
+      const rawFrame =
+        targetFrame !== undefined ? targetFrame : frameRef.current;
       const safeFrame = isNaN(rawFrame)
         ? 0
         : Math.max(0, Math.min(FRAME_COUNT - 1, rawFrame));
@@ -107,12 +118,20 @@ export default function Home() {
         preloadImage(targetIndex).catch(() => {});
         for (let offset = 1; offset < FRAME_COUNT; offset++) {
           const lower = targetIndex - offset;
-          if (lower >= 0 && imagesRef.current[lower]?.complete && imagesRef.current[lower]!.naturalWidth > 0) {
+          if (
+            lower >= 0 &&
+            imagesRef.current[lower]?.complete &&
+            imagesRef.current[lower]!.naturalWidth > 0
+          ) {
             baseImg = imagesRef.current[lower];
             break;
           }
           const higher = targetIndex + offset;
-          if (higher < FRAME_COUNT && imagesRef.current[higher]?.complete && imagesRef.current[higher]!.naturalWidth > 0) {
+          if (
+            higher < FRAME_COUNT &&
+            imagesRef.current[higher]?.complete &&
+            imagesRef.current[higher]!.naturalWidth > 0
+          ) {
             baseImg = imagesRef.current[higher];
             break;
           }
@@ -167,7 +186,12 @@ export default function Home() {
           const featherHeight = Math.min(80, Math.round(drawHeight * 0.2));
 
           // Soft top feather into obsidian void
-          const topFeather = ctx.createLinearGradient(0, drawY, 0, drawY + featherHeight);
+          const topFeather = ctx.createLinearGradient(
+            0,
+            drawY,
+            0,
+            drawY + featherHeight,
+          );
           topFeather.addColorStop(0, "rgba(5, 5, 8, 1)");
           topFeather.addColorStop(1, "rgba(5, 5, 8, 0)");
           ctx.fillStyle = topFeather;
@@ -178,12 +202,17 @@ export default function Home() {
             0,
             drawY + drawHeight - featherHeight,
             0,
-            drawY + drawHeight
+            drawY + drawHeight,
           );
           bottomFeather.addColorStop(0, "rgba(5, 5, 8, 0)");
           bottomFeather.addColorStop(1, "rgba(5, 5, 8, 1)");
           ctx.fillStyle = bottomFeather;
-          ctx.fillRect(0, drawY + drawHeight - featherHeight, canvasWidth, featherHeight);
+          ctx.fillRect(
+            0,
+            drawY + drawHeight - featherHeight,
+            canvasWidth,
+            featherHeight,
+          );
 
           // Solid background fill for any empty area above image
           if (drawY > 0) {
@@ -194,14 +223,19 @@ export default function Home() {
           // Solid background fill for any empty area below image
           if (drawY + drawHeight < canvasHeight) {
             ctx.fillStyle = "rgba(5, 5, 8, 1)";
-            ctx.fillRect(0, drawY + drawHeight, canvasWidth, canvasHeight - (drawY + drawHeight));
+            ctx.fillRect(
+              0,
+              drawY + drawHeight,
+              canvasWidth,
+              canvasHeight - (drawY + drawHeight),
+            );
           }
         }
 
         lastDrawnFrameRef.current = targetIndex;
       }
     },
-    [preloadImage]
+    [preloadImage],
   );
 
   useEffect(() => {
@@ -305,7 +339,9 @@ export default function Home() {
     window.addEventListener("wheel", preventScroll, { passive: false });
     window.addEventListener("touchmove", preventScroll, { passive: false });
 
-    const lenis = (window as unknown as { lenis?: { stop: () => void; start: () => void } }).lenis;
+    const lenis = (
+      window as unknown as { lenis?: { stop: () => void; start: () => void } }
+    ).lenis;
     lenis?.stop();
 
     // Called when intro finishes: reveals all UI elements and sets up ScrollTrigger

@@ -10,6 +10,7 @@ import {
   BookOpen,
   CalendarDays,
   Compass,
+  LockKeyhole,
   MapPin,
   Sparkles,
   TrainFront,
@@ -113,39 +114,6 @@ function useJourneyMotion(ref: React.RefObject<HTMLElement | null>) {
   }, [ref]);
 }
 
-function StationArt() {
-  return (
-    <div className="station-art" aria-hidden="true">
-      <div className="station-arch station-arch-one">
-        <span />
-      </div>
-      <div className="station-arch station-arch-two">
-        <span />
-      </div>
-      <div className="station-sign">
-        <small>PLATFORM</small>
-        <strong>9¾</strong>
-        <span>THE NEXT CHAPTER</span>
-      </div>
-      <div className="station-lamp station-lamp-one">
-        <i />
-      </div>
-      <div className="station-lamp station-lamp-two">
-        <i />
-      </div>
-      <div className="station-tracks">
-        <span />
-        <span />
-      </div>
-      <div className="journey-steam">
-        <i />
-        <i />
-        <i />
-        <i />
-      </div>
-    </div>
-  );
-}
 
 export function WizardingJourney() {
   const ref = useRef<HTMLElement>(null);
@@ -347,9 +315,49 @@ export function WizardingCampus() {
   );
 }
 
+export function WizardingSponsors() {
+  return (
+    <section id="sponsors" className="section wizarding-sponsors !bg-transparent">
+      <div className="shell">
+        <Reveal className="sponsors-heading">
+          <div>
+            <Eyebrow>The coalition</Eyebrow>
+            <h2>Great things are<br /><em>never solo magic.</em></h2>
+          </div>
+          <p>
+            The partners, mentors, and believers helping Technika turn a bold idea
+            into a room full of possibility.
+          </p>
+        </Reveal>
+
+        <Reveal className="sponsors-coming-soon">
+          <div className="coming-soon-icon">
+            <Sparkles size={48} strokeWidth={1} />
+          </div>
+          <p>Official partners and sponsors will be announced soon.</p>
+          <span className="soon-badge"><LockKeyhole size={12} />Partner announcements coming soon<i /></span>
+        </Reveal>
+
+        <Reveal className="sponsors-cta">
+          <div>
+            <span className="sponsors-cta-kicker">Build the next chapter</span>
+            <h3>Bring your name to the platform.</h3>
+            <p>Partnerships, ideas, and a little bit of beautifully organised chaos.</p>
+          </div>
+          <Link href="/contact" className="button button-gold">
+            Become a partner <ArrowRight size={16} />
+          </Link>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+/*
+// ORIGINAL SPONSORS CODE - Commented out for coming soon
 const partners = ["GAIL", "PANIKA", "tiqr event", "ADBARK THREADS", "unique PATNA", "Jio Saavn"];
 
-export function WizardingSponsors() {
+export function WizardingSponsorsOriginal() {
   return (
     <section id="sponsors" className="section wizarding-sponsors !bg-transparent">
       <div className="shell">
@@ -389,6 +397,7 @@ export function WizardingSponsors() {
     </section>
   );
 }
+*/
 
 export function WizardingInvitation() {
   return (

@@ -112,6 +112,7 @@ export function HouseSwitcher() {
         aria-expanded={open}
         aria-label="Change house"
         onClick={() => setOpen((value) => !value)}
+        suppressHydrationWarning
         className="group inline-flex items-center gap-2 rounded-full border border-brand/40 bg-surface/90 px-3 py-2.5 text-left shadow-lg backdrop-blur-xl transition-colors hover:border-brand hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-ring"
       >
         <span className="grid h-7 w-7 place-items-center rounded-full bg-brand-soft text-fg-brand" aria-hidden="true">
