@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { gsap, ScrollTrigger } from "@/components/SmoothScroll";
 import { useMagic } from "@/components/experience";
-import { isHomeIntroCompleted, setHomeIntroCompleted } from "@/lib/intro-state";
+import { setHomeIntroCompleted } from "@/lib/intro-state";
 import { Hero } from "@/components/hero";
 import { Timeline } from "@/components/timeline";
 import {
@@ -14,460 +13,380 @@ import {
   WizardingSponsors,
 } from "@/components/wizarding-home";
 
-const FRAME_COUNT = 473;
-const INTRO_START_FRAME = 0;
-const INTRO_END_FRAME = 100; // First ~21% of frames (0 to 100), matching castle reveal across 473 frames
-const SCROLL_START_FRAME = 100;
-const INTRO_FPS = 60; // 60 FPS smoothly matches the new frame density
-const INTRO_DURATION_MS =
-  ((INTRO_END_FRAME - INTRO_START_FRAME) / INTRO_FPS) * 1000; // ~1666ms
+import { useMotionValueEvent, useScroll, useSpring } from "motion/react";
+import { CDN_BASE_URL, FRAME_CONFIG, ANIMATION_CONFIG } from "@/lib/config";
 
-const clampIndex = (i: number): number => {
-  if (isNaN(i)) return 0;
-  return Math.max(0, Math.min(FRAME_COUNT - 1, Math.floor(i)));
-};
+const {
+  COUNT: FRAME_COUNT,
+  DPR_LIMIT,
+  START_FRAME = 120,
+  END_FRAME = 473,
+} = FRAME_CONFIG;
+const { LERP_FACTOR, LERP_THRESHOLD, SPRING: SPRING_CONFIG } = ANIMATION_CONFIG;
 
-function currentFrame(index: number): string {
-  const safeIndex = clampIndex(index);
-  const padded = String(safeIndex + 1).padStart(5, "0");
-  return `/images/frames/${padded}.jpg`;
+function pad5(n: number): string {
+  return String(n).padStart(5, "0");
+}
+
+function getWebpSrc(i: number): string {
+  const base = CDN_BASE_URL.replace(/\/+$/, "");
+  const normalizedBase =
+    base.startsWith("http") || base.startsWith("/") ? base : `/${base}`;
+  return `${normalizedBase}/${pad5(i + 1)}.webp`;
+}
+
+function calculateCoverFit(
+  canvasWidth: number,
+  canvasHeight: number,
+  imageWidth: number,
+  imageHeight: number,
+  dpr: number,
+) {
+  const cw = canvasWidth / dpr;
+  const ch = canvasHeight / dpr;
+  const canvasAR = cw / ch;
+  const imgAR = imageWidth / imageHeight;
+
+  let dw: number;
+  let dh: number;
+
+  if (canvasAR > imgAR) {
+    // Canvas is wider than image (landscape/ultrawide)
+    dw = cw;
+    dh = cw / imgAR;
+  } else {
+    // Canvas is taller than image (mobile portrait / tablet): cover 100% height with NO vertical gaps
+    dh = ch;
+    dw = ch * imgAR;
+  }
+
+  // Exact center cropping with ceil/floor to avoid sub-pixel gaps
+  const x = Math.floor((cw - dw) / 2);
+  const y = Math.floor((ch - dh) / 2);
+
+  return { width: Math.ceil(dw), height: Math.ceil(dh), x, y };
+}
+
+function drawImageToCanvas(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  img: HTMLImageElement | undefined,
+  dprLimit: number,
+) {
+  const dpr = Math.min(window.devicePixelRatio || 1, dprLimit);
+  const cw = canvas.width / dpr;
+  const ch = canvas.height / dpr;
+
+  if (!img || !img.complete || !img.naturalWidth || !img.naturalHeight) {
+    ctx.fillStyle = "#050505";
+    ctx.fillRect(0, 0, cw, ch);
+    return;
+  }
+
+  const fit = calculateCoverFit(
+    canvas.width,
+    canvas.height,
+    img.naturalWidth,
+    img.naturalHeight,
+    dpr,
+  );
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "medium";
+  ctx.drawImage(img, fit.x, fit.y, fit.width, fit.height);
+}
+
+function preloadFrame(
+  i: number,
+  imagesRef: React.MutableRefObject<(HTMLImageElement | undefined)[]>,
+): Promise<HTMLImageElement> {
+  const safeIndex = Math.max(0, Math.min(FRAME_COUNT - 1, i));
+  const existing = imagesRef.current[safeIndex];
+  if (existing && existing.complete && existing.naturalWidth > 0) {
+    return Promise.resolve(existing);
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = getWebpSrc(safeIndex);
+
+    img.onload = () => {
+      imagesRef.current[safeIndex] = img;
+      if ("decode" in img) {
+        img
+          .decode()
+          .catch(() => {})
+          .finally(() => resolve(img));
+      } else {
+        resolve(img);
+      }
+    };
+
+    img.onerror = () => {
+      resolve(img);
+    };
+  });
+}
+
+function startProgressivePreload(
+  imagesRef: React.MutableRefObject<(HTMLImageElement | undefined)[]>,
+  startFrame: number,
+  onFirstLoaded: () => void,
+  cancelledRef: { current: boolean },
+) {
+  // Phase 1: Immediately fetch initial 25 forward frames with high priority
+  const priorityCount = 25;
+  let firstBatchLoaded = 0;
+
+  for (let i = 0; i < priorityCount; i++) {
+    const idx = startFrame + i;
+    if (idx < FRAME_COUNT) {
+      preloadFrame(idx, imagesRef).then(() => {
+        if (cancelledRef.current) return;
+        firstBatchLoaded++;
+        if (firstBatchLoaded === 1) {
+          onFirstLoaded();
+        }
+      });
+    }
+  }
+
+  // Phase 2: Background concurrent stream for remaining forward frames
+  const queue: number[] = [];
+  for (let i = startFrame + priorityCount; i < FRAME_COUNT; i++) {
+    queue.push(i);
+  }
+  for (let i = startFrame - 1; i >= 0; i--) {
+    queue.push(i);
+  }
+
+  const CONCURRENCY = 6;
+  let qIndex = 0;
+
+  async function worker() {
+    while (qIndex < queue.length && !cancelledRef.current) {
+      const idx = queue[qIndex++];
+      await preloadFrame(idx, imagesRef);
+    }
+  }
+
+  setTimeout(() => {
+    if (cancelledRef.current) return;
+    for (let c = 0; c < CONCURRENCY; c++) {
+      worker();
+    }
+  }, 80);
 }
 
 export default function Home() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imagesRef = useRef<(HTMLImageElement | null)[]>(
-    new Array(FRAME_COUNT).fill(null),
-  );
-  const frameRef = useRef<number>(
-    isHomeIntroCompleted() ? SCROLL_START_FRAME : INTRO_START_FRAME,
-  );
+  const sectionRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const imagesRef = useRef<(HTMLImageElement | undefined)[]>([]);
+  const targetFrameRef = useRef<number>(START_FRAME);
+  const currentFrameRef = useRef<number>(START_FRAME);
   const lastDrawnFrameRef = useRef<number>(-1);
-  const tweenRef = useRef<gsap.core.Tween | null>(null);
-  const [isLoaded, setIsLoaded] = useState<boolean>(() =>
-    isHomeIntroCompleted(),
-  );
+  const rafRef = useRef<number | null>(null);
+
+  const [loaded, setLoaded] = useState(false);
   const { setReady } = useMagic();
 
-  // Resize canvas according to device pixel ratio for sharp rendering without overwhelming GPU.
-  // Smoothly accommodates mobile viewport changes while ignoring minor URL address-bar fluctuations.
-  const setCanvasSize = useCallback(() => {
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end end"],
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, SPRING_CONFIG);
+
+  const drawFrame = useCallback((index: number) => {
+    const ctx = ctxRef.current;
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
-    const targetWidth = Math.round(window.innerWidth * pixelRatio);
-    const targetHeight = Math.round(window.innerHeight * pixelRatio);
+    if (!ctx || !canvas) return;
 
-    const widthChanged = Math.abs(canvas.width - targetWidth) > 4;
-    const heightChanged = Math.abs(canvas.height - targetHeight) > 100;
+    let img = imagesRef.current[index];
+    if (!img || !img.complete || img.naturalWidth === 0) {
+      for (let offset = 1; offset < FRAME_COUNT; offset++) {
+        const lower = index - offset;
+        if (
+          lower >= 0 &&
+          imagesRef.current[lower]?.complete &&
+          imagesRef.current[lower]!.naturalWidth > 0
+        ) {
+          img = imagesRef.current[lower];
+          break;
+        }
+        const higher = index + offset;
+        if (
+          higher < FRAME_COUNT &&
+          imagesRef.current[higher]?.complete &&
+          imagesRef.current[higher]!.naturalWidth > 0
+        ) {
+          img = imagesRef.current[higher];
+          break;
+        }
+      }
+    }
 
-    if (canvas.width === 0 || widthChanged || heightChanged) {
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-      lastDrawnFrameRef.current = -1; // Force redraw on meaningful resize
+    drawImageToCanvas(ctx, canvas, img, DPR_LIMIT);
+  }, []);
+
+  const lookaheadBuffer = useCallback((centerFrame: number) => {
+    const ahead = 20;
+    for (let offset = 1; offset <= ahead; offset++) {
+      const idx = centerFrame + offset;
+      if (idx < FRAME_COUNT && !imagesRef.current[idx]) {
+        preloadFrame(idx, imagesRef);
+      }
     }
   }, []);
 
-  // Preload and decode a single frame off-thread so drawImage doesn't hitch
-  const preloadImage = useCallback(
-    (index: number): Promise<HTMLImageElement> => {
-      const safeIndex = clampIndex(index);
-      const existing = imagesRef.current[safeIndex];
-      if (existing && existing.complete && existing.naturalWidth > 0) {
-        return Promise.resolve(existing);
-      }
-      const img = existing || new Image();
-      if (!existing) {
-        img.decoding = "async";
-        img.src = currentFrame(safeIndex);
-        imagesRef.current[safeIndex] = img;
-      }
-      return img
-        .decode()
-        .then(() => img)
-        .catch(() => img);
-    },
-    [],
-  );
-
-  // Render the given discrete frame at 100% opacity using aspect-ratio cover math (no translucent blending)
-  const render = useCallback(
-    (targetFrame?: number, force = false) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d", { alpha: false });
-      if (!ctx) return;
-
-      const rawFrame =
-        targetFrame !== undefined ? targetFrame : frameRef.current;
-      const safeFrame = isNaN(rawFrame)
-        ? 0
-        : Math.max(0, Math.min(FRAME_COUNT - 1, rawFrame));
-      const targetIndex = clampIndex(Math.round(safeFrame));
-
-      if (!force && targetIndex === lastDrawnFrameRef.current) {
-        return; // Skip duplicate redraws when the frame hasn't changed
-      }
-
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      if (canvasWidth === 0 || canvasHeight === 0) return;
-
-      // Base image
-      let baseImg = imagesRef.current[targetIndex];
-      if (!baseImg || !baseImg.complete || baseImg.naturalWidth === 0) {
-        preloadImage(targetIndex).catch(() => {});
-        for (let offset = 1; offset < FRAME_COUNT; offset++) {
-          const lower = targetIndex - offset;
-          if (
-            lower >= 0 &&
-            imagesRef.current[lower]?.complete &&
-            imagesRef.current[lower]!.naturalWidth > 0
-          ) {
-            baseImg = imagesRef.current[lower];
-            break;
-          }
-          const higher = targetIndex + offset;
-          if (
-            higher < FRAME_COUNT &&
-            imagesRef.current[higher]?.complete &&
-            imagesRef.current[higher]!.naturalWidth > 0
-          ) {
-            baseImg = imagesRef.current[higher];
-            break;
-          }
-        }
-      }
-
-      if (baseImg && baseImg.complete && baseImg.naturalWidth > 0) {
-        const imageAspect = baseImg.naturalWidth / baseImg.naturalHeight;
-        const canvasAspect = canvasWidth / canvasHeight;
-        let drawWidth: number;
-        let drawHeight: number;
-        let drawX: number;
-        let drawY: number;
-
-        // Minimum width of the video that must be visible (at least 55% visible width on mobile)
-        const MIN_VISIBLE_WIDTH_FRACTION = 0.55;
-
-        // In standard cover mode, what fraction of the video's width would be visible?
-        const standardCoverWidth = canvasHeight * imageAspect;
-        const visibleWidthFraction = canvasWidth / standardCoverWidth;
-
-        if (visibleWidthFraction < MIN_VISIBLE_WIDTH_FRACTION) {
-          // Mobile Portrait View: Ensure more than half (>55%) of the video width is visible
-          drawWidth = Math.round(canvasWidth / MIN_VISIBLE_WIDTH_FRACTION);
-          drawHeight = Math.round(drawWidth / imageAspect);
-          drawX = Math.round((canvasWidth - drawWidth) / 2);
-          drawY = Math.round((canvasHeight - drawHeight) * 0.45);
-        } else {
-          // Desktop / Tablet Landscape View: standard cover mode
-          if (imageAspect > canvasAspect) {
-            drawHeight = canvasHeight;
-            drawWidth = drawHeight * imageAspect;
-            drawX = (canvasWidth - drawWidth) / 2;
-            drawY = 0;
-          } else {
-            drawWidth = canvasWidth;
-            drawHeight = drawWidth / imageAspect;
-            drawX = 0;
-            drawY = (canvasHeight - drawHeight) / 2;
-          }
-        }
-
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "medium";
-
-        // Draw image fully opaque - NO translucent opacity fading
-        ctx.globalAlpha = 1.0;
-        ctx.drawImage(baseImg, drawX, drawY, drawWidth, drawHeight);
-
-        // On mobile view where drawY > 0, feather the top and bottom into the background
-        if (drawY > 0 || drawY + drawHeight < canvasHeight) {
-          const featherHeight = Math.min(80, Math.round(drawHeight * 0.2));
-
-          // Soft top feather into obsidian void
-          const topFeather = ctx.createLinearGradient(
-            0,
-            drawY,
-            0,
-            drawY + featherHeight,
-          );
-          topFeather.addColorStop(0, "rgba(5, 5, 8, 1)");
-          topFeather.addColorStop(1, "rgba(5, 5, 8, 0)");
-          ctx.fillStyle = topFeather;
-          ctx.fillRect(0, drawY, canvasWidth, featherHeight);
-
-          // Soft bottom feather into obsidian void
-          const bottomFeather = ctx.createLinearGradient(
-            0,
-            drawY + drawHeight - featherHeight,
-            0,
-            drawY + drawHeight,
-          );
-          bottomFeather.addColorStop(0, "rgba(5, 5, 8, 0)");
-          bottomFeather.addColorStop(1, "rgba(5, 5, 8, 1)");
-          ctx.fillStyle = bottomFeather;
-          ctx.fillRect(
-            0,
-            drawY + drawHeight - featherHeight,
-            canvasWidth,
-            featherHeight,
-          );
-
-          // Solid background fill for any empty area above image
-          if (drawY > 0) {
-            ctx.fillStyle = "rgba(5, 5, 8, 1)";
-            ctx.fillRect(0, 0, canvasWidth, drawY);
-          }
-
-          // Solid background fill for any empty area below image
-          if (drawY + drawHeight < canvasHeight) {
-            ctx.fillStyle = "rgba(5, 5, 8, 1)";
-            ctx.fillRect(
-              0,
-              drawY + drawHeight,
-              canvasWidth,
-              canvasHeight - (drawY + drawHeight),
-            );
-          }
-        }
-
-        lastDrawnFrameRef.current = targetIndex;
-      }
-    },
-    [preloadImage],
-  );
-
   useEffect(() => {
-    let isMounted = true;
-    let introRafId = 0;
-    let scrollTriggerInstance: ScrollTrigger | null = null;
-    let preventScrollActive = false;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    setCanvasSize();
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) return;
+    ctxRef.current = ctx;
 
-    // Prevent scrolling while intro video is playing
-    const preventScroll = (e: Event) => {
-      e.preventDefault();
-    };
-
-    // Pipelined background preloader for scroll frames (controlled concurrency so TCP sockets aren't starved)
-    const preloadScrollFrames = () => {
-      let nextIndex = SCROLL_START_FRAME;
-      const CONCURRENCY = 6;
-      let activeRequests = 0;
-
-      const pump = () => {
-        if (!isMounted || nextIndex >= FRAME_COUNT) return;
-        while (activeRequests < CONCURRENCY && nextIndex < FRAME_COUNT) {
-          const idx = nextIndex++;
-          activeRequests++;
-          preloadImage(idx).finally(() => {
-            activeRequests--;
-            pump();
-          });
-        }
-      };
-      pump();
-    };
-
-    // Setup GSAP tween + ScrollTrigger starting from frame 100 to 472 (total 473 frames)
-    // Using a GSAP tween with scrub ensures updates fire on GSAP's 60fps ticker
-    const initScrollTrigger = () => {
-      if (scrollTriggerInstance) return;
-
-      const triggerEl = document.querySelector(".home-page") || document.body;
-      const frameObj = { frame: SCROLL_START_FRAME };
-
-      const tween = gsap.to(frameObj, {
-        frame: FRAME_COUNT - 1,
-        ease: "none",
-        scrollTrigger: {
-          trigger: triggerEl,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 0.35, // Responsive, buttery smooth catch-up on both mobile touch and desktop wheel
-        },
-        onUpdate: () => {
-          if (!isMounted) return;
-          frameRef.current = frameObj.frame;
-          render(frameObj.frame);
-        },
-      });
-
-      tweenRef.current = tween;
-      scrollTriggerInstance = tween.scrollTrigger as ScrollTrigger;
-
-      setTimeout(() => {
-        ScrollTrigger.refresh();
-      }, 150);
-    };
-
-    // Window resize handler
     const handleResize = () => {
-      setCanvasSize();
-      render(frameRef.current, true);
+      const dpr = Math.min(window.devicePixelRatio || 1, DPR_LIMIT);
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      canvas.width = Math.floor(vw * dpr);
+      canvas.height = Math.floor(vh * dpr);
+      canvas.style.width = "100%";
+      canvas.style.height = "100%";
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawFrame(Math.round(currentFrameRef.current));
     };
+
+    handleResize();
     window.addEventListener("resize", handleResize);
-
-    // =========================================================================
-    // BRANCH 1: Returning via link tag / redirect (Intro already completed)
-    // =========================================================================
-    if (isHomeIntroCompleted()) {
-      frameRef.current = SCROLL_START_FRAME;
-      preloadImage(SCROLL_START_FRAME).then(() => {
-        if (isMounted) render(SCROLL_START_FRAME, true);
-      });
-
-      setIsLoaded(true);
-      setReady(true);
-      initScrollTrigger();
-      preloadScrollFrames();
-
-      return () => {
-        isMounted = false;
-        window.removeEventListener("resize", handleResize);
-        tweenRef.current?.kill();
-        scrollTriggerInstance?.kill();
-      };
-    }
-
-    // =========================================================================
-    // BRANCH 2: Loaded for 1st time or refreshed at home page
-    // =========================================================================
-    preventScrollActive = true;
-    window.addEventListener("wheel", preventScroll, { passive: false });
-    window.addEventListener("touchmove", preventScroll, { passive: false });
-
-    const lenis = (
-      window as unknown as { lenis?: { stop: () => void; start: () => void } }
-    ).lenis;
-    lenis?.stop();
-
-    // Called when intro finishes: reveals all UI elements and sets up ScrollTrigger
-    const finishIntro = () => {
-      if (!isMounted) return;
-
-      if (preventScrollActive) {
-        preventScrollActive = false;
-        window.removeEventListener("wheel", preventScroll);
-        window.removeEventListener("touchmove", preventScroll);
-      }
-      lenis?.start();
-
-      setHomeIntroCompleted(true);
-
-      frameRef.current = SCROLL_START_FRAME;
-      render(SCROLL_START_FRAME, true);
-
-      setIsLoaded(true);
-      setReady(true);
-      initScrollTrigger();
-      preloadScrollFrames();
-    };
-
-    // Playback loop locked to display refresh rate via performance.now()
-    let introStarted = false;
-    const startIntroPlayback = () => {
-      if (introStarted || !isMounted) return;
-      introStarted = true;
-
-      frameRef.current = INTRO_START_FRAME;
-      render(INTRO_START_FRAME, true);
-
-      const startTime = performance.now();
-
-      const tick = (now: number) => {
-        if (!isMounted) return;
-        const elapsed = Math.max(0, now - startTime);
-        const progress = Math.min(elapsed / INTRO_DURATION_MS, 1);
-        const targetFrame =
-          INTRO_START_FRAME +
-          Math.round(progress * (INTRO_END_FRAME - INTRO_START_FRAME));
-
-        if (targetFrame !== frameRef.current) {
-          frameRef.current = targetFrame;
-          render(targetFrame);
-        }
-
-        if (progress < 1) {
-          introRafId = requestAnimationFrame(tick);
-        } else {
-          finishIntro();
-        }
-      };
-
-      introRafId = requestAnimationFrame(tick);
-    };
-
-    // Preload intro frames (0 to INTRO_END_FRAME) and begin continuous video playback
-    let loadedIntroCount = 0;
-    const requiredIntroBuffer = Math.min(30, Math.round(INTRO_END_FRAME * 0.4)); // ~30 frames buffer before starting playback
-
-    for (let i = INTRO_START_FRAME; i <= INTRO_END_FRAME; i++) {
-      preloadImage(i)
-        .then(() => {
-          loadedIntroCount++;
-          if (loadedIntroCount >= requiredIntroBuffer && !introStarted) {
-            startIntroPlayback();
-          }
-        })
-        .catch(() => {
-          loadedIntroCount++;
-          if (loadedIntroCount >= requiredIntroBuffer && !introStarted) {
-            startIntroPlayback();
-          }
-        });
-    }
-
-    // Safety fallback: start playback within 400ms even on slower connections
-    const fallbackTimer = setTimeout(() => {
-      if (!introStarted && isMounted) {
-        startIntroPlayback();
-      }
-    }, 400);
+    window.addEventListener("orientationchange", handleResize);
 
     return () => {
-      isMounted = false;
-      clearTimeout(fallbackTimer);
-      cancelAnimationFrame(introRafId);
-      if (preventScrollActive) {
-        window.removeEventListener("wheel", preventScroll);
-        window.removeEventListener("touchmove", preventScroll);
-      }
       window.removeEventListener("resize", handleResize);
-      lenis?.start();
-      tweenRef.current?.kill();
-      scrollTriggerInstance?.kill();
+      window.removeEventListener("orientationchange", handleResize);
     };
-  }, [preloadImage, render, setCanvasSize, setReady]);
+  }, [drawFrame]);
+
+  useEffect(() => {
+    const cancelledRef = { current: false };
+    imagesRef.current = new Array(FRAME_COUNT);
+
+    startProgressivePreload(
+      imagesRef,
+      START_FRAME,
+      () => {
+        if (cancelledRef.current) return;
+        drawFrame(START_FRAME);
+        setLoaded(true);
+        setReady(true);
+        setHomeIntroCompleted(true);
+      },
+      cancelledRef,
+    );
+
+    const fallbackTimer = setTimeout(() => {
+      if (cancelledRef.current) return;
+      setLoaded(true);
+      setReady(true);
+      setHomeIntroCompleted(true);
+      drawFrame(START_FRAME);
+    }, 1200);
+
+    return () => {
+      cancelledRef.current = true;
+      clearTimeout(fallbackTimer);
+    };
+  }, [drawFrame, setReady]);
+
+  useMotionValueEvent(smoothProgress, "change", (v) => {
+    const nextTarget = Math.max(
+      0,
+      Math.min(FRAME_COUNT - 1, START_FRAME + v * (END_FRAME - START_FRAME)),
+    );
+    targetFrameRef.current = nextTarget;
+    lookaheadBuffer(Math.round(nextTarget));
+  });
+
+  useEffect(() => {
+    const tick = () => {
+      const curr = currentFrameRef.current;
+      const target = targetFrameRef.current;
+      const diff = target - curr;
+
+      if (Math.abs(diff) > LERP_THRESHOLD) {
+        const step = diff * LERP_FACTOR;
+        const next = Math.abs(diff) < 0.005 ? target : curr + step;
+        currentFrameRef.current = next;
+
+        const nextFrame = Math.round(next);
+        if (nextFrame !== lastDrawnFrameRef.current) {
+          drawFrame(nextFrame);
+          lastDrawnFrameRef.current = nextFrame;
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [drawFrame]);
 
   return (
-    <div className="home-page home-atelier">
-      {/* Pinned background canvas layer directly on home page */}
+    <div
+      ref={sectionRef}
+      className="relative w-full min-h-screen home-page home-atelier bg-transparent"
+      data-home-ready="true"
+      data-lenis-prevent
+    >
+      {/* Background Frame Sequence Canvas - stays permanently locked in viewport behind all sections */}
       <div
         className="home-canvas-layer fixed inset-0 z-0 pointer-events-none overflow-hidden"
-        data-ready={isLoaded}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: "100vw",
+          height: "100dvh",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
         aria-hidden="true"
       >
         <canvas
           ref={canvasRef}
-          className="wizarding-canvas block h-full w-full object-cover"
+          className="wizarding-canvas block h-full w-full"
+          style={{ width: "100%", height: "100%", display: "block" }}
         />
-        {/* Subtle cinematic gradient vignette for phone & desktop text readability */}
+
+        {/* Ambient subtle vignette overlay to match dark wizarding theme */}
         <div
-          className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/55 via-transparent to-black/65"
-          aria-hidden="true"
+          aria-hidden
+          className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none"
         />
       </div>
 
-      <Hero />
-      <WizardingJourney />
-      <Timeline />
-      <WizardingManifesto />
-      <WizardingCampus />
-      <WizardingSponsors />
-      <WizardingInvitation />
+      {/* Page Content */}
+      <div className="relative z-10 w-full pointer-events-auto">
+        <Hero />
+        <WizardingJourney />
+        <Timeline />
+        <WizardingManifesto />
+        <WizardingCampus />
+        <WizardingSponsors />
+        <WizardingInvitation />
+      </div>
     </div>
   );
 }

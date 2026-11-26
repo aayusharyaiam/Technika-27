@@ -12,17 +12,16 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // 1. Initialize Lenis instance with super smooth scrolling settings
+    // 1. Initialize Lenis instance with smooth transition inertia delay to reduce jitter
     const lenis = new Lenis({
-      duration: 1.4,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      lerp: 0.075, // Adds a smooth transition inertia delay (~400ms settling time) to absorb wheel notches and eliminate jitter
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
-      syncTouch: false,
+      syncTouch: false, // Maintain native touch momentum on touchscreens/trackpads without competing
       autoResize: true,
-      wheelMultiplier: 1.0,
-      touchMultiplier: 1.5,
+      wheelMultiplier: 0.88, // Soften mouse-wheel notch velocity spikes
+      touchMultiplier: 1.2,
     });
 
     lenisRef.current = lenis;
@@ -56,7 +55,9 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
 
     // 5. Cleanup
     return () => {
-      document.removeEventListener("click", handleAnchorClick, { capture: true });
+      document.removeEventListener("click", handleAnchorClick, {
+        capture: true,
+      });
       gsap.ticker.remove(updateTicker);
       lenis.off("scroll", ScrollTrigger.update);
       lenis.destroy();

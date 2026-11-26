@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import { Experience } from "@/components/experience";
@@ -91,8 +90,8 @@ export const metadata: Metadata = {
   referrer: "origin-when-cross-origin",
   formatDetection: { email: false, address: false, telephone: false },
   icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/apple-icon.png", type: "image/png" }],
+    icon: [{ url: "/images/hufflepuff.png", type: "image/png" }],
+    apple: [{ url: "/images/hufflepuff.png", type: "image/png" }],
   },
   alternates: { canonical: absoluteUrl("/") },
   robots: {
@@ -164,9 +163,8 @@ export default function RootLayout({
           href={`${appleIcon}?house=${theme}`}
           type="image/png"
         />
-        <Script
+        <script
           id="restore-house-theme"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: houseBootScript(theme),
           }}
@@ -183,7 +181,7 @@ export default function RootLayout({
             <RegistrationArrivalProvider>
               <SmoothScroll>
                 <Experience
-                  header={<TechnikaNavbar logoSrc="/images/crest.webp" />}
+                  header={<TechnikaNavbar />}
                   footer={<Footer />}
                 >
                   <main id="main-content" tabIndex={-1}>

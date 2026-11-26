@@ -74,14 +74,14 @@ export function houseLogoFor(house: House): string {
   return houseLogoPaths[house];
 }
 
-/** Favicon fallback for the unsorted theme; house themes use their PNG crest. */
+/** Favicon for the house theme (PNG crest). */
 export function houseIconFor(house: House): string {
-  return house === "default" ? "/icon.svg" : houseLogoFor(house);
+  return houseLogoFor(house) || houseLogoPaths.default;
 }
 
-/** Apple touch icon fallback for the unsorted theme; house themes use their PNG crest. */
+/** Apple touch icon for the house theme (PNG crest). */
 export function houseAppleIconFor(house: House): string {
-  return house === "default" ? "/apple-icon.png" : houseLogoFor(house);
+  return houseLogoFor(house) || houseLogoPaths.default;
 }
 
 export function isHouse(value: unknown): value is House {
@@ -114,5 +114,5 @@ export function houseBootScript(
   initialHouse: House = "default",
   preferInitialHouse = false,
 ) {
-  return `try{var serverHouse=${JSON.stringify(initialHouse)};var savedHouse=localStorage.getItem(${JSON.stringify(HOUSE_STORAGE_KEY)});var h=${preferInitialHouse ? "serverHouse" : "savedHouse||serverHouse"};if(${JSON.stringify(Object.keys(houseThemes))}.includes(h)){document.documentElement.dataset.house=h;document.documentElement.dataset.theme=h==="default"?"hogwarts":h}}catch(e){}`;
+  return `try{var serverHouse=${JSON.stringify(initialHouse)};var savedHouse=localStorage.getItem(${JSON.stringify(HOUSE_STORAGE_KEY)});var h=${preferInitialHouse ? "serverHouse" : "savedHouse||serverHouse"};var logos=${JSON.stringify(houseLogoPaths)};if(logos[h]){document.documentElement.dataset.house=h;document.documentElement.dataset.theme=h==="default"?"hogwarts":h;var href=logos[h]+"?house="+h;var icons=document.querySelectorAll("link[rel~='icon']");for(var i=0;i<icons.length;i++){icons[i].href=href;icons[i].type="image/png";}var apples=document.querySelectorAll("link[rel='apple-touch-icon']");for(var j=0;j<apples.length;j++){apples[j].href=href;apples[j].type="image/png";}}}catch(e){}`;
 }

@@ -59,17 +59,20 @@ export function HouseProvider({
     const withHouseCacheKey = (href: string) => `${href}?house=${house}`;
 
     const syncLinks = (selector: string, rel: string, href: string, type?: string) => {
-      const links = [...document.head.querySelectorAll<HTMLLinkElement>(selector)];
-      const targets = links.length > 0 ? links : [document.createElement("link")];
-
-      for (const link of targets) {
-        if (!link.isConnected) {
-          link.rel = rel;
-          document.head.appendChild(link);
-        }
+      const links = Array.from(document.head.querySelectorAll<HTMLLinkElement>(selector));
+      if (links.length === 0) {
+        const link = document.createElement("link");
+        link.rel = rel;
         link.href = withHouseCacheKey(href);
         if (type) link.type = type;
         link.dataset.houseIcon = "true";
+        document.head.appendChild(link);
+      } else {
+        for (const link of links) {
+          link.href = withHouseCacheKey(href);
+          if (type) link.type = type;
+          link.dataset.houseIcon = "true";
+        }
       }
     };
 
