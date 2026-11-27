@@ -1,0 +1,122 @@
+/* ------------------------------------------------------------------
+   Technika loader + navbar – keyframes and state styles.
+   Imported by loader.tsx and navbar.tsx (global CSS, safe to import twice).
+------------------------------------------------------------------- */
+
+/* Wordmark + navbar share the brand font (set --font-brand in layout) */
+.tk-wordmark,
+.tk-nav {
+  font-family:
+    var(--font-brand, "Outfit"), ui-sans-serif, system-ui, sans-serif;
+}
+
+.tk-wordmark {
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  -webkit-text-stroke: 1px transparent;
+}
+
+/* ---------- Intro: outline fades in, then fills with colour ---------- */
+
+@keyframes tk-shape-in {
+  0% {
+    fill-opacity: 0;
+    stroke-opacity: 0;
+  }
+  38% {
+    fill-opacity: 0;
+    stroke-opacity: 0.55;
+  }
+  100% {
+    fill-opacity: 1;
+    stroke-opacity: 0;
+  }
+}
+
+@keyframes tk-word-in {
+  0% {
+    color: transparent;
+    -webkit-text-stroke-color: transparent;
+  }
+  38% {
+    color: transparent;
+    -webkit-text-stroke-color: rgb(255 255 255 / 0.5);
+  }
+  100% {
+    color: #fff;
+    -webkit-text-stroke-color: transparent;
+  }
+}
+
+.tk-loader .tk-shape {
+  animation: tk-shape-in 1.05s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.tk-loader .tk-wordmark {
+  animation: tk-word-in 1.05s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ---------- Glow behind the logo ---------- */
+
+@keyframes tk-glow-in {
+  from {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes tk-glow-breathe {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.72;
+    transform: scale(0.94);
+  }
+}
+
+.tk-glow {
+  transition: opacity 450ms ease;
+}
+
+.tk-glow-core {
+  background: radial-gradient(
+    closest-side,
+    var(--tk-glow) 0%,
+    transparent 100%
+  );
+  animation:
+    tk-glow-in 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) 0.35s both,
+    tk-glow-breathe 2.8s ease-in-out 1.75s infinite;
+}
+
+/* ---------- Hand-off: logo flies to the navbar ---------- */
+
+.tk-loader-brand {
+  will-change: transform;
+}
+
+.tk-loader[data-phase="fly"] .tk-loader-bg {
+  opacity: 0;
+  transition: opacity 650ms ease 150ms;
+}
+
+.tk-loader[data-phase="fly"] .tk-glow {
+  opacity: 0;
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-loader .tk-shape,
+  .tk-loader .tk-wordmark,
+  .tk-glow-core {
+    animation: none;
+  }
+}

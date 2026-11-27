@@ -28,6 +28,9 @@ import {
 import "lenis/dist/lenis.css";
 import "./main.css";
 
+import { Outfit } from "next/font/google";
+import { TechnikaShell } from "@/components/dynamic-loading/shell";
+
 const garamond = localFont({
   src: [
     {
@@ -43,12 +46,6 @@ const garamond = localFont({
   ],
   variable: "--font-garamond",
   display: "swap",
-});
-const outfit = localFont({
-  src: "../../public/fonts/outfit.woff2",
-  variable: "--font-outfit",
-  display: "swap",
-  weight: "300 700",
 });
 const handwriting = localFont({
   src: "../../public/fonts/caveat.woff2",
@@ -67,6 +64,13 @@ const tasaOrbiter = localFont({
   variable: "--font-tasa-orbiter",
   display: "swap",
   weight: "400",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-brand",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -186,12 +190,9 @@ export default function RootLayout({
           <AuthProvider>
             <RegistrationArrivalProvider>
               <SmoothScroll>
-                <Experience
-                  header={<TechnikaNavbar />}
-                  footer={<Footer />}
-                >
+                <Experience footer={<Footer />}>
                   <main id="main-content" tabIndex={-1}>
-                    {children}
+                    <TechnikaShell>{children}</TechnikaShell>
                     <PageTransition />
                   </main>
                 </Experience>
