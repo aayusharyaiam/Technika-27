@@ -1,99 +1,170 @@
 /* ------------------------------------------------------------------
    Technika loader + navbar – keyframes and state styles.
    Imported by loader.tsx and navbar.tsx (global CSS, safe to import twice).
+
+   INTRO SEQUENCE (about 1.9s)
+     0.00s – 1.25s  outline is drawn: the "T" edges trace in the house colour,
+                    the wordmark outline traces in the theme text colour
+     1.15s – 1.85s  outline fades out while the fill fades in
+
+   WORDMARK FONT
+   The wordmark uses the CSS variable --font-technika if it exists
+   (set it with next/font/local, see app/layout.example.tsx), otherwise it
+   inherits your site font. Its colour is the `text-fg-brand` utility.
+
+   Optional tweaks – set any of these in your globals.css on :root or body:
+
+     --tk-font      font-family for the wordmark (overrides --font-technika)
+     --tk-weight    wordmark weight                      (default 400)
+     --tk-tracking  letter-spacing                       (default 0em)
+     --tk-outline   wordmark outline thickness in the intro (default 1px)
+                    0px = no wordmark outline, the text just fades in
+     --tk-mark-h    height of the "T" mark vs font size  (default 0.82em)
+     --tk-mark-y    nudge the mark up/down               (default 0em, negative = up)
+     --tk-gap       space between mark and wordmark      (default 0.32em)
+
+   NAVBAR LOOK
+     --tk-nav-font        font for nav links + buttons   (default: system mono)
+     --tk-stripe          colour of the solid stripes    (default #080808)
+     --tk-stripe-gap      colour of the translucent gaps (default grey @ 16%)
+     --tk-stripe-angle    slant of the stripes           (default 113deg)
+     --tk-stripe-period   distance between stripes       (default 10px)
 ------------------------------------------------------------------- */
 
-/* Wordmark + navbar share the brand font (set --font-brand in layout) */
-.tk-wordmark,
-.tk-nav {
-  font-family:
-    var(--font-brand, "Outfit"), ui-sans-serif, system-ui, sans-serif;
-}
-
 .tk-wordmark {
-  font-weight: 600;
-  letter-spacing: -0.035em;
-  -webkit-text-stroke: 1px transparent;
+  display: inline-block;
+  font-family: var(--tk-font, var(--font-harryp), var(--font-garamond), Georgia, serif);
+  font-weight: var(--tk-weight, 400);
+  letter-spacing: var(--tk-tracking, 0.03em);
+  /* HarryP ships one weight (400) – never fake a bold that breaks outline alignment */
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
 }
 
-/* ---------- Intro: outline fades in, then fills with colour ---------- */
+.tk-brand {
+  gap: var(--tk-gap, 0.28em);
+}
 
-@keyframes tk-shape-in {
-  0% {
-    fill-opacity: 0;
-    stroke-opacity: 0;
+.tk-mark {
+  height: var(--tk-mark-h, 0.82em);
+  transform: translateY(var(--tk-mark-y, -0.02em));
+}
+
+.tk-baseline {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  vertical-align: baseline;
+}
+
+/* ---------- Loader start state (before the intro runs) ---------- */
+
+.tk-loader .tk-shape {
+  stroke-dasharray: var(--tk-len);
+  stroke-dashoffset: var(--tk-len);
+  stroke-opacity: 1;
+  fill-opacity: 0;
+}
+
+.tk-loader .tk-word-fill {
+  opacity: 0;
+}
+
+.tk-word-outline {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  font-style: inherit;
+  letter-spacing: inherit;
+}
+
+.tk-word-outline text {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  font-style: inherit;
+  letter-spacing: inherit;
+  dominant-baseline: alphabetic;
+  fill: none;
+  stroke: currentColor; /* = text-fg-brand, inherited from .tk-wordmark */
+  stroke-width: var(--tk-outline, 1.2px);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 12em;
+  stroke-dashoffset: 12em;
+  text-rendering: geometricPrecision;
+}
+
+/* ---------- Intro: draw the outline, then fill ---------- */
+
+@keyframes tk-draw {
+  from {
+    stroke-dashoffset: var(--tk-len);
   }
-  38% {
-    fill-opacity: 0;
-    stroke-opacity: 0.55;
+  to {
+    stroke-dashoffset: 0;
   }
-  100% {
+}
+
+@keyframes tk-fill {
+  from {
+    fill-opacity: 0;
+    stroke-opacity: 1;
+  }
+  to {
     fill-opacity: 1;
     stroke-opacity: 0;
   }
 }
 
-@keyframes tk-word-in {
-  0% {
-    color: transparent;
-    -webkit-text-stroke-color: transparent;
+@keyframes tk-word-draw {
+  from {
+    stroke-dashoffset: 12em;
   }
-  38% {
-    color: transparent;
-    -webkit-text-stroke-color: rgb(255 255 255 / 0.5);
-  }
-  100% {
-    color: #fff;
-    -webkit-text-stroke-color: transparent;
+  to {
+    stroke-dashoffset: 0;
   }
 }
 
-.tk-loader .tk-shape {
-  animation: tk-shape-in 1.05s cubic-bezier(0.4, 0, 0.2, 1) both;
+@keyframes tk-word-out {
+  from {
+    stroke-opacity: 1;
+  }
+  to {
+    stroke-opacity: 0;
+  }
 }
 
-.tk-loader .tk-wordmark {
-  animation: tk-word-in 1.05s cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-
-/* ---------- Glow behind the logo ---------- */
-
-@keyframes tk-glow-in {
+@keyframes tk-word-fill {
   from {
     opacity: 0;
-    transform: scale(0.35);
   }
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
-@keyframes tk-glow-breathe {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.72;
-    transform: scale(0.94);
-  }
-}
-
-.tk-glow {
-  transition: opacity 450ms ease;
-}
-
-.tk-glow-core {
-  background: radial-gradient(
-    closest-side,
-    var(--tk-glow) 0%,
-    transparent 100%
-  );
+.tk-loader:not([data-phase="idle"]) .tk-shape {
   animation:
-    tk-glow-in 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) 0.35s both,
-    tk-glow-breathe 2.8s ease-in-out 1.75s infinite;
+    tk-draw 0.85s cubic-bezier(0.65, 0, 0.35, 1) var(--tk-delay, 0s) both,
+    tk-fill 0.7s ease-out 1.15s both;
+}
+
+.tk-loader:not([data-phase="idle"]) .tk-word-outline text {
+  animation:
+    tk-word-draw 1.1s cubic-bezier(0.65, 0, 0.35, 1) 0.15s both,
+    tk-word-out 0.7s ease-out 1.15s both;
+}
+
+.tk-loader:not([data-phase="idle"]) .tk-word-fill {
+  animation: tk-word-fill 0.7s ease-out 1.15s both;
 }
 
 /* ---------- Hand-off: logo flies to the navbar ---------- */
@@ -107,16 +178,50 @@
   transition: opacity 650ms ease 150ms;
 }
 
-.tk-loader[data-phase="fly"] .tk-glow {
-  opacity: 0;
+/* ---------- Navbar: black stripes with translucent grey gaps ---------- */
+/* The stripes are opaque; the page shows through the thin gaps. */
+
+.tk-stripes {
+  --stripe: var(--tk-stripe, #080808);
+  --gap: var(--tk-stripe-gap, rgb(38 38 42 / 0.36));
+  --period: var(--tk-stripe-period, 10px);
+  background-image: repeating-linear-gradient(
+    var(--tk-stripe-angle, 113deg),
+    var(--stripe) 0,
+    var(--stripe) calc(var(--period) * 0.84),
+    var(--gap) calc(var(--period) * 0.89),
+    var(--gap) calc(var(--period) * 0.96),
+    var(--stripe) var(--period)
+  );
 }
 
-/* ---------- Reduced motion ---------- */
+.tk-nav-text {
+  font-family: var(
+    --tk-nav-font,
+    ui-monospace,
+    "SF Mono",
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    "Liberation Mono",
+    monospace
+  );
+}
+
+/* ---------- Reduced motion: skip the drawing, show the final logo ---------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .tk-loader .tk-shape,
-  .tk-loader .tk-wordmark,
-  .tk-glow-core {
-    animation: none;
+  .tk-loader .tk-shape {
+    animation: none !important;
+    stroke-dasharray: none !important;
+    stroke-opacity: 0 !important;
+    fill-opacity: 1 !important;
+  }
+  .tk-loader .tk-word-fill {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  .tk-word-outline {
+    display: none;
   }
 }

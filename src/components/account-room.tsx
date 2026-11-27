@@ -43,7 +43,7 @@ export function AccountRoom({ access }: { access: Exclude<RoomAccess, { status: 
     {access.status === "unassigned" ? <>
       <h1>House assignment pending</h1>
       <p>{access.displayName}, your account is verified, but a house has not been saved in your profile. The Common Room will not assign one for you.</p>
-      <Link className="button button-gold" href="/signup?step=ceremony">Return to the Sorting Hat <ArrowUpRight size={15} /></Link>
+      <Link className="button button-gold" href="/register">Return to the Sorting Hat <ArrowUpRight size={15} /></Link>
     </> : <>
       <h1>The profile ledger is unavailable.</h1>
       <p>We could not read your saved house. Your account has not been changed.</p>

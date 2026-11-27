@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { isEmailConfirmed } from "@/lib/auth/session-state";
+import { isBitMesraEmail } from "@/lib/bit-email";
 import { getServerSupabase } from "@/lib/supabase/server";
 import DashboardClient from "./dashboard-client";
 import { createPrivateMetadata } from "@/lib/seo";
@@ -11,7 +13,18 @@ export const metadata = createPrivateMetadata(
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+type DashboardPageProps = {
+  searchParams: Promise<{ view?: string | string[] }>;
+};
+
+export default async function DashboardPage({
+  searchParams,
+}: DashboardPageProps) {
+  const params = await searchParams;
+  const viewParam = Array.isArray(params.view) ? params.view[0] : params.view;
+  if (viewParam === "common-room") {
+    redirect("/common-room");
+  }
   const supabase = await getServerSupabase();
   if (!supabase) {
     redirect("/login");
@@ -22,16 +35,18 @@ export default async function DashboardPage() {
     error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError || !user) {
+  if (userError || !user || !isEmailConfirmed(user)) {
     redirect("/login");
   }
 
   // Fetch user profile details using lib/supabase
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, college, phone, house, created_at")
+    .select("full_name, college, phone, house, is_bit, created_at")
     .eq("id", user.id)
     .maybeSingle();
+
+  const computedIsBit = isBitMesraEmail(user.email);
 
   // Extract robust fields, gracefully resolving user metadata
   const safeProfile = {
@@ -48,11 +63,17 @@ export default async function DashboardPage() {
       profile?.house?.trim() ||
       (user.user_metadata?.house as string) ||
       "default",
+    is_bit: computedIsBit || profile?.is_bit === true,
     created_at: profile?.created_at || user.created_at || null,
   };
 
-  // Self-heal: ensure profiles row has these values if row was missing
-  if (!profile || !profile.house) {
+  // Self-heal: ensure profiles row & accurate `is_bit` flag exist once verified
+  if (
+    !profile ||
+    !profile.house ||
+    typeof profile.is_bit !== "boolean" ||
+    (computedIsBit && profile.is_bit !== true)
+  ) {
     try {
       await supabase.from("profiles").upsert(
         {
@@ -61,6 +82,7 @@ export default async function DashboardPage() {
           college: safeProfile.college,
           phone: safeProfile.phone,
           house: safeProfile.house,
+          is_bit: safeProfile.is_bit,
         },
         { onConflict: "id" },
       );

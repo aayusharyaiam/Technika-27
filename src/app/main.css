@@ -1238,6 +1238,12 @@ main:focus {
   pointer-events: none;
 }
 
+@media (pointer: coarse), (max-width: 767px) {
+  .wand-sparks {
+    display: none;
+  }
+}
+
 .route-spell-veil {
   position: fixed;
   inset: 0;
@@ -6102,18 +6108,18 @@ html[data-house]:not([data-house="default"]) .hero-castle img {
   position: absolute;
   top: 0;
   left: 0;
-  width: 104px;
-  height: 104px;
+  width: 54px;
+  height: 54px;
   pointer-events: none;
   opacity: 0;
   will-change: transform;
 }
 
 .photographic-wand>img {
-  width: 104px;
-  height: 104px;
+  width: 54px;
+  height: 54px;
   filter: brightness(1.65) drop-shadow(1px 2px 1px #0009);
-  transform-origin: 5px 5px;
+  transform-origin: 4px 4px;
   transition:
     filter 0.25s,
     rotate 0.2s;
@@ -6121,13 +6127,13 @@ html[data-house]:not([data-house="default"]) .hero-castle img {
 
 .photographic-wand>span {
   position: absolute;
-  left: 3px;
-  top: 3px;
-  width: 3px;
-  height: 3px;
+  left: 2px;
+  top: 2px;
+  width: 2.5px;
+  height: 2.5px;
   background: var(--gold);
   border-radius: 50%;
-  box-shadow: 0 0 7px 2px color-mix(in srgb, var(--gold) 45%, transparent);
+  box-shadow: 0 0 6px 1.5px color-mix(in srgb, var(--gold) 45%, transparent);
 }
 
 .photographic-wand.wand-casting img {
@@ -9458,8 +9464,8 @@ html[data-house]:not([data-house="default"]) .hero-castle img {
   );
 
   /* ---------- surfaces ---------- */
-  --bg-sunken: var(--neutral-1000);
-  --bg: var(--neutral-950);
+  --bg-sunken: #080808;
+  --bg: #080808;
   --surface-1: var(--neutral-900);
   --surface-2: var(--neutral-800);
   --surface-3: var(--neutral-700);

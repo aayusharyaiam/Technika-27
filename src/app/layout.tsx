@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import { Experience } from "@/components/experience";
-import TechnikaNavbar from "@/components/Navbar";
 import { Footer } from "@/components/footer";
 import PageTransition from "@/components/PageTransition";
 import { SiteSchema } from "@/components/structured-data";
@@ -20,9 +19,7 @@ import { RegistrationArrivalProvider } from "@/components/registration-arrival";
 import { AuthProvider } from "@/components/auth-provider";
 import SmoothScroll from "@/components/SmoothScroll";
 import {
-  houseAppleIconFor,
   houseBootScript,
-  houseIconFor,
   themeAttributeForHouse,
 } from "@/lib/houses";
 import "lenis/dist/lenis.css";
@@ -99,10 +96,6 @@ export const metadata: Metadata = {
   classification: "Technology and cultural festival",
   referrer: "origin-when-cross-origin",
   formatDetection: { email: false, address: false, telephone: false },
-  icons: {
-    icon: [{ url: "/images/hufflepuff.png", type: "image/png" }],
-    apple: [{ url: "/images/hufflepuff.png", type: "image/png" }],
-  },
   alternates: { canonical: absoluteUrl("/") },
   robots: {
     index: indexable,
@@ -141,7 +134,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f0c19",
+  themeColor: "#080808",
   colorScheme: "dark",
 };
 
@@ -151,8 +144,6 @@ export default function RootLayout({
   // Keep the public shell static. The boot script restores the saved house
   // before hydration; authenticated profile data synchronizes client-side.
   const theme = "default" as const;
-  const icon = houseIconFor(theme);
-  const appleIcon = houseAppleIconFor(theme);
 
   return (
     <html
@@ -163,16 +154,6 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <link
-          rel="icon"
-          href={`${icon}?house=${theme}`}
-          type={icon.endsWith(".svg") ? "image/svg+xml" : "image/png"}
-        />
-        <link
-          rel="apple-touch-icon"
-          href={`${appleIcon}?house=${theme}`}
-          type="image/png"
-        />
         <script
           id="restore-house-theme"
           dangerouslySetInnerHTML={{

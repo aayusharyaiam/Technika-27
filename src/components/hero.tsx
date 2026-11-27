@@ -22,6 +22,7 @@ import { useMagic } from "./experience";
 import { HouseBanners } from "./house-banners";
 import ParticleLogo from "./ParticleLogo";
 import { useHouse } from "@/components/house-provider";
+import { useTechnikaShell } from "@/components/dynamic-loading/shell";
 
 const FLOATING_CANDLES = [
   "left-[10%] top-[22%] [animation-delay:0s]",
@@ -182,12 +183,10 @@ function GoldenSnitch() {
       aria-hidden="true"
     >
       <div
-        className="flying-snitch absolute left-0 top-0 h-12 w-[4.5rem] will-change-transform sm:h-16 sm:w-24 [&_svg]:relative [&_svg]:block [&_svg]:size-full [&_svg]:drop-shadow-[0_0_8px_rgba(255,201,83,0.78)]"
+        className="flying-snitch absolute left-0 top-0 h-12 w-[4.5rem] will-change-transform sm:h-16 sm:w-24 [&_svg]:relative [&_svg]:block [&_svg]:size-full"
         ref={snitchRef}
       >
-        <span className="snitch-halo absolute -inset-[45%] rounded-full bg-[radial-gradient(circle,rgba(255,218,128,0.6),transparent_66%)] animate-hx-pulse motion-reduce:animate-none" />
         <SnitchArtwork />
-        <span className="snitch-trail absolute right-full top-1/2 h-px w-20 bg-[linear-gradient(to_left,rgba(255,216,128,0.7),transparent)]" />
       </div>
     </div>
   );
@@ -196,6 +195,7 @@ function GoldenSnitch() {
 export function Hero() {
   const ref = useRef<HTMLElement>(null);
   const { house: activeHouse } = useHouse();
+  const { ready: shellReady } = useTechnikaShell();
   const house = activeHouse === "default" ? "hufflepuff" : activeHouse;
 
   return (
@@ -237,7 +237,7 @@ export function Hero() {
           <motion.div
             variants={heroContainerVariants}
             initial="hidden"
-            animate="visible"
+            animate={shellReady ? "visible" : "hidden"}
             className="order-2 flex w-full flex-col items-center text-center lg:order-1 lg:w-[54%] lg:items-start lg:text-left"
           >
             <motion.div
@@ -335,34 +335,19 @@ export function Hero() {
           <motion.div
             variants={heroCrestVariants}
             initial="hidden"
-            animate="visible"
+            animate={shellReady ? "visible" : "hidden"}
             className="order-1 relative flex w-full flex-col items-center justify-center lg:order-2 lg:w-[46%]"
           >
             <div className="relative flex h-[155px] w-[155px] items-center justify-center sm:h-[200px] sm:w-[200px] md:h-[230px] md:w-[230px] lg:h-[460px] lg:w-[460px] xl:h-[530px] xl:w-[530px]">
-              {/* Subtle House-Themed Aura Behind Crest */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 0.9, scale: 1 }}
-                transition={{ duration: 2.1, delay: 0.5, ease: HERO_EASE }}
-                className="pointer-events-none absolute -inset-4 rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--primary-400)_18%,transparent)_0%,color-mix(in_oklab,var(--secondary-300)_9%,transparent)_44%,transparent_72%)] blur-2xl transition-all duration-700 lg:-inset-6"
-                aria-hidden="true"
-              />
-              {/* Delicate Orbital Accent Ring */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.92 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 1.85, delay: 0.7, ease: HERO_EASE }}
-                className="pointer-events-none absolute inset-2 rounded-full border border-white/10 lg:inset-4"
-                aria-hidden="true"
-              />
-
-              <ParticleLogo
-                src={`/images/${house}.png`}
-                dotSize={1.15}
-                particles={14000}
-                background="transparent"
-                ariaLabel={`${house} interactive particle crest`}
-              />
+              {shellReady && (
+                <ParticleLogo
+                  src={`/images/${house}.png`}
+                  dotSize={1.15}
+                  particles={14000}
+                  background="transparent"
+                  ariaLabel={`${house} interactive particle crest`}
+                />
+              )}
             </div>
           </motion.div>
         </div>
@@ -372,7 +357,7 @@ export function Hero() {
       <motion.div
         variants={heroCueVariants}
         initial="hidden"
-        animate="visible"
+        animate={shellReady ? "visible" : "hidden"}
         className="relative z-[7] mx-auto flex w-full max-w-7xl items-center justify-between gap-6 px-5 pb-6 text-[10px] uppercase tracking-[0.25em] text-zinc-500 sm:px-8 lg:px-14"
       >
         <span className="max-lg:hidden font-mono text-zinc-500">

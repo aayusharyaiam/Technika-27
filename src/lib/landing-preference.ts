@@ -8,7 +8,7 @@ const KEY = "technika:landing:v1";
 
 export const LANDING_ROUTES: Record<LandingPreference, string> = {
   "great-hall": "/dashboard",
-  "common-room": "/account",
+  "common-room": "/common-room",
 };
 
 export function getLandingPreference(): LandingPreference | null {

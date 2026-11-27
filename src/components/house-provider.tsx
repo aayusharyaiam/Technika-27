@@ -56,28 +56,86 @@ export function HouseProvider({
     const favicon = houseIconFor(house);
     const appleIcon = houseAppleIconFor(house);
     const faviconType = favicon.endsWith(".svg") ? "image/svg+xml" : "image/png";
-    const withHouseCacheKey = (href: string) => `${href}?house=${house}`;
+    const targetFaviconUrl = new URL(`${favicon}?house=${house}`, window.location.origin).href;
+    const targetAppleUrl = new URL(`${appleIcon}?house=${house}`, window.location.origin).href;
 
-    const syncLinks = (selector: string, rel: string, href: string, type?: string) => {
+    let syncing = false;
+    const syncLinkGroup = (
+      selector: string,
+      rel: string,
+      targetUrl: string,
+      type?: string,
+    ) => {
       const links = Array.from(document.head.querySelectorAll<HTMLLinkElement>(selector));
-      if (links.length === 0) {
-        const link = document.createElement("link");
-        link.rel = rel;
-        link.href = withHouseCacheKey(href);
-        if (type) link.type = type;
-        link.dataset.houseIcon = "true";
-        document.head.appendChild(link);
+      const managedLinks = links.filter((link) => link.dataset.houseIcon === "true");
+      const foreignLinks = links.filter((link) => link.dataset.houseIcon !== "true");
+
+      // Never remove React-managed/foreign <link> nodes (that causes React 19 removeChild crashes);
+      // update foreign links in place and only replace imperatively created [data-house-icon] nodes.
+      for (const link of foreignLinks) {
+        if (link.href !== targetUrl) link.href = targetUrl;
+        if (type && link.type !== type) link.type = type;
+      }
+
+      if (
+        foreignLinks.length === 0 &&
+        managedLinks.length === 1 &&
+        managedLinks[0].href === targetUrl
+      ) {
+        return;
+      }
+
+      if (foreignLinks.length === 0) {
+        const fresh = document.createElement("link");
+        fresh.rel = rel;
+        fresh.href = targetUrl;
+        if (type) fresh.type = type;
+        fresh.dataset.houseIcon = "true";
+        document.head.appendChild(fresh);
+
+        for (const oldLink of managedLinks) {
+          if (oldLink !== fresh && oldLink.parentNode) {
+            oldLink.parentNode.removeChild(oldLink);
+          }
+        }
       } else {
-        for (const link of links) {
-          link.href = withHouseCacheKey(href);
-          if (type) link.type = type;
-          link.dataset.houseIcon = "true";
+        for (const oldLink of managedLinks) {
+          if (oldLink.parentNode) {
+            oldLink.parentNode.removeChild(oldLink);
+          }
         }
       }
     };
 
-    syncLinks('link[rel~="icon"]', "icon", favicon, faviconType);
-    syncLinks('link[rel="apple-touch-icon"]', "apple-touch-icon", appleIcon, "image/png");
+    const syncAllIcons = () => {
+      if (syncing) return;
+      syncing = true;
+      try {
+        syncLinkGroup('link[rel~="icon"]', "icon", targetFaviconUrl, faviconType);
+        syncLinkGroup('link[rel="apple-touch-icon"]', "apple-touch-icon", targetAppleUrl, "image/png");
+      } finally {
+        syncing = false;
+      }
+    };
+
+    syncAllIcons();
+
+    // Keep house icon intact if Next.js head reconciliation mutates or inserts icon links on navigation
+    const observer = new MutationObserver(() => {
+      syncAllIcons();
+    });
+    observer.observe(document.head, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["href", "rel"],
+    });
+    window.addEventListener("pageshow", syncAllIcons);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("pageshow", syncAllIcons);
+    };
   }, [house]);
 
   return <HouseContext.Provider value={{ house, theme: houseThemes[house], setHouse }}>{children}</HouseContext.Provider>;

@@ -2,37 +2,38 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { motion, type Variants } from "motion/react";
 import {
   ArrowUpRight,
+  BadgeCheck,
+  Bird,
   BookOpen,
   CalendarDays,
+  Check,
   CheckCircle2,
   Compass,
   Copy,
-  Check,
   Flame,
-  Leaf,
-  Bird,
-  Sun,
   GraduationCap,
+  Leaf,
+  Lock,
   Mail,
   Phone,
   ShieldCheck,
   Sparkles,
+  Sun,
   User,
-  Palette,
 } from "lucide-react";
 import { useHouse } from "@/components/house-provider";
+import type { AssignedHouse } from "@/lib/common-room/types";
 import {
-  houseThemes,
-  selectableHouses,
   houseFromValue,
-  themeAttributeForHouse,
   houseLogoFor,
+  houseThemes,
+  themeAttributeForHouse,
   type House,
 } from "@/lib/houses";
-import { saveHousePreference } from "@/lib/house-preference";
 import LogoutButton from "./logout-button";
 
 interface DashboardProfile {
@@ -40,6 +41,7 @@ interface DashboardProfile {
   college: string | null;
   phone: string | null;
   house: string | null;
+  is_bit?: boolean;
   created_at?: string | null;
 }
 
@@ -50,15 +52,52 @@ interface DashboardClientProps {
   createdAt?: string | null;
 }
 
+const DASH_EASE = [0.16, 1, 0.3, 1] as const;
+
+const sectionContainer: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.05 },
+  },
+};
+
+const fadeUpItem: Variants = {
+  hidden: { opacity: 0, y: 20, filter: "blur(4px)" },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.75, ease: DASH_EASE },
+  },
+};
+
+const cardStagger: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.07 },
+  },
+};
+
+const cardItem: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: DASH_EASE },
+  },
+};
+
 const houseSymbols = {
   gryffindor: Flame,
   slytherin: Leaf,
   ravenclaw: Bird,
   hufflepuff: Sun,
-};
+} as const;
 
 const houseMascots: Record<
-  Exclude<House, "default">,
+  AssignedHouse,
   { mascot: string; element: string }
 > = {
   gryffindor: { mascot: "Lion", element: "Fire" },
@@ -67,7 +106,7 @@ const houseMascots: Record<
   hufflepuff: { mascot: "Badger", element: "Earth" },
 };
 
-const actionCards = [
+const directoryLinks = [
   {
     href: "/registrations",
     label: "Festival Chambers",
@@ -85,14 +124,6 @@ const actionCards = [
     Icon: Compass,
   },
   {
-    href: "/account",
-    label: "Common Room",
-    detail:
-      "Enter your private house chamber, read founder letters, and view house records.",
-    badge: "House Quarters",
-    Icon: BookOpen,
-  },
-  {
     href: "/accommodation",
     label: "Guest Quarters",
     detail:
@@ -100,7 +131,7 @@ const actionCards = [
     badge: "Stay & Passes",
     Icon: ShieldCheck,
   },
-];
+] as const;
 
 export default function DashboardClient({
   userId,
@@ -110,13 +141,18 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   const { house: contextHouse, setHouse } = useHouse();
   const [copiedId, setCopiedId] = useState(false);
-  const [switching, setSwitching] = useState(false);
-  const [switchFeedback, setSwitchFeedback] = useState<string | null>(null);
 
-  // Active house prioritized from profile or context
   const activeHouse: House =
     houseFromValue(profile.house) || houseFromValue(contextHouse) || "default";
   const theme = houseThemes[activeHouse];
+  const assignedHouse: AssignedHouse | null =
+    activeHouse !== "default" ? activeHouse : null;
+
+  useEffect(() => {
+    if (assignedHouse && contextHouse !== assignedHouse) {
+      setHouse(assignedHouse);
+    }
+  }, [assignedHouse, contextHouse, setHouse]);
 
   const displayName = profile.full_name?.trim() || "Wizard";
   const firstName = displayName.split(/\s+/)[0] || "Wizard";
@@ -127,32 +163,6 @@ export default function DashboardClient({
     setTimeout(() => setCopiedId(false), 2000);
   };
 
-  const handleHouseChange = async (targetHouse: Exclude<House, "default">) => {
-    if (switching || targetHouse === activeHouse) return;
-    setSwitching(true);
-    setSwitchFeedback(null);
-
-    setHouse(targetHouse);
-
-    try {
-      const err = await saveHousePreference(userId, targetHouse);
-      if (err) {
-        setSwitchFeedback(
-          "House theme changed locally. Profile sync will retry.",
-        );
-      } else {
-        setSwitchFeedback(
-          `${houseThemes[targetHouse].name} is now your active house.`,
-        );
-      }
-    } catch {
-      setSwitchFeedback("House theme updated.");
-    } finally {
-      setSwitching(false);
-      setTimeout(() => setSwitchFeedback(null), 3000);
-    }
-  };
-
   const registeredDate = createdAt
     ? new Date(createdAt).toLocaleDateString("en-IN", {
         year: "numeric",
@@ -161,470 +171,521 @@ export default function DashboardClient({
       })
     : "Verified Delegate";
 
+  const ActiveHouseIcon = assignedHouse
+    ? houseSymbols[assignedHouse]
+    : Sparkles;
+
   return (
     <main
-      className="min-h-screen bg-bg text-fg pt-28 pb-20 px-4 sm:px-6 lg:px-8 transition-colors duration-500"
+      className="relative min-h-screen overflow-hidden bg-[#080808] px-4 pb-20 pt-28 text-zinc-100 transition-colors duration-500 sm:px-6 lg:px-8"
       data-theme={themeAttributeForHouse(activeHouse)}
       data-house={activeHouse}
     >
-      <div className="mx-auto max-w-7xl flex flex-col gap-8">
+      {/* Subtle theme-reactive radial atmosphere */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-0 h-[32rem] w-[64rem] -translate-x-1/2 rounded-full bg-brand-soft opacity-40 blur-3xl transition-colors duration-700"
+      />
+
+      <motion.div
+        variants={sectionContainer}
+        initial="hidden"
+        animate="visible"
+        className="relative z-10 mx-auto flex max-w-7xl flex-col gap-8"
+      >
         {/* =========================================================
-            TOP STATUS BAR & BREADCRUMB
+            TOP STATUS BAR
            ========================================================= */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-line-subtle">
+        <motion.div
+          variants={fadeUpItem}
+          className="flex flex-col justify-between gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-center"
+        >
           <div className="flex items-center gap-2.5">
-            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-brand-soft text-fg-brand">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full border border-brand-border bg-brand-soft text-fg-brand">
               <Sparkles size={14} />
             </span>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-fg-brand">
+            <span className="font-orbiter text-[11px] font-semibold uppercase tracking-[0.22em] text-fg-brand">
               Command Centre · Technika &apos;27
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-brand-border bg-surface-1 text-xs text-fg-muted">
-              <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
-              <span>Owls & Server Synchronized</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="font-orbiter inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-zinc-300">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-brand" />
+              <span>Owls &amp; Server Synchronized</span>
             </div>
 
-            <Link
-              href="/account"
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-fg-brand border border-brand-border bg-brand-soft hover:bg-brand-soft/80 transition-colors"
-            >
-              <BookOpen size={13} />
-              <span>Common Room</span>
-            </Link>
+            {assignedHouse && (
+              <Link
+                href="/common-room"
+                className="font-orbiter inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-soft px-3.5 py-1.5 text-xs font-medium text-fg-brand transition-all duration-200 hover:border-brand hover:brightness-110"
+              >
+                <BookOpen size={13} />
+                <span>3D Common Room</span>
+              </Link>
+            )}
           </div>
-        </div>
+        </motion.div>
 
         {/* =========================================================
-            HERO COMMAND CHAMBER BANNER (HOUSE THEMED)
+            HERO COMMAND CHAMBER BANNER
            ========================================================= */}
-        <section
-          className="relative overflow-hidden rounded-3xl border border-brand-border bg-surface-1 p-6 sm:p-10 lg:p-12 shadow-glow-brand transition-all duration-500"
-          style={{
-            backgroundImage:
-              "radial-gradient(ellipse at 85% 15%, color-mix(in oklab, var(--primary-500) 25%, transparent), transparent 60%), linear-gradient(145deg, var(--surface-1), var(--bg))",
-          }}
+        <motion.section
+          variants={fadeUpItem}
+          className="relative overflow-hidden rounded-3xl border border-brand-border bg-white/[0.025] p-6 shadow-glow-brand backdrop-blur-2xl transition-colors duration-500 sm:p-10 lg:p-12"
         >
-          {/* Subtle Ambient Backdrops */}
           <div
-            className="pointer-events-none absolute -right-20 -top-24 h-80 w-80 rounded-full bg-brand-soft blur-3xl opacity-70"
             aria-hidden="true"
+            className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-brand-soft opacity-65 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/55 to-transparent"
           />
 
           <div className="relative z-10 grid gap-8 lg:grid-cols-12 lg:items-center">
-            {/* Left Column: Greeting and Key Actions */}
-            <div className="lg:col-span-7 flex flex-col gap-4">
-              <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-fg-brand">
-                <ShieldCheck size={14} />
-                <span>Verified Castle Delegate</span>
+            {/* Greeting & Actions */}
+            <div className="flex flex-col gap-4 lg:col-span-7">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="font-orbiter inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-fg-brand">
+                  <ShieldCheck size={14} />
+                  Verified Castle Delegate
+                </span>
+
+                {profile.is_bit && (
+                  <span className="font-orbiter inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-soft/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-fg-brand">
+                    <BadgeCheck size={12} />
+                    BIT Patna Verified
+                  </span>
+                )}
               </div>
 
-              <h1 className="font-serif text-4xl sm:text-6xl lg:text-7xl leading-tight text-fg-strong tracking-tight">
+              <h1 className="font-serif text-4xl leading-[1.06] tracking-tight text-zinc-100 sm:text-6xl lg:text-7xl">
                 Welcome home,
                 <br />
-                <em className="text-fg-brand italic">{firstName}.</em>
+                <em className="italic text-fg-brand">{firstName}.</em>
               </h1>
 
-              <p className="max-w-2xl text-sm sm:text-base leading-relaxed text-fg-muted">
-                Your Technika command centre is primed for the festival. Follow
-                your registered chambers, browse campus quests on the
-                Marauder&apos;s Map, and let the virtues of your house guide
-                every competition.
+              <p className="max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
+                Your Technika command centre is primed for the festival. Explore
+                your interactive 3D House Common Room below, follow campus
+                quests on the Marauder&apos;s Map, and carry your house colours
+                with pride.
               </p>
 
-              {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-3 pt-3">
                 <Link
                   href="/registrations"
-                  className="px-6 py-3 rounded-xl font-semibold text-xs sm:text-sm tracking-widest uppercase bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 text-neutral-950 hover:brightness-110 shadow-lg shadow-amber-500/25 flex items-center gap-2 transition-all duration-300"
+                  className="font-orbiter inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-brand-on shadow-glow-brand transition-all duration-200 hover:bg-brand-hover sm:text-sm"
                 >
                   <span>Explore Events</span>
                   <ArrowUpRight size={16} />
                 </Link>
 
+                {assignedHouse && (
+                  <Link
+                    href="/common-room"
+                    className="font-orbiter inline-flex items-center gap-2 rounded-xl border border-brand-border bg-brand-soft/60 px-5 py-3 text-xs font-medium uppercase tracking-wider text-zinc-100 transition-all duration-200 hover:border-brand hover:bg-brand-soft sm:text-sm"
+                  >
+                    <BookOpen size={15} className="text-fg-brand" />
+                    <span>Enter 3D Common Room</span>
+                  </Link>
+                )}
+
                 <Link
                   href="/marauders-map"
-                  className="px-5 py-3 rounded-xl font-medium text-xs sm:text-sm tracking-wider uppercase border border-line-brand bg-surface-1/70 text-fg hover:border-brand-border hover:bg-brand-soft transition-all duration-300 flex items-center gap-2"
+                  className="font-orbiter inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3 text-xs font-medium uppercase tracking-wider text-zinc-300 transition-all duration-200 hover:border-white/25 hover:text-zinc-100 sm:text-sm"
                 >
                   <Compass size={15} className="text-fg-brand" />
-                  <span>Open Campus Map</span>
+                  <span>Campus Map</span>
                 </Link>
               </div>
             </div>
 
-            {/* Right Column: House Crest & Colours Showcase Card */}
-            <div className="lg:col-span-5 flex flex-col gap-4">
-              <div className="relative rounded-2xl border border-brand-border bg-surface-2/70 backdrop-blur-xl p-6 sm:p-7 shadow-xl flex flex-col gap-5">
+            {/* Locked House Crest Showcase */}
+            <div className="flex flex-col gap-4 lg:col-span-5">
+              <motion.div
+                whileHover={{ y: -3 }}
+                transition={{ duration: 0.35, ease: DASH_EASE }}
+                className="relative flex flex-col gap-5 rounded-2xl border border-brand-border bg-[#0c0c12]/80 p-6 shadow-xl backdrop-blur-xl sm:p-7"
+              >
                 <div className="flex items-center gap-5">
-                  {/* House Crest Visual */}
-                  <div className="relative flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center p-2 rounded-2xl bg-brand-soft border border-brand-border shadow-inner">
+                  <motion.div
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{
+                      duration: 4.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-brand-border bg-brand-soft p-2.5 shadow-inner sm:h-24 sm:w-24"
+                  >
                     <Image
                       src={houseLogoFor(activeHouse)}
                       width={80}
                       height={80}
                       alt={theme.name}
                       priority
-                      className="object-contain w-full h-full drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]"
+                      className="h-full w-full object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.8)]"
                     />
-                  </div>
+                  </motion.div>
 
-                  {/* House Titles */}
                   <div className="min-w-0 flex flex-col gap-1">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-fg-subtle">
-                      YOUR ASSIGNED HOUSE
+                    <span className="font-orbiter inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-fg-brand">
+                      <Lock size={10} />
+                      Permanent House
                     </span>
-                    <h2 className="font-serif text-2xl sm:text-3xl font-bold text-fg-strong truncate">
+                    <h2 className="truncate font-serif text-2xl font-bold text-zinc-100 sm:text-3xl">
                       {theme.name}
                     </h2>
-                    <p className="text-xs italic text-fg-muted line-clamp-1">
+                    <p className="line-clamp-2 text-xs italic text-zinc-400">
                       {theme.motto}
                     </p>
                   </div>
                 </div>
 
-                {/* House Badges & Virtues */}
-                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-line-subtle text-xs">
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-bg/40 border border-line-subtle">
-                    <span className="text-fg-brand font-semibold">
+                <div className="grid grid-cols-2 gap-2.5 border-t border-white/10 pt-4 text-xs">
+                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
+                    <span className="font-orbiter font-semibold text-fg-brand">
                       Element:
                     </span>
-                    <span className="text-fg-strong capitalize">
-                      {activeHouse !== "default"
-                        ? houseMascots[activeHouse].element
+                    <span className="capitalize text-zinc-200">
+                      {assignedHouse
+                        ? houseMascots[assignedHouse].element
                         : "Magic"}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-bg/40 border border-line-subtle">
-                    <span className="text-fg-brand font-semibold">Mascot:</span>
-                    <span className="text-fg-strong capitalize">
-                      {activeHouse !== "default"
-                        ? houseMascots[activeHouse].mascot
+                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
+                    <span className="font-orbiter font-semibold text-fg-brand">
+                      Mascot:
+                    </span>
+                    <span className="capitalize text-zinc-200">
+                      {assignedHouse
+                        ? houseMascots[assignedHouse].mascot
                         : "Crest"}
                     </span>
                   </div>
                 </div>
 
-                {/* Quality Tagline */}
-                <div className="flex items-center gap-2 text-xs text-fg-muted pt-1">
-                  <CheckCircle2
+                <div className="flex items-center justify-between gap-2 pt-0.5 text-xs text-zinc-400">
+                  <span className="inline-flex min-w-0 items-center gap-2 truncate">
+                    <CheckCircle2
+                      size={15}
+                      className="shrink-0 text-fg-brand"
+                    />
+                    <span className="truncate">{theme.quality}</span>
+                  </span>
+                  <ActiveHouseIcon
                     size={15}
-                    className="text-fg-brand flex-shrink-0"
+                    className="shrink-0 text-fg-brand"
                   />
-                  <span className="truncate">{theme.quality}</span>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
-        </section>
+        </motion.section>
 
         {/* =========================================================
-            PROFILE DETAILS & CREDENTIALS LEDGER
+            PERSONAL DETAILS & CREDENTIALS LEDGER
            ========================================================= */}
-        <section className="grid gap-6 lg:grid-cols-12">
-          {/* Left Column: Official Profile Ledger */}
-          <article className="lg:col-span-7 rounded-3xl border border-line bg-surface-1 p-6 sm:p-8 flex flex-col justify-between gap-6 shadow-md">
-            <div>
-              <div className="flex items-center justify-between gap-4 pb-4 border-b border-line-subtle">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-fg-brand">
-                    OFFICIAL STUDENT LEDGER
-                  </span>
-                  <h2 className="font-serif text-2xl sm:text-3xl text-fg-strong">
-                    Personal Details & Credentials
-                  </h2>
-                </div>
-
-                <div className="w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center text-fg-brand">
-                  <User size={18} />
-                </div>
-              </div>
-
-              {/* Data List Grid */}
-              <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mt-6">
-                {/* Full Name */}
-                <div className="flex flex-col gap-1 p-3.5 rounded-2xl bg-bg/40 border border-line-subtle">
-                  <span className="text-[10px] uppercase tracking-wider text-fg-subtle flex items-center gap-1.5 font-medium">
-                    <User size={12} className="text-fg-brand" /> Full Name
-                  </span>
-                  <span className="text-sm sm:text-base font-semibold text-fg-strong">
-                    {profile.full_name || "Wizard Delegate"}
-                  </span>
-                </div>
-
-                {/* Email Address */}
-                <div className="flex flex-col gap-1 p-3.5 rounded-2xl bg-bg/40 border border-line-subtle">
-                  <span className="text-[10px] uppercase tracking-wider text-fg-subtle flex items-center gap-1.5 font-medium">
-                    <Mail size={12} className="text-fg-brand" /> Owl-Post Email
-                  </span>
-                  <span
-                    className="text-sm font-semibold text-fg-strong truncate"
-                    title={email}
-                  >
-                    {email}
-                  </span>
-                </div>
-
-                {/* College / Institution */}
-                <div className="flex flex-col gap-1 p-3.5 rounded-2xl bg-bg/40 border border-line-subtle">
-                  <span className="text-[10px] uppercase tracking-wider text-fg-subtle flex items-center gap-1.5 font-medium">
-                    <GraduationCap size={12} className="text-fg-brand" />{" "}
-                    Institution / College
-                  </span>
-                  <span className="text-sm font-semibold text-fg-strong">
-                    {profile.college || "Birla Institute of Technology, Patna"}
-                  </span>
-                </div>
-
-                {/* Phone */}
-                <div className="flex flex-col gap-1 p-3.5 rounded-2xl bg-bg/40 border border-line-subtle">
-                  <span className="text-[10px] uppercase tracking-wider text-fg-subtle flex items-center gap-1.5 font-medium">
-                    <Phone size={12} className="text-fg-brand" /> Secure
-                    Dispatch Phone
-                  </span>
-                  <span className="text-sm font-semibold text-fg-strong">
-                    {profile.phone || "Not recorded yet"}
-                  </span>
-                </div>
-
-                {/* House Affiliation */}
-                <div className="flex flex-col gap-1 p-3.5 rounded-2xl bg-bg/40 border border-line-subtle">
-                  <span className="text-[10px] uppercase tracking-wider text-fg-subtle flex items-center gap-1.5 font-medium">
-                    <ShieldCheck size={12} className="text-fg-brand" /> House
-                    Affiliation
-                  </span>
-                  <span className="text-sm font-semibold text-fg-strong capitalize flex items-center gap-2">
-                    {theme.name}
-                    {activeHouse !== "default" && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-brand-soft text-fg-brand font-mono">
-                        {theme.initial}
-                      </span>
-                    )}
-                  </span>
-                </div>
-
-                {/* Registration Date */}
-                <div className="flex flex-col gap-1 p-3.5 rounded-2xl bg-bg/40 border border-line-subtle">
-                  <span className="text-[10px] uppercase tracking-wider text-fg-subtle flex items-center gap-1.5 font-medium">
-                    <CalendarDays size={12} className="text-fg-brand" />{" "}
-                    Enrolled Since
-                  </span>
-                  <span className="text-sm font-semibold text-fg-strong">
-                    {registeredDate}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Truncated Delegate ID & Copy Tool */}
-            <div className="p-3.5 rounded-2xl bg-brand-soft/50 border border-brand-border flex items-center justify-between gap-4 text-xs">
-              <div className="min-w-0">
-                <span className="text-[10px] uppercase tracking-widest text-fg-subtle block">
-                  Delegate Cipher / UUID
-                </span>
-                <span
-                  className="font-mono text-fg-strong truncate block"
-                  title={userId}
-                >
-                  {userId}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleCopyId}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-1 border border-brand-border hover:bg-surface-2 text-fg-brand font-medium text-xs transition-colors flex-shrink-0 cursor-pointer"
-              >
-                {copiedId ? (
-                  <>
-                    <Check size={14} className="text-emerald-400" />
-                    <span>Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={14} />
-                    <span>Copy</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </article>
-
-          {/* Right Column: House Customizer (The Sorting Mirror) */}
-          <article className="lg:col-span-5 rounded-3xl border border-line bg-surface-1 p-6 sm:p-8 flex flex-col justify-between gap-6 shadow-md">
-            <div>
-              <div className="flex items-center justify-between gap-4 pb-4 border-b border-line-subtle">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-fg-brand">
-                    THE SORTING MIRROR
-                  </span>
-                  <h2 className="font-serif text-2xl sm:text-3xl text-fg-strong">
-                    Equip House Theme
-                  </h2>
-                </div>
-
-                <div className="w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center text-fg-brand">
-                  <Palette size={18} />
-                </div>
-              </div>
-
-              <p className="text-xs leading-relaxed text-fg-muted mt-4">
-                Switch your active house to immerse the entire dashboard and
-                navigation bar in that founder&apos;s colors. Your selection is
-                automatically synced with your profile.
-              </p>
-
-              {/* Four Houses Selection Grid */}
-              <div className="grid grid-cols-2 gap-3 mt-5">
-                {selectableHouses.map((h) => {
-                  const hTheme = houseThemes[h];
-                  const Icon = houseSymbols[h];
-                  const isSelected = activeHouse === h;
-
-                  return (
-                    <button
-                      type="button"
-                      key={h}
-                      onClick={() => handleHouseChange(h)}
-                      disabled={switching}
-                      className={`relative flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border text-center transition-all duration-300 cursor-pointer ${
-                        isSelected
-                          ? "border-brand bg-brand-soft shadow-lg shadow-brand/10 scale-[1.02]"
-                          : "border-line-subtle bg-bg/50 hover:border-brand/40 hover:bg-surface-2/60 text-fg-muted"
-                      }`}
-                    >
-                      {/* Active Indicator Pin */}
-                      {isSelected && (
-                        <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-brand shadow-[0_0_6px_var(--brand)]" />
-                      )}
-
-                      <div className="w-10 h-10 rounded-xl bg-surface-1 flex items-center justify-center text-fg-brand">
-                        <Icon size={20} />
-                      </div>
-
-                      <div className="flex flex-col">
-                        <span className="font-serif text-sm font-bold text-fg-strong">
-                          {hTheme.name}
-                        </span>
-                        <span className="text-[10px] text-fg-subtle line-clamp-1">
-                          {hTheme.quality.split("·")[0]}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {switchFeedback && (
-                <p className="mt-3 text-xs text-center text-fg-brand font-medium animate-fade-in">
-                  ✦ {switchFeedback}
-                </p>
-              )}
-            </div>
-
-            <div className="p-4 rounded-2xl bg-bg/40 border border-line-subtle flex items-center justify-between text-xs text-fg-muted">
-              <span>Looking for ceremony preview?</span>
-              <Link
-                href="/sorting"
-                className="font-semibold text-fg-brand hover:underline flex items-center gap-1"
-              >
-                Sorting Ceremony <ArrowUpRight size={13} />
-              </Link>
-            </div>
-          </article>
-        </section>
-
-        {/* =========================================================
-            CHAMBER PASSAGES & FESTIVAL SHORTCUTS (ACTION CARDS)
-           ========================================================= */}
-        <section className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-fg-brand">
-                THE GRAND DIRECTORY
+        <motion.section
+          variants={fadeUpItem}
+          className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 shadow-xl sm:p-8"
+        >
+          <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <div className="flex flex-col gap-1">
+              <span className="font-orbiter text-[10px] font-semibold uppercase tracking-[0.22em] text-fg-brand">
+                OFFICIAL STUDENT LEDGER
               </span>
-              <h2 className="font-serif text-2xl sm:text-3xl text-fg-strong">
-                Festival Passages & Quests
+              <h2 className="font-serif text-2xl text-zinc-100 sm:text-3xl">
+                Personal Details &amp; Credentials
               </h2>
             </div>
 
-            <span className="hidden sm:block text-xs text-fg-subtle">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-brand-border bg-brand-soft text-fg-brand">
+              <User size={18} />
+            </div>
+          </div>
+
+          <motion.div
+            variants={cardStagger}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            <motion.div
+              variants={cardItem}
+              className="flex flex-col gap-1 rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+            >
+              <span className="font-orbiter flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-400">
+                <User size={12} className="text-fg-brand" /> Full Name
+              </span>
+              <span className="text-sm font-semibold text-zinc-100 sm:text-base">
+                {profile.full_name || "Wizard Delegate"}
+              </span>
+            </motion.div>
+
+            <motion.div
+              variants={cardItem}
+              className="flex flex-col gap-1 rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+            >
+              <span className="font-orbiter flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-400">
+                <Mail size={12} className="text-fg-brand" /> Owl-Post Email
+              </span>
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className="truncate text-sm font-semibold text-zinc-100"
+                  title={email}
+                >
+                  {email}
+                </span>
+                {profile.is_bit && (
+                  <span className="font-orbiter shrink-0 rounded-full border border-brand-border bg-brand-soft px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-fg-brand">
+                    BIT
+                  </span>
+                )}
+              </div>
+            </motion.div>
+
+            <motion.div
+              variants={cardItem}
+              className="flex flex-col gap-1 rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+            >
+              <span className="font-orbiter flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-400">
+                <GraduationCap size={12} className="text-fg-brand" />{" "}
+                Institution / College
+              </span>
+              <span className="text-sm font-semibold text-zinc-100">
+                {profile.college || "Not provided"}
+              </span>
+            </motion.div>
+
+            <motion.div
+              variants={cardItem}
+              className="flex flex-col gap-1 rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+            >
+              <span className="font-orbiter flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-400">
+                <Phone size={12} className="text-fg-brand" /> Secure Dispatch
+                Phone
+              </span>
+              <span className="text-sm font-semibold text-zinc-100">
+                {profile.phone || "Not recorded yet"}
+              </span>
+            </motion.div>
+
+            <motion.div
+              variants={cardItem}
+              className="flex flex-col gap-1 rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+            >
+              <span className="font-orbiter flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-400">
+                <ShieldCheck size={12} className="text-fg-brand" /> House
+                Affiliation
+              </span>
+              <span className="flex items-center gap-2 text-sm font-semibold capitalize text-zinc-100">
+                {theme.name}
+                {assignedHouse && (
+                  <span className="rounded-full bg-brand-soft px-2 py-0.5 font-mono text-xs text-fg-brand">
+                    {theme.initial}
+                  </span>
+                )}
+              </span>
+            </motion.div>
+
+            <motion.div
+              variants={cardItem}
+              className="flex flex-col gap-1 rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+            >
+              <span className="font-orbiter flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-400">
+                <CalendarDays size={12} className="text-fg-brand" /> Enrolled
+                Since
+              </span>
+              <span className="text-sm font-semibold text-zinc-100">
+                {registeredDate}
+              </span>
+            </motion.div>
+          </motion.div>
+
+          {/* Delegate UUID copy bar */}
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand-border bg-brand-soft/40 p-4 text-xs">
+            <div className="min-w-0 flex-1">
+              <span className="font-orbiter block text-[10px] uppercase tracking-widest text-zinc-400">
+                Delegate Cipher / UUID
+              </span>
+              <span
+                className="mt-0.5 block truncate font-mono text-zinc-100"
+                title={userId}
+              >
+                {userId}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCopyId}
+              className="font-orbiter flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-brand-border bg-[#0b0b10] px-3.5 py-2 text-xs font-medium text-fg-brand transition-colors hover:border-brand hover:bg-brand-soft"
+            >
+              {copiedId ? (
+                <>
+                  <Check size={14} className="text-emerald-400" />
+                  <span>Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={14} />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
+          </div>
+        </motion.section>
+
+        {/* =========================================================
+            CHAMBER PASSAGES & FESTIVAL SHORTCUTS
+           ========================================================= */}
+        <motion.section variants={fadeUpItem} className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="font-orbiter text-[10px] font-semibold uppercase tracking-[0.22em] text-fg-brand">
+                THE GRAND DIRECTORY
+              </span>
+              <h2 className="font-serif text-2xl text-zinc-100 sm:text-3xl">
+                Festival Passages &amp; Quests
+              </h2>
+            </div>
+
+            <span className="font-orbiter hidden text-xs text-zinc-500 sm:block">
               Direct portals to official chambers
             </span>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {actionCards.map(({ href, label, detail, badge, Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className="group relative flex flex-col justify-between p-6 rounded-3xl border border-line bg-surface-1 hover:border-brand-border hover:bg-brand-soft hover:shadow-glow-brand transition-all duration-300"
+          <motion.div
+            variants={cardStagger}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.15 }}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {assignedHouse && (
+              <motion.div
+                variants={cardItem}
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.25 }}
               >
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <span className="w-10 h-10 rounded-2xl bg-brand-soft border border-brand-border text-fg-brand flex items-center justify-center">
-                      <Icon size={18} />
-                    </span>
+                <Link
+                  href="/common-room"
+                  className="group relative flex h-full flex-col justify-between rounded-3xl border border-brand-border bg-brand-soft/35 p-6 text-left transition-all duration-300 hover:border-brand hover:bg-brand-soft/60 hover:shadow-glow-brand"
+                >
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-brand-border bg-[#07070a]/70 text-fg-brand">
+                        <BookOpen size={18} />
+                      </span>
 
-                    <span className="text-[9px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full bg-bg/60 border border-line-subtle text-fg-subtle">
-                      {badge}
-                    </span>
+                      <span className="font-orbiter rounded-full border border-brand-border bg-[#07070a]/60 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-widest text-fg-brand">
+                        3D Room
+                      </span>
+                    </div>
+
+                    <h3 className="font-serif text-lg font-bold text-zinc-100 transition-colors group-hover:text-fg-brand">
+                      Common Room
+                    </h3>
+
+                    <p className="text-xs leading-relaxed text-zinc-400">
+                      Enter the dedicated full-viewport 3D chamber, inspect house
+                      archives, notice boards, and member rolls.
+                    </p>
                   </div>
 
-                  <h3 className="font-serif text-lg font-bold text-fg-strong group-hover:text-fg-brand transition-colors">
-                    {label}
-                  </h3>
+                  <div className="font-orbiter mt-4 flex items-center justify-between border-t border-white/10 pt-4 text-xs font-semibold text-fg-brand">
+                    <span>Enter 3D Chamber</span>
+                    <ArrowUpRight
+                      size={16}
+                      className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    />
+                  </div>
+                </Link>
+              </motion.div>
+            )}
 
-                  <p className="text-xs leading-relaxed text-fg-muted">
-                    {detail}
-                  </p>
-                </div>
+            {directoryLinks.map(({ href, label, detail, badge, Icon }) => (
+              <motion.div
+                key={href}
+                variants={cardItem}
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.25 }}
+              >
+                <Link
+                  href={href}
+                  className="group relative flex h-full flex-col justify-between rounded-3xl border border-white/10 bg-white/[0.02] p-6 transition-all duration-300 hover:border-brand-border hover:bg-brand-soft/40 hover:shadow-glow-brand"
+                >
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-brand-border bg-brand-soft text-fg-brand">
+                        <Icon size={18} />
+                      </span>
 
-                <div className="flex items-center justify-between pt-4 mt-4 border-t border-line-subtle text-xs font-semibold text-fg-brand">
-                  <span>Enter Chamber</span>
-                  <ArrowUpRight
-                    size={16}
-                    className="transform transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                  />
-                </div>
-              </Link>
+                      <span className="font-orbiter rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-widest text-zinc-400">
+                        {badge}
+                      </span>
+                    </div>
+
+                    <h3 className="font-serif text-lg font-bold text-zinc-100 transition-colors group-hover:text-fg-brand">
+                      {label}
+                    </h3>
+
+                    <p className="text-xs leading-relaxed text-zinc-400">
+                      {detail}
+                    </p>
+                  </div>
+
+                  <div className="font-orbiter mt-4 flex items-center justify-between border-t border-white/10 pt-4 text-xs font-semibold text-fg-brand">
+                    <span>Enter Chamber</span>
+                    <ArrowUpRight
+                      size={16}
+                      className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    />
+                  </div>
+                </Link>
+              </motion.div>
             ))}
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
         {/* =========================================================
             BOTTOM CASTLE FOOTER & LOGOUT
            ========================================================= */}
-        <section className="rounded-3xl border border-brand-border bg-gradient-to-r from-surface-1 via-brand-soft to-surface-1 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md">
+        <motion.section
+          variants={fadeUpItem}
+          className="flex flex-col items-center justify-between gap-6 rounded-3xl border border-brand-border bg-gradient-to-r from-white/[0.02] via-brand-soft/50 to-white/[0.02] p-6 shadow-md sm:flex-row sm:p-8"
+        >
           <div className="flex items-center gap-4 text-center sm:text-left">
-            <div className="hidden sm:flex w-12 h-12 rounded-2xl bg-brand-soft border border-brand-border items-center justify-center text-fg-brand">
+            <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-brand-border bg-brand-soft text-fg-brand sm:flex">
               <Sparkles size={22} />
             </div>
 
             <div>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-fg-brand block">
+              <span className="font-orbiter block text-[10px] font-semibold uppercase tracking-[0.22em] text-fg-brand">
                 A NOTE FROM THE CASTLE
               </span>
-              <p className="font-serif text-xl sm:text-2xl text-fg-strong mt-0.5">
+              <p className="mt-0.5 font-serif text-xl italic text-zinc-100 sm:text-2xl">
                 &ldquo;{theme.motto}&rdquo;
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
             <Link
               href="/"
-              className="px-5 py-2.5 rounded-xl text-xs font-medium border border-line-brand bg-surface-1 text-fg hover:border-brand-border hover:bg-brand-soft transition-colors"
+              className="font-orbiter rounded-xl border border-white/10 bg-white/[0.03] px-5 py-2.5 text-xs font-medium text-zinc-200 transition-colors hover:border-brand-border hover:bg-brand-soft"
             >
               Return Home
             </Link>
 
             <LogoutButton />
           </div>
-        </section>
-      </div>
+        </motion.section>
+      </motion.div>
     </main>
   );
 }

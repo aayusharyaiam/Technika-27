@@ -1,34 +1,37 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./technika.css";
-// ⚠️ Adjust this path to wherever your HouseProvider / useHouse lives.
-import { useHouse } from "@/components/house-provider";
-import { getLogoPalette } from "./house-palette";
 import { TechnikaBrand } from "./logo";
 
-/** Intro animation is ~1.1s; this adds a short hold so it never feels cut off. */
-const MIN_VISIBLE_MS = 1600;
+/** Intro animation is ~1.9s (draw outline, then fill); this adds a short hold. */
+const MIN_VISIBLE_MS = 2400;
 /** Safety net: never keep people waiting longer than this. */
 const MAX_WAIT_MS = 6000;
 /** Duration of the logo flying into the navbar. */
 const FLY_MS = 850;
 
 /**
- * Full-screen intro. Plays the outline → fill → glow sequence, waits for
+ * Full-screen intro. Draws the outline, fills it with the house colour, waits for
  * the page (window load + fonts), then flies the logo into the navbar
  * brand slot (`[data-tk-nav-brand]`) and calls `onLanded`.
  *
  * Render it while loading and unmount it from `onLanded` (see shell.tsx).
  */
-export function TechnikaLoader({ onLanded }: { onLanded?: () => void }) {
-  const { house } = useHouse();
-  const palette = getLogoPalette(house);
-  const [phase, setPhase] = useState<"intro" | "fly">("intro");
+export function TechnikaLoader({
+  onReveal,
+  onLanded,
+}: {
+  onReveal?: () => void;
+  onLanded?: () => void;
+}) {
+  const [phase, setPhase] = useState<"idle" | "intro" | "fly">("idle");
   const brandRef = useRef<HTMLDivElement>(null);
 
+  const onRevealRef = useRef(onReveal);
   const onLandedRef = useRef(onLanded);
   useEffect(() => {
+    onRevealRef.current = onReveal;
     onLandedRef.current = onLanded;
   });
 
@@ -37,17 +40,38 @@ export function TechnikaLoader({ onLanded }: { onLanded?: () => void }) {
       "(prefers-reduced-motion: reduce)",
     ).matches;
 
-    // Lock scroll while the loader is up
+    // Lock both native scroll and Lenis smooth scroll while the loader is visible
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const lenis = (
+      window as unknown as { lenis?: { stop?: () => void; start?: () => void } }
+    ).lenis;
+    lenis?.stop?.();
 
     let cancelled = false;
+    let didLand = false;
     let flight: Animation | undefined;
     const timers: number[] = [];
     const wait = (ms: number) =>
       new Promise<void>((resolve) =>
         timers.push(window.setTimeout(resolve, ms)),
       );
+    const finish = () => {
+      if (cancelled || didLand) return;
+      didLand = true;
+      onLandedRef.current?.();
+    };
+
+    // Start the intro once the wordmark font is ready (max 800ms), so the outline
+    // is never drawn in a fallback font. Guard so a late font resolve never reverts "fly".
+    const fontReady = document.fonts
+      ? Promise.race([document.fonts.ready.then(() => undefined), wait(800)])
+      : Promise.resolve();
+    fontReady.then(() => {
+      if (!cancelled) {
+        setPhase((prev) => (prev === "idle" ? "intro" : prev));
+      }
+    });
 
     const pageLoaded =
       document.readyState === "complete"
@@ -71,23 +95,29 @@ export function TechnikaLoader({ onLanded }: { onLanded?: () => void }) {
     ready.then(() => {
       if (cancelled) return;
       setPhase("fly");
+      onRevealRef.current?.();
 
       const brand = brandRef.current;
       const target = document.querySelector<HTMLElement>("[data-tk-nav-brand]");
 
-      // No navbar to land on (or reduced motion): just fade out.
-      if (!brand || !target || reduceMotion) {
-        timers.push(
-          window.setTimeout(() => !cancelled && onLandedRef.current?.(), 450),
-        );
+      if (reduceMotion) {
+        timers.push(window.setTimeout(finish, 200));
         return;
       }
 
-      // FLIP: measure both lockups, then scale + translate the loader one onto the navbar one.
+      if (!brand || !target || typeof brand.animate !== "function") {
+        timers.push(window.setTimeout(finish, 450));
+        return;
+      }
+
       const from = brand.getBoundingClientRect();
       const to = target.getBoundingClientRect();
-      const scale = to.width / from.width;
+      if (from.width <= 0 || to.width <= 0) {
+        timers.push(window.setTimeout(finish, 450));
+        return;
+      }
 
+      const scale = to.width / from.width;
       flight = brand.animate(
         [
           { transform: "translate3d(0, 0, 0) scale(1)" },
@@ -101,9 +131,9 @@ export function TechnikaLoader({ onLanded }: { onLanded?: () => void }) {
           fill: "forwards",
         },
       );
-      flight.onfinish = () => {
-        if (!cancelled) onLandedRef.current?.();
-      };
+      flight.onfinish = finish;
+      // Fallback ensures background-throttled tabs never trap the loader open
+      timers.push(window.setTimeout(finish, FLY_MS + 250));
     });
 
     return () => {
@@ -111,6 +141,7 @@ export function TechnikaLoader({ onLanded }: { onLanded?: () => void }) {
       timers.forEach((t) => window.clearTimeout(t));
       flight?.cancel();
       document.body.style.overflow = previousOverflow;
+      lenis?.start?.();
     };
   }, []);
 
@@ -120,21 +151,17 @@ export function TechnikaLoader({ onLanded }: { onLanded?: () => void }) {
       aria-live="polite"
       aria-label="Loading Technika"
       data-phase={phase}
+      data-lenis-prevent
       className="tk-loader fixed inset-0 z-[100] overflow-hidden"
-      style={{ "--tk-glow": palette.glow } as CSSProperties}
     >
-      <div className="tk-loader-bg absolute inset-0 bg-[#0a0a0a]" />
-
-      <div className="tk-glow pointer-events-none absolute inset-0 grid place-items-center">
-        <div className="tk-glow-core aspect-square w-[min(120vw,46rem)] rounded-full" />
-      </div>
+      <div className="tk-loader-bg absolute inset-0 bg-[#080808] motion-reduce:transition-none" />
 
       <div className="absolute inset-0 grid place-items-center">
         <div
           ref={brandRef}
           className="tk-loader-brand flex w-max origin-top-left"
         >
-          <TechnikaBrand className="text-[clamp(2.75rem,9vw,8rem)]" />
+          <TechnikaBrand intro className="text-[clamp(2.75rem,9vw,8rem)]" />
         </div>
       </div>
     </div>

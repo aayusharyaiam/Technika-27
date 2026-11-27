@@ -44,6 +44,7 @@ function WandSparks({ enabled }: { enabled: boolean }) {
     let frame = 0;
     let lastSpawn = 0;
     const finePointer = window.matchMedia("(pointer: fine)");
+    const mobileViewport = window.matchMedia("(max-width: 767px)");
     let accent = "";
     let highlight = "";
     const getAccent = () => {
@@ -62,6 +63,10 @@ function WandSparks({ enabled }: { enabled: boolean }) {
       canvas.width = window.innerWidth * dpr;
       canvas.height = window.innerHeight * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (mobileViewport.matches) {
+        sparks = [];
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      }
     };
     const draw = () => {
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
@@ -84,10 +89,12 @@ function WandSparks({ enabled }: { enabled: boolean }) {
     };
     const spawn = (event: PointerEvent, burst: boolean) => {
       if (
-        !burst &&
-        (!finePointer.matches || performance.now() - lastSpawn < 32)
+        !finePointer.matches ||
+        mobileViewport.matches ||
+        event.pointerType === "touch"
       )
         return;
+      if (!burst && performance.now() - lastSpawn < 32) return;
       lastSpawn = performance.now();
       const count = burst ? 22 : 2;
       for (let i = 0; i < count; i++) {
@@ -136,7 +143,12 @@ export function Experience({
 }) {
   const pathname = usePathname();
   const { active: arrivalActive } = useRegistrationArrival();
-  const immersive = pathname === "/account" || arrivalActive;
+  const immersive =
+    pathname === "/account" ||
+    pathname.startsWith("/account/") ||
+    pathname === "/common-room" ||
+    pathname.startsWith("/common-room/") ||
+    arrivalActive;
   const isHome = pathname === "/";
   // On the home page, the intro video controls when ready becomes true (at the castle scene).
   // On all other routes (or when returning to home after intro has completed), ready is immediately true.

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   useEffect,
   useRef,
@@ -11,6 +11,7 @@ import {
   type InputHTMLAttributes,
   type ReactNode,
 } from "react";
+import { AnimatePresence, motion, type Variants } from "motion/react";
 import {
   ArrowRight,
   Bird,
@@ -31,7 +32,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
-import { houseFromValue, houseThemes, themeAttributeForHouse } from "@/lib/houses";
+import { isEmailConfirmed } from "@/lib/auth/session-state";
+import { isBitMesraEmail } from "@/lib/bit-email";
+import {
+  houseFromValue,
+  houseThemes,
+  themeAttributeForHouse,
+} from "@/lib/houses";
 import {
   getLandingPreference,
   setLandingPreference,
@@ -52,51 +59,46 @@ export const HOUSES = [
 ] as const;
 export type CanonicalHouse = (typeof HOUSES)[number];
 
-type AuthMode = "login" | "signup" | "forgot" | "reset";
-type CallbackError = "confirmation" | "reset";
+type AuthMode = "login" | "register" | "forgot" | "reset";
+type CallbackError = "confirmation" | "reset" | "unconfirmed";
 type SupabaseBrowserClient = NonNullable<ReturnType<typeof getSupabase>>;
 
 interface SignupExperienceProps {
   initialMode?: AuthMode;
   callbackError?: CallbackError;
+  callbackMessage?: string;
+  hasVerifiedRecovery?: boolean;
+  onRecoveryComplete?: () => Promise<void> | void;
   onSignupSuccess?: (participant: ArrivalParticipant) => void;
 }
+
+const AUTH_EASE = [0.16, 1, 0.3, 1] as const;
+
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 24, scale: 0.985 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.8, ease: AUTH_EASE, staggerChildren: 0.08 },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 14, filter: "blur(4px)" },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.65, ease: AUTH_EASE },
+  },
+};
 
 const houseIcons: Record<CanonicalHouse, LucideIcon> = {
   gryffindor: Flame,
   slytherin: Leaf,
   ravenclaw: Bird,
   hufflepuff: Sun,
-};
-
-const houseColorStyles: Record<
-  CanonicalHouse,
-  { border: string; bg: string; text: string; glow: string }
-> = {
-  gryffindor: {
-    border: "border-red-600/60",
-    bg: "bg-red-950/40",
-    text: "text-red-300",
-    glow: "shadow-[0_0_30px_rgba(220,38,38,0.35)]",
-  },
-  slytherin: {
-    border: "border-emerald-600/60",
-    bg: "bg-emerald-950/40",
-    text: "text-emerald-300",
-    glow: "shadow-[0_0_30px_rgba(16,185,129,0.35)]",
-  },
-  ravenclaw: {
-    border: "border-sky-600/60",
-    bg: "bg-sky-950/40",
-    text: "text-sky-300",
-    glow: "shadow-[0_0_30px_rgba(14,165,233,0.35)]",
-  },
-  hufflepuff: {
-    border: "border-amber-500/60",
-    bg: "bg-amber-950/40",
-    text: "text-amber-300",
-    glow: "shadow-[0_0_30px_rgba(245,158,11,0.35)]",
-  },
 };
 
 const houseLore: Record<
@@ -137,7 +139,7 @@ const IDLE_SUBTEXT =
   "Four houses. Equal belonging. The Hat weighs ambition, daring, intellect, and heart.";
 
 /* ------------------------------------------------------------------ */
-/* House helpers                                                       */
+/* House helpers (assignment logic intentionally preserved)            */
 /* ------------------------------------------------------------------ */
 
 function normalizeHouse(value: unknown): CanonicalHouse | null {
@@ -151,8 +153,6 @@ function normalizeHouse(value: unknown): CanonicalHouse | null {
 /**
  * Evenly and randomly distributes house assignment across the 4 canonical houses:
  * gryffindor, slytherin, ravenclaw, hufflepuff.
- * Queries current counts from `profiles`, finds the house(s) with the minimum member count,
- * and breaks ties by picking uniformly at random among the minimum-count houses.
  */
 async function getBalancedHouse(
   client: SupabaseBrowserClient,
@@ -191,7 +191,6 @@ async function getBalancedHouse(
     console.warn("Could not determine balanced house from profiles:", err);
   }
 
-  // Fallback if querying profiles fails
   return HOUSES[Math.floor(Math.random() * HOUSES.length)];
 }
 
@@ -211,7 +210,6 @@ async function resolveHouse(
     console.warn("Could not read profile house:", err);
   }
 
-  // Assign balanced house and persist
   const assigned = await getBalancedHouse(client);
   try {
     await client
@@ -253,6 +251,16 @@ function parseAuthError(caught: unknown): string {
     return "Please confirm the verification letter sent to your inbox before signing in.";
   if (/fetch|network|timeout/i.test(message))
     return "Cannot reach the Supabase account service. Check your internet connection.";
+  const code =
+    typeof caught === "object" && caught !== null && "code" in caught
+      ? String((caught as { code?: unknown }).code || "")
+      : "";
+  if (
+    /email rate limit|over_email_send_rate_limit/i.test(message) ||
+    code === "over_email_send_rate_limit"
+  ) {
+    return "The verification email quota has been reached for now. Please wait ~1 hour (Supabase's default email limit is 2 emails/hour unless Custom SMTP is configured) or sign in if you already confirmed your email.";
+  }
   if (/rate limit|too many/i.test(message))
     return "Too many attempts reached the Owlery. Please wait a moment before trying again.";
   if (/database error saving new user/i.test(message))
@@ -261,11 +269,11 @@ function parseAuthError(caught: unknown): string {
 }
 
 /* ------------------------------------------------------------------ */
-/* Reusable input field (defined at module level so it never remounts) */
+/* Reusable theme-reactive input field                                */
 /* ------------------------------------------------------------------ */
 
 const inputBase =
-  "w-full rounded-xl border border-neutral-700/60 bg-neutral-900/80 py-3 text-base text-neutral-100 outline-none transition-colors duration-200 placeholder:text-neutral-500 text-ellipsis focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 disabled:opacity-60 sm:text-sm";
+  "w-full rounded-xl border border-white/10 bg-white/[0.03] py-3 text-base text-zinc-100 outline-none transition-all duration-200 placeholder:text-zinc-500 text-ellipsis hover:border-white/20 focus:border-brand focus:bg-white/[0.05] focus:ring-2 focus:ring-brand/25 disabled:opacity-60 sm:text-sm";
 
 interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -282,13 +290,15 @@ function Field({
   ...inputProps
 }: FieldProps) {
   return (
-    <label className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-neutral-300">
-      <span>{label}</span>
+    <label className="group/field flex min-w-0 flex-col gap-1.5 text-xs font-medium text-zinc-300">
+      <span className="font-orbiter tracking-[0.04em] text-zinc-300">
+        {label}
+      </span>
       <span className="relative block">
         <Icon
           size={16}
           aria-hidden="true"
-          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400/80"
+          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-brand/80 transition-colors duration-200 group-focus-within/field:text-fg-brand"
         />
         <input
           {...inputProps}
@@ -297,28 +307,28 @@ function Field({
         {trailing}
       </span>
       {hint && (
-        <span className="text-[11px] font-normal text-neutral-500">{hint}</span>
+        <span className="text-[11px] font-normal text-zinc-500">{hint}</span>
       )}
     </label>
   );
 }
 
 const linkBtn =
-  "font-medium text-amber-400 underline underline-offset-2 transition-colors hover:text-amber-300 disabled:opacity-60";
+  "font-orbiter font-medium text-fg-brand underline underline-offset-4 decoration-brand/50 transition-all duration-200 hover:decoration-brand hover:brightness-110 disabled:opacity-60";
 
 /* ------------------------------------------------------------------ */
 
 export function SignupLoading() {
   return (
     <div
-      className="flex min-h-screen flex-col items-center justify-center bg-neutral-950 p-6 text-amber-200"
+      className="flex min-h-screen flex-col items-center justify-center bg-[#080808] p-6 text-zinc-200"
       aria-busy="true"
     >
-      <LoaderCircle size={32} className="mb-4 animate-spin text-amber-400" />
-      <h1 className="font-serif text-2xl tracking-wider text-amber-100">
+      <LoaderCircle size={32} className="mb-4 animate-spin text-fg-brand" />
+      <h1 className="font-serif text-2xl tracking-wider text-zinc-100">
         The Sorting Hat Awaits
       </h1>
-      <p className="mt-2 text-xs uppercase tracking-widest text-amber-300/70">
+      <p className="font-orbiter mt-2 text-xs uppercase tracking-[0.22em] text-fg-brand/80">
         Opening the Great Hall doors…
       </p>
     </div>
@@ -328,21 +338,25 @@ export function SignupLoading() {
 export function SignupExperience({
   initialMode = "login",
   callbackError,
+  callbackMessage,
+  hasVerifiedRecovery = false,
+  onRecoveryComplete,
   onSignupSuccess,
 }: SignupExperienceProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { setHouse } = useHouse();
   const { user } = useAuth();
   const { enabled } = useMagic();
   const { begin: beginArrival, active: arrivalActive } = useRegistrationArrival();
 
-  const [mode, setMode] = useState<AuthMode>(() =>
-    searchParams.get("step") === "signup" ? "signup" : initialMode,
-  );
+  const [clientRecovered, setClientRecovered] = useState(false);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState("");
+  const [resendingEmail, setResendingEmail] = useState(false);
   const [busy, setBusy] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const [continuation, setContinuation] = useState<"/account" | "/login" | null>(null);
+  const [continuation, setContinuation] = useState<
+    "/dashboard" | "/login" | null
+  >(null);
   const [showPassword, setShowPassword] = useState(false);
   const [landing, setLanding] = useState<LandingPreference | null>(() =>
     getLandingPreference(),
@@ -362,13 +376,24 @@ export function SignupExperience({
   const [hatSpeech, setHatSpeech] = useState(IDLE_SPEECH);
   const [hatSubtext, setHatSubtext] = useState(IDLE_SUBTEXT);
 
-  const [error, setError] = useState(
-    callbackError === "reset"
-      ? "That password reset link has expired or could not be verified. Request a new reset letter below."
-      : callbackError === "confirmation"
-        ? "That confirmation link has expired. Request a new confirmation email below."
-        : "",
-  );
+  const [error, setError] = useState(() => {
+    if (callbackError === "reset") {
+      return (
+        callbackMessage ||
+        "That password reset link has expired or could not be verified. Request a new reset letter below."
+      );
+    }
+    if (callbackError === "confirmation") {
+      return (
+        callbackMessage ||
+        "That confirmation link has expired. Request a new confirmation email below."
+      );
+    }
+    if (callbackError === "unconfirmed") {
+      return "Please confirm the verification email sent to your inbox before accessing your account.";
+    }
+    return "";
+  });
   const [message, setMessage] = useState("");
 
   const alertRef = useRef<HTMLParagraphElement>(null);
@@ -377,11 +402,31 @@ export function SignupExperience({
   const mounted = useRef(true);
   const verification = useRef<AbortController | null>(null);
 
-  const isSignup = mode === "signup";
+  const effectiveRecovery = hasVerifiedRecovery || clientRecovered;
+  const mode: AuthMode =
+    clientRecovered && initialMode === "forgot" ? "reset" : initialMode;
+  const isSignup = mode === "register";
   const isReset = mode === "reset";
   const isForgot = mode === "forgot";
   const isNewPassword = isSignup || isReset;
   const disabled = busy || leaving || continuation !== null;
+
+  useEffect(() => {
+    if (initialMode !== "forgot" && initialMode !== "reset") return;
+    const client = getSupabase();
+    if (!client) return;
+
+    const {
+      data: { subscription },
+    } = client.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" && session?.user) {
+        setClientRecovered(true);
+        setError("");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [initialMode]);
 
   useEffect(() => {
     mounted.current = true;
@@ -400,14 +445,6 @@ export function SignupExperience({
     setHatMood("idle");
     setHatSpeech(IDLE_SPEECH);
     setHatSubtext(IDLE_SUBTEXT);
-  };
-
-  const switchMode = (next: AuthMode, speech?: string) => {
-    setMode(next);
-    setError("");
-    setMessage("");
-    resetHat();
-    if (speech) setHatSpeech(speech);
   };
 
   const handleInputFocus = (field: "email" | "password") => {
@@ -432,25 +469,21 @@ export function SignupExperience({
     resetHat();
   };
 
-  const handlePreviewHouse = (houseKey: CanonicalHouse) => {
-    const lore = houseLore[houseKey];
-    setAssignedHouse(houseKey);
-    setHouse(houseKey);
-    setHatMood("revealed");
-    setHatSpeech(lore.speech);
-    setHatSubtext(lore.subtext);
-  };
-
-  /** Helper: Retry API call with exponential backoff */
-  const fetchWithRetry = async (url: string, signal: AbortSignal, maxRetries = 3): Promise<Response> => {
+  const fetchWithRetry = async (
+    url: string,
+    signal: AbortSignal,
+    maxRetries = 3,
+  ): Promise<Response> => {
     for (let i = 0; i < maxRetries; i++) {
       try {
         const res = await fetch(url, { cache: "no-store", signal });
         if (res.ok) return res;
-        if (i < maxRetries - 1) await new Promise(r => setTimeout(r, 500 * (i + 1)));
+        if (i < maxRetries - 1)
+          await new Promise((r) => setTimeout(r, 500 * (i + 1)));
       } catch (err) {
         if (signal.aborted) throw err;
-        if (i < maxRetries - 1) await new Promise(r => setTimeout(r, 500 * (i + 1)));
+        if (i < maxRetries - 1)
+          await new Promise((r) => setTimeout(r, 500 * (i + 1)));
         else throw err;
       }
     }
@@ -465,46 +498,76 @@ export function SignupExperience({
     delay: number,
   ) => {
     setLeaving(true);
-    const house = normalizeHouse(knownHouse) || (await resolveHouse(client, userId));
+    const house =
+      normalizeHouse(knownHouse) || (await resolveHouse(client, userId));
     if (!mounted.current) return;
+
     if (isSignup) {
       const controller = new AbortController();
       verification.current = controller;
-      // Mobile networks + a cold serverless start can take well over 10s on the first call.
       const timeout = setTimeout(() => controller.abort(), 30_000);
       try {
-        const response = await fetchWithRetry('/api/common-room/arrival', controller.signal, 5);
-        const result: { status?: string; participant?: Partial<ArrivalParticipant> } = await response.json();
+        const response = await fetchWithRetry(
+          "/api/common-room/arrival",
+          controller.signal,
+          5,
+        );
+        const result: {
+          status?: string;
+          participant?: Partial<ArrivalParticipant>;
+        } = await response.json();
         const saved = result?.participant;
         const verifiedHouse = houseFromValue(saved?.house);
-        if (!response.ok) throw new Error(`API returned ${response.status}: ${result?.status}`);
-        if (result?.status !== 'ready') throw new Error(`Arrival not ready: ${result?.status}`);
-        if (saved?.id !== userId) throw new Error('User ID mismatch');
-        if (typeof saved.displayName !== 'string' || !saved.displayName.trim()) throw new Error('No displayName');
-        if (!verifiedHouse || verifiedHouse === 'default') throw new Error(`Invalid house: ${saved?.house}`);
-        if (saved.house !== verifiedHouse) throw new Error('House verification failed');
+        if (!response.ok)
+          throw new Error(`API returned ${response.status}: ${result?.status}`);
+        if (result?.status !== "ready")
+          throw new Error(`Arrival not ready: ${result?.status}`);
+        if (saved?.id !== userId) throw new Error("User ID mismatch");
+        if (typeof saved.displayName !== "string" || !saved.displayName.trim())
+          throw new Error("No displayName");
+        if (!verifiedHouse || verifiedHouse === "default")
+          throw new Error(`Invalid house: ${saved?.house}`);
+        if (saved.house !== verifiedHouse)
+          throw new Error("House verification failed");
         if (!mounted.current) return;
-        const participant: ArrivalParticipant = { id: userId, displayName: saved.displayName, house: verifiedHouse };
-        setAssignedHouse(verifiedHouse); setHouse(verifiedHouse);
-        setHatMood('revealed'); setHatSpeech('Your acceptance letter has arrived.');
+        const participant: ArrivalParticipant = {
+          id: userId,
+          displayName: saved.displayName,
+          house: verifiedHouse,
+        };
+        setAssignedHouse(verifiedHouse);
+        setHouse(verifiedHouse);
+        setHatMood("revealed");
+        setHatSpeech("Your acceptance letter has arrived.");
         setHatSubtext(houseThemes[verifiedHouse].motto);
-        setMessage('Your registration is confirmed. Your acceptance letter is ready.');
+        setMessage(
+          "Your registration is confirmed. Your acceptance letter is ready.",
+        );
         void syncHouseMetadata(client, verifiedHouse, knownHouse);
         (onSignupSuccess ?? beginArrival)(participant);
       } catch (err) {
-        console.warn('[signup] arrival verification failed:', err);
+        console.warn("[signup] arrival verification failed:", err);
         if (!mounted.current) return;
-        setAssignedHouse(null); setHatMood('idle');
-        setHatSpeech('Your record is safe. The profile ledger needs another look.');
-        setMessage('Your registration succeeded, but we could not verify your session and saved house. Continue to your Common Room to retry.');
-        setContinuation('/account');
-      } finally { clearTimeout(timeout); verification.current = null; }
+        setAssignedHouse(null);
+        setHatMood("idle");
+        setHatSpeech(
+          "Your record is safe. The profile ledger needs another look.",
+        );
+        setMessage(
+          "Your registration succeeded, but we could not verify your session and saved house. Continue to your Dashboard to retry.",
+        );
+        setContinuation("/dashboard");
+      } finally {
+        clearTimeout(timeout);
+        verification.current = null;
+      }
       return;
     }
+
     setAssignedHouse(house);
     setHouse(house);
     setHatMood("revealed");
-    setHatSpeech(`BETTER BE... ${house.toUpperCase()}! ⚡`);
+    setHatSpeech(`BETTER BE... ${house.toUpperCase()}!`);
     setHatSubtext(houseThemes[house].motto);
     setMessage(
       `${houseThemes[house].name} welcomes you! ${houseThemes[house].motto}`,
@@ -515,6 +578,32 @@ export function SignupExperience({
       router.push(resolveLandingPath());
       router.refresh();
     }, delay);
+  };
+
+  const handleResendVerification = async () => {
+    if (!pendingVerificationEmail || resendingEmail) return;
+    const client = getSupabase();
+    if (!client) return;
+
+    setResendingEmail(true);
+    setError("");
+    try {
+      const { error: resendErr } = await client.auth.resend({
+        type: "signup",
+        email: pendingVerificationEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/dashboard")}`,
+        },
+      });
+      if (resendErr) throw resendErr;
+      setMessage(
+        `A fresh verification email has been sent to ${pendingVerificationEmail}. Please check your inbox and spam folder.`,
+      );
+    } catch (caught) {
+      setError(parseAuthError(caught));
+    } finally {
+      if (mounted.current) setResendingEmail(false);
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -531,6 +620,7 @@ export function SignupExperience({
       .trim()
       .replace(/[\s().-]/g, "");
     const password = String(form.get("password") || "");
+    const confirmPassword = String(form.get("confirmPassword") || "");
 
     if (isSignup && name.length < 2) {
       setError("Please enter your full name (at least 2 characters).");
@@ -555,7 +645,7 @@ export function SignupExperience({
       );
       return;
     }
-    if (isReset && password !== String(form.get("confirmPassword") || "")) {
+    if (isNewPassword && password !== confirmPassword) {
       setError("Your passwords do not match. Please verify both fields.");
       return;
     }
@@ -601,9 +691,9 @@ export function SignupExperience({
         );
         setHatSubtext(msg);
       } else if (isSignup) {
-        // 1. Balance and assign house across the 4 canonical houses
         const chosenHouse = await getBalancedHouse(client);
-        void import('./acceptance-letter').catch(() => {});
+        const isBit = isBitMesraEmail(email);
+        void import("./acceptance-letter").catch(() => {});
         const { data: signUpData, error: signUpErr } = await client.auth.signUp(
           {
             email,
@@ -616,9 +706,10 @@ export function SignupExperience({
                 college,
                 phone,
                 house: chosenHouse,
+                is_bit: isBit,
               },
               emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-                "/login",
+                "/dashboard",
               )}`,
             },
           },
@@ -626,8 +717,31 @@ export function SignupExperience({
         if (!mounted.current) return;
         if (signUpErr) throw signUpErr;
 
-        // 3. Upsert profiles record if user/session was returned
-        if (signUpData.user) {
+        if (
+          signUpData.user &&
+          Array.isArray(signUpData.user.identities) &&
+          signUpData.user.identities.length === 0
+        ) {
+          throw new Error("User already registered");
+        }
+
+        const emailConfirmed = isEmailConfirmed(signUpData.user);
+
+        if (!emailConfirmed) {
+          if (signUpData.session) await client.auth.signOut();
+          setPendingVerificationEmail(email);
+          const signupMsg = `Verification email sent to ${email}. Click the confirmation link in your inbox to verify your email and complete your registration.`;
+          setMessage(signupMsg);
+          setHatMood("idle");
+          setHatSpeech(
+            "An owl has left for your inbox. Verify your email address to complete enrollment.",
+          );
+          setHatSubtext(signupMsg);
+          setContinuation("/login");
+          return;
+        }
+
+        if (signUpData.session && signUpData.user) {
           try {
             await client.from("profiles").upsert(
               {
@@ -636,59 +750,57 @@ export function SignupExperience({
                 college,
                 phone,
                 house: chosenHouse,
+                is_bit: isBit,
               },
               { onConflict: "id" },
             );
           } catch {
-            /* best-effort sync */
+            /* best-effort sync after verified registration */
           }
-        }
 
-        const emailConfirmed = Boolean(
-          signUpData.user?.email_confirmed_at || signUpData.user?.confirmed_at,
-        );
-
-        if (!emailConfirmed) {
-          if (signUpData.session) await client.auth.signOut();
-          const signupMsg =
-            `Your enrollment is written in the castle ledger! The Sorting Hat has foreseen you in ${chosenHouse.toUpperCase()}! Confirm the verification email sent to your inbox to enter your common room.`;
-          setMessage(signupMsg);
-          setAssignedHouse(chosenHouse);
-          setHouse(chosenHouse);
-          setHatMood("revealed");
-          setHatSpeech(houseLore[chosenHouse].speech);
-          setHatSubtext(signupMsg);
-          setContinuation("/login");
-          return;
-        }
-
-        if (signUpData.session && signUpData.user) {
-          await sortAndEnter(
-            client,
-            signUpData.user.id,
-            chosenHouse,
-            1800,
-          );
+          await sortAndEnter(client, signUpData.user.id, chosenHouse, 1800);
         } else {
-          setMessage("Your registration was received, but no signed-in session was returned. Sign in to verify your Common Room.");
-          setHatMood("idle"); setContinuation("/login");
+          setPendingVerificationEmail(email);
+          setMessage(
+            "Verification email sent. Confirm your inbox and then sign in to complete your entry.",
+          );
+          setHatMood("idle");
+          setContinuation("/login");
         }
       } else if (isReset) {
-        const { data: verified, error: verifyErr } =
-          await client.auth.getUser();
-        if (verifyErr || !verified.user) {
+        if (!effectiveRecovery) {
           setError(
             "Please open the verified password reset link from your email first.",
           );
+          setHatMood("error");
+          return;
+        }
+        const { data: verified, error: verifyErr } =
+          await client.auth.getUser();
+        if (verifyErr || !verified.user || !isEmailConfirmed(verified.user)) {
+          setError(
+            "Please open the verified password reset link from your email first.",
+          );
+          setHatMood("error");
           return;
         }
         const { error: updateErr } = await client.auth.updateUser({ password });
         if (updateErr) throw updateErr;
+        try {
+          await onRecoveryComplete?.();
+        } catch {
+          /* ignore cookie cleanup failure */
+        }
         setMessage(
-          "Your password has been changed. Your common room is ready.",
+          "Your password has been updated. Taking you to your dashboard…",
         );
         setHatMood("revealed");
         setHatSpeech("Your castle key is renewed. Step into the Great Hall!");
+        setLeaving(true);
+        timerRef.current = setTimeout(() => {
+          router.replace("/dashboard");
+          router.refresh();
+        }, 1200);
       } else {
         setHatSpeech(
           "I see courage, yes... and a keen intellect... where shall I place you?",
@@ -701,19 +813,25 @@ export function SignupExperience({
           });
         if (authErr) throw authErr;
 
-        if (!authData.user.email_confirmed_at && !authData.user.confirmed_at) {
+        if (!isEmailConfirmed(authData.user)) {
           await client.auth.signOut();
+          setPendingVerificationEmail(email);
           throw new Error("Email not confirmed");
         }
 
-        // Determine user house from profiles or assign balanced house if missing
+        const isBit = isBitMesraEmail(authData.user.email || email);
+
         let userHouse: CanonicalHouse | null = null;
+        let storedIsBit: boolean | null = null;
+        let hasProfileRow = false;
         try {
           const { data: prof } = await client
             .from("profiles")
-            .select("house")
+            .select("house, is_bit")
             .eq("id", authData.user.id)
             .maybeSingle();
+          hasProfileRow = Boolean(prof);
+          storedIsBit = typeof prof?.is_bit === "boolean" ? prof.is_bit : null;
           userHouse = normalizeHouse(prof?.house);
         } catch {
           // ignore
@@ -725,6 +843,14 @@ export function SignupExperience({
 
         if (!userHouse) {
           userHouse = await getBalancedHouse(client);
+        }
+
+        const effectiveIsBit = isBit || storedIsBit === true;
+        if (
+          !hasProfileRow ||
+          storedIsBit === null ||
+          (isBit && storedIsBit !== true)
+        ) {
           try {
             await client.from("profiles").upsert(
               {
@@ -737,10 +863,13 @@ export function SignupExperience({
                 college: (authData.user.user_metadata?.college as string) || "",
                 phone: (authData.user.user_metadata?.phone as string) || "",
                 house: userHouse,
+                is_bit: effectiveIsBit,
               },
               { onConflict: "id" },
             );
-            await client.auth.updateUser({ data: { house: userHouse } });
+            await client.auth.updateUser({
+              data: { house: userHouse, is_bit: effectiveIsBit },
+            });
           } catch {
             /* best-effort sync */
           }
@@ -768,59 +897,85 @@ export function SignupExperience({
       );
       setHatSubtext(friendlyErr);
     } finally {
-      if (mounted.current) { lockRef.current = false; setBusy(false); }
+      if (mounted.current) {
+        lockRef.current = false;
+        setBusy(false);
+      }
     }
   };
 
   const currentTheme = assignedHouse
     ? houseThemes[assignedHouse]
     : houseThemes.default;
-  const currentStyles = assignedHouse ? houseColorStyles[assignedHouse] : null;
   const HouseIcon = assignedHouse ? houseIcons[assignedHouse] : null;
 
   return (
     <div
-      className={`flex min-h-[100dvh] w-full items-center justify-center bg-neutral-950 px-4 pb-12 pt-24 text-neutral-100 selection:bg-amber-500/30 selection:text-amber-100 transition-opacity duration-500 motion-reduce:transition-none sm:px-6 sm:pt-28 lg:px-8 ${arrivalActive ? "pointer-events-none opacity-0" : ""}`}
+      className={`relative flex min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#080808] px-4 pb-16 pt-28 text-zinc-100 transition-colors duration-700 selection:bg-brand-soft selection:text-fg-strong sm:px-6 sm:pt-32 lg:px-8 ${arrivalActive ? "pointer-events-none opacity-0" : ""}`}
       data-theme={
         assignedHouse ? themeAttributeForHouse(assignedHouse) : undefined
       }
       data-house={assignedHouse || undefined}
     >
-      {/* minmax(0, …) stops long text from stretching the grid columns */}
-      <div className="grid w-full max-w-5xl grid-cols-1 overflow-hidden rounded-3xl border border-amber-500/20 bg-neutral-900/60 shadow-2xl shadow-black/80 backdrop-blur-2xl lg:min-h-[44rem] lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-        {/* ============ LEFT: SORTING HAT ============ */}
-        <aside className="relative flex min-w-0 flex-col items-center gap-4 overflow-hidden border-b border-amber-500/20 bg-gradient-to-b from-amber-950/20 via-neutral-950/80 to-purple-950/20 p-5 sm:p-8 lg:border-b-0 lg:border-r">
+      {/* Ambient theme-reactive radial atmosphere */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-0 h-[34rem] w-[58rem] -translate-x-1/2 rounded-full bg-brand-soft opacity-45 blur-3xl transition-colors duration-700"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-32 right-0 h-80 w-80 rounded-full bg-brand-soft opacity-30 blur-3xl transition-colors duration-700"
+      />
+
+      <motion.div
+        variants={cardVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative z-10 grid w-full max-w-5xl grid-cols-1 overflow-hidden rounded-3xl border border-brand-border bg-white/[0.025] shadow-2xl shadow-black/80 backdrop-blur-2xl transition-[border-color,box-shadow] duration-700 lg:min-h-[44rem] lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
+      >
+        {/* Top subtle shimmer hairline */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 h-px bg-gradient-to-r from-transparent via-brand/50 to-transparent"
+        />
+
+        {/* ============ LEFT: SORTING HAT CHAMBER ============ */}
+        <aside className="relative flex min-w-0 flex-col items-center gap-5 overflow-hidden border-b border-white/10 bg-gradient-to-b from-brand-soft/40 via-[#09090d]/90 to-[#080808] p-6 sm:p-8 lg:border-b-0 lg:border-r lg:border-white/10">
           <div
-            className="pointer-events-none absolute left-1/2 top-12 h-56 w-56 -translate-x-1/2 rounded-full bg-gradient-to-tr from-amber-400/10 via-orange-500/10 to-transparent blur-3xl"
+            className="pointer-events-none absolute left-1/2 top-10 h-56 w-56 -translate-x-1/2 rounded-full bg-brand-soft opacity-60 blur-3xl transition-colors duration-700"
             aria-hidden="true"
           />
 
-          <div className="relative z-10 flex flex-wrap items-center justify-center gap-x-2 text-center text-[10px] font-medium uppercase tracking-[0.2em] text-amber-300">
-            <span aria-hidden="true" className="text-amber-400">
-              ✦
-            </span>
+          <motion.div
+            variants={itemVariants}
+            className="font-orbiter relative z-10 flex flex-wrap items-center justify-center gap-x-2 text-center text-[10px] font-medium uppercase tracking-[0.22em] text-fg-brand"
+          >
+            <span aria-hidden="true">✦</span>
             <span>The Great Hall · BIT Patna</span>
-            <span aria-hidden="true" className="text-amber-400">
-              ✦
-            </span>
-          </div>
+            <span aria-hidden="true">✦</span>
+          </motion.div>
 
-          <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center gap-4">
-            {/* Hat artwork: fixed box, image fills it (no more overflow) */}
-            <div
-              className={`relative h-32 w-32 shrink-0 transition-transform duration-500 sm:h-40 sm:w-40 lg:h-44 lg:w-44 ${
-                hatMood === "deliberating"
-                  ? "scale-105 animate-pulse"
-                  : hatMood === "revealed"
-                    ? "scale-110 drop-shadow-[0_0_25px_rgba(245,158,11,0.6)]"
-                    : ""
-              }`}
+          <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center gap-5">
+            {/* Sorting Hat artwork with gentle breathing float */}
+            <motion.div
+              animate={{
+                y: hatMood === "revealed" ? [0, -8, 0] : [0, -5, 0],
+                scale:
+                  hatMood === "deliberating"
+                    ? 1.06
+                    : hatMood === "revealed"
+                      ? 1.08
+                      : 1,
+              }}
+              transition={{
+                y: { duration: 4.5, repeat: Infinity, ease: "easeInOut" },
+                scale: { duration: 0.6, ease: AUTH_EASE },
+              }}
+              className="relative h-32 w-32 shrink-0 sm:h-40 sm:w-40 lg:h-44 lg:w-44"
             >
               <div
                 aria-hidden="true"
-                className={`pointer-events-none absolute -inset-3 -z-10 rounded-full blur-2xl transition-colors duration-500 ${
-                  currentStyles ? currentStyles.bg : "bg-amber-500/15"
-                }`}
+                className="pointer-events-none absolute -inset-4 -z-10 rounded-full bg-brand-soft opacity-80 blur-2xl transition-colors duration-700"
               />
               <Image
                 src="/images/sorting-hat.png"
@@ -829,54 +984,48 @@ export function SignupExperience({
                 height={260}
                 priority
                 sizes="(min-width: 1024px) 176px, 160px"
-                className="h-full w-full object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)]"
+                className="h-full w-full object-contain drop-shadow-[0_14px_24px_rgba(0,0,0,0.9)]"
               />
-            </div>
+            </motion.div>
 
-            {/* Chatbox */}
+            {/* Hat dialogue card */}
             <div className="flex w-full max-w-md flex-col gap-4">
-              <div
-                className={`relative rounded-2xl border bg-neutral-900/90 p-4 shadow-2xl backdrop-blur-xl transition-[border-color,box-shadow] duration-500 sm:p-5 ${
-                  currentStyles
-                    ? `${currentStyles.border} ${currentStyles.glow}`
-                    : "border-amber-500/30 shadow-amber-500/10"
-                }`}
-              >
+              <div className="relative rounded-2xl border border-brand-border bg-[#0c0c11]/90 p-4 shadow-glow-brand backdrop-blur-xl transition-[border-color,box-shadow] duration-500 sm:p-5">
                 <div
-                  className="absolute -top-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 border-l border-t border-inherit bg-neutral-900"
+                  className="absolute -top-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 border-l border-t border-brand-border bg-[#0c0c11] transition-colors duration-500"
                   aria-hidden="true"
                 />
 
-                <div className="mb-3 flex items-center justify-between gap-2 border-b border-amber-500/20 pb-2.5">
+                <div className="mb-3 flex items-center justify-between gap-2 border-b border-white/10 pb-2.5">
                   <div className="flex min-w-0 items-center gap-2">
                     <span
                       aria-hidden="true"
-                      className="shrink-0 animate-spin text-xs text-amber-400 [animation-duration:6s]"
+                      className="shrink-0 animate-spin text-xs text-fg-brand [animation-duration:7s]"
                     >
                       ✦
                     </span>
-                    <span className="truncate text-[10px] font-semibold uppercase tracking-widest text-amber-200 sm:text-xs">
+                    <span className="font-orbiter truncate text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-200 sm:text-xs">
                       The Sorting Hat
                     </span>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-amber-500/20 bg-neutral-950/80 px-2.5 py-1 text-[9px] uppercase tracking-wider text-neutral-300">
+                  <div className="font-orbiter flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[9px] uppercase tracking-wider text-zinc-300">
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${
                         hatMood === "deliberating"
-                          ? "animate-ping bg-amber-400"
+                          ? "animate-ping bg-brand"
                           : hatMood === "revealed"
                             ? "bg-emerald-400 shadow-[0_0_8px_#34d399]"
                             : hatMood === "error"
                               ? "bg-red-400"
-                              : "bg-amber-400/80"
+                              : "bg-brand"
                       }`}
                     />
                     <span>
                       {hatMood === "deliberating"
                         ? "Deliberating…"
                         : hatMood === "revealed"
-                          ? "Sorted!"
+                          ? "Sorted"
                           : hatMood === "error"
                             ? "Lock resisted"
                             : "Listening"}
@@ -884,46 +1033,59 @@ export function SignupExperience({
                   </div>
                 </div>
 
-                {hatMood === "revealed" && assignedHouse && HouseIcon && (
-                  <div
-                    className={`mb-3 flex items-center gap-3 rounded-xl border p-3 animate-in fade-in zoom-in-95 duration-500 ${currentStyles?.border} ${currentStyles?.bg}`}
-                  >
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-400/40 bg-neutral-950/80">
-                      <HouseIcon size={22} className={currentStyles?.text} />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="block text-[9px] font-semibold uppercase tracking-widest text-amber-400/90">
-                        Decree of the Founders
-                      </span>
-                      <h3
-                        className={`font-serif text-lg font-bold uppercase leading-tight tracking-wider sm:text-xl ${currentStyles?.text}`}
-                      >
-                        {currentTheme.name}
-                      </h3>
-                      <p className="break-words text-[11px] italic leading-snug text-neutral-300">
-                        {currentTheme.motto}
-                      </p>
-                    </div>
-                  </div>
-                )}
+                <AnimatePresence mode="wait">
+                  {hatMood === "revealed" && assignedHouse && HouseIcon && (
+                    <motion.div
+                      key={`house-${assignedHouse}`}
+                      initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.5, ease: AUTH_EASE }}
+                      className="mb-3 flex items-center gap-3 rounded-xl border border-brand-border bg-brand-soft/60 p-3"
+                    >
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-brand-border bg-[#080808]/80 text-fg-brand">
+                        <HouseIcon size={22} />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-orbiter block text-[9px] font-semibold uppercase tracking-widest text-fg-brand">
+                          Decree of the Founders
+                        </span>
+                        <h3 className="font-serif text-lg font-bold uppercase leading-tight tracking-wider text-zinc-100 sm:text-xl">
+                          {currentTheme.name}
+                        </h3>
+                        <p className="break-words text-[11px] italic leading-snug text-zinc-300">
+                          {currentTheme.motto}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                {/* min-height keeps the box from jumping as the Hat's lines change */}
-                <div className="flex min-h-[5.5rem] items-start gap-2 sm:min-h-[6rem]">
+                <div className="flex min-h-[5.5rem] items-start gap-2.5 sm:min-h-[6rem]">
                   <Feather
                     size={14}
-                    className="mt-1.5 shrink-0 text-amber-400"
+                    className="mt-1.5 shrink-0 text-fg-brand"
                     aria-hidden="true"
                   />
-                  <p className="break-words font-serif text-sm italic leading-relaxed text-amber-50/95 sm:text-[15px]">
-                    &ldquo;{hatSpeech}&rdquo;
-                  </p>
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={hatSpeech}
+                      initial={{ opacity: 0, y: 6, filter: "blur(3px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.35, ease: AUTH_EASE }}
+                      className="break-words font-serif text-sm italic leading-relaxed text-zinc-100 sm:text-[15px]"
+                    >
+                      &ldquo;{hatSpeech}&rdquo;
+                    </motion.p>
+                  </AnimatePresence>
                 </div>
 
                 {hatSubtext && (
-                  <div className="mt-3 flex items-start gap-1.5 border-t border-white/5 pt-2.5 text-[11px] leading-snug text-neutral-400">
+                  <div className="mt-3 flex items-start gap-1.5 border-t border-white/10 pt-2.5 text-[11px] leading-snug text-zinc-400">
                     <Sparkles
                       size={11}
-                      className="mt-0.5 shrink-0 text-amber-400"
+                      className="mt-0.5 shrink-0 text-fg-brand"
                       aria-hidden="true"
                     />
                     <span className="min-w-0 break-words">{hatSubtext}</span>
@@ -931,31 +1093,34 @@ export function SignupExperience({
                 )}
               </div>
 
-              {/* Houses */}
+              {/* Four houses informational emblem bar (non-editable) */}
               <div className="flex flex-col gap-2">
-                <span className="text-center text-[9px] uppercase tracking-[0.2em] text-neutral-400">
-                  Four houses · equal belonging
+                <span className="font-orbiter text-center text-[9px] uppercase tracking-[0.2em] text-zinc-500">
+                  Four houses · balanced destiny
                 </span>
                 <div className="grid grid-cols-4 gap-2">
                   {HOUSES.map((h) => {
                     const Icon = houseIcons[h];
                     const isSelected = assignedHouse === h;
                     return (
-                      <button
-                        type="button"
+                      <div
                         key={h}
-                        onClick={() => handlePreviewHouse(h)}
-                        aria-pressed={isSelected}
-                        title={`${houseLore[h].title}: click to hear the Hat`}
-                        className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 text-[9px] font-medium capitalize transition-all duration-300 ${
+                        className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl border px-1.5 py-2 text-[9px] font-medium capitalize transition-colors duration-300 ${
                           isSelected
-                            ? `${houseColorStyles[h].border} ${houseColorStyles[h].bg} ${houseColorStyles[h].text} shadow-lg`
-                            : "border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200"
+                            ? "border-brand bg-brand-soft text-fg-brand shadow-glow-brand"
+                            : "border-white/10 bg-white/[0.02] text-zinc-400"
                         }`}
                       >
-                        <Icon size={16} />
-                        <span className="max-w-full truncate">{h}</span>
-                      </button>
+                        <Icon
+                          size={15}
+                          className={
+                            isSelected ? "text-fg-brand" : "text-zinc-500"
+                          }
+                        />
+                        <span className="font-orbiter max-w-full truncate">
+                          {h}
+                        </span>
+                      </div>
                     );
                   })}
                 </div>
@@ -963,78 +1128,83 @@ export function SignupExperience({
             </div>
           </div>
 
-          <div className="relative z-10 hidden items-center gap-3 text-[9px] uppercase tracking-[0.2em] text-neutral-500 sm:flex">
-            <span>The Hat remembers</span>
-            <span aria-hidden="true" className="text-amber-400">
+          <div className="font-orbiter relative z-10 hidden items-center gap-3 text-[9px] uppercase tracking-[0.2em] text-zinc-500 sm:flex">
+            <span>The Hat decides</span>
+            <span aria-hidden="true" className="text-fg-brand">
               ✦
             </span>
-            <span>Your destiny awaits</span>
+            <span>Your chapter awaits</span>
           </div>
         </aside>
 
-        {/* ============ RIGHT: FORM ============ */}
-        <section className="flex min-w-0 flex-col justify-center bg-gradient-to-br from-neutral-900/90 via-neutral-950 to-neutral-900/90 p-5 sm:p-8 lg:p-10">
+        {/* ============ RIGHT: AUTH FORM ============ */}
+        <section className="flex min-w-0 flex-col justify-center bg-gradient-to-br from-[#0b0b10]/95 via-[#080808] to-[#0a0a0f]/95 p-6 sm:p-9 lg:p-11">
           <div className="mx-auto flex w-full max-w-md flex-col gap-5">
-            <div>
-              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-400">
+            <motion.div variants={itemVariants}>
+              <span className="font-orbiter mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.24em] text-fg-brand">
                 {isSignup
-                  ? "Chapter I · Your letter has arrived"
+                  ? "Chapter I · New Student Enrollment"
                   : isForgot
-                    ? "A lost key can be found"
+                    ? "Lost Castle Key · Owl Dispatch"
                     : isReset
-                      ? "A new key to the castle"
-                      : "Return to the common room"}
+                      ? "Verified Recovery · New Cipher"
+                      : "Return To The Common Room"}
               </span>
 
-              <h1 className="font-serif text-3xl font-normal leading-tight tracking-tight text-neutral-100 sm:text-4xl">
+              <h1 className="font-serif text-3xl font-normal leading-tight tracking-tight text-zinc-100 sm:text-4xl">
                 {isSignup ? (
                   <>
-                    The Hat <em className="italic text-amber-300">Awaits</em>
+                    The Hat{" "}
+                    <em className="italic text-fg-brand">Awaits</em>
                   </>
                 ) : isForgot ? (
                   <>
                     Recover your{" "}
-                    <em className="italic text-amber-300">castle key</em>
+                    <em className="italic text-fg-brand">castle key</em>
                   </>
                 ) : isReset ? (
                   <>
                     A fresh start.{" "}
-                    <em className="italic text-amber-300">A stronger spell</em>
+                    <em className="italic text-fg-brand">A stronger spell</em>
                   </>
                 ) : (
                   <>
                     The Hat{" "}
-                    <em className="italic text-amber-300">Remembers You</em>
+                    <em className="italic text-fg-brand">Remembers You</em>
                   </>
                 )}
               </h1>
 
-              <p className="mt-2 text-xs leading-relaxed text-neutral-400 sm:text-sm">
+              <p className="mt-2 text-xs leading-relaxed text-zinc-400 sm:text-sm">
                 {isSignup
-                  ? "Create your student record. Once created, the Hat will divine your house with balanced harmony."
+                  ? "Create your student record and verify your email address before completing enrollment."
                   : isForgot
                     ? "Enter your registered email to receive an owl-post password reset link."
                     : isReset
                       ? "Choose a strong new passphrase for your Technika account."
-                      : "Sign in with your email and password. If unsorted, the Hat will assign your house evenly across the four."}
+                      : "Sign in with your verified email and password to enter your house chamber."}
               </p>
-            </div>
+            </motion.div>
 
-            {user && !isReset && !leaving && (
-              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+            {user && isEmailConfirmed(user) && !isReset && !leaving && !busy && (
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border border-brand-border bg-brand-soft/60 p-3 text-xs text-zinc-200">
                 <span className="min-w-0 break-all">
                   Signed in as {user.email}.
                 </span>
                 <Link
-                  href="/account"
-                  className="inline-flex shrink-0 items-center gap-1 font-semibold underline hover:text-amber-100"
+                  href="/dashboard"
+                  className="font-orbiter inline-flex shrink-0 items-center gap-1 font-semibold text-fg-brand underline hover:brightness-110"
                 >
-                  Common Room <ArrowRight size={13} />
+                  Dashboard <ArrowRight size={13} />
                 </Link>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+            <motion.form
+              variants={itemVariants}
+              onSubmit={handleSubmit}
+              className="flex flex-col gap-3.5"
+            >
               {isSignup && (
                 <>
                   <Field
@@ -1119,7 +1289,7 @@ export function SignupExperience({
                       type="button"
                       disabled={disabled}
                       onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-neutral-400 transition-colors hover:text-amber-200"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-zinc-400 transition-colors hover:text-fg-brand"
                       aria-label={
                         showPassword ? "Hide password" : "Show password"
                       }
@@ -1130,113 +1300,154 @@ export function SignupExperience({
                 />
               )}
 
-              {isReset && (
+              {isNewPassword && (
                 <Field
-                  label="Confirm password"
+                  label={isReset ? "Confirm new password" : "Confirm password"}
                   icon={KeyRound}
                   name="confirmPassword"
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   minLength={12}
                   maxLength={128}
-                  placeholder="Repeat your new password"
+                  placeholder={
+                    isReset
+                      ? "Repeat your new password"
+                      : "Repeat your password"
+                  }
                   disabled={disabled}
                   required
                 />
               )}
 
               {mode === "login" && (
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-200/70">
+                <div className="flex flex-col gap-1.5 pt-1">
+                  <span className="font-orbiter text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">
                     Where shall the owl take you after signing in?
                   </span>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2.5">
                     {(
                       [
-                        ["great-hall", "Great Hall", "The dashboard"],
-                        ["common-room", "Common Room", "Your house hearth"],
+                        ["great-hall", "Great Hall", "Command dashboard"],
+                        ["common-room", "Common Room", "3D house hearth"],
                       ] as const
-                    ).map(([value, label, hint]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        disabled={disabled}
-                        aria-pressed={landing === value}
-                        onClick={() => {
-                          setLanding(value);
-                          setLandingPreference(value);
-                        }}
-                        className={`rounded-xl border p-2.5 text-left transition-colors disabled:opacity-60 ${
-                          landing === value
-                            ? "border-amber-400/70 bg-amber-500/15"
-                            : "border-amber-500/20 bg-black/20 hover:border-amber-400/40"
-                        }`}
-                      >
-                        <span className="block text-xs font-semibold text-amber-100">
-                          {label}
-                        </span>
-                        <span className="mt-0.5 block text-[10px] text-neutral-400">
-                          {hint}
-                        </span>
-                      </button>
-                    ))}
+                    ).map(([value, label, hint]) => {
+                      const active = landing === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          disabled={disabled}
+                          aria-pressed={active}
+                          onClick={() => {
+                            setLanding(value);
+                            setLandingPreference(value);
+                          }}
+                          className={`rounded-xl border p-2.5 text-left transition-all duration-200 disabled:opacity-60 ${
+                            active
+                              ? "border-brand bg-brand-soft text-fg-strong shadow-glow-brand"
+                              : "border-white/10 bg-white/[0.02] hover:border-brand-border hover:bg-white/[0.04]"
+                          }`}
+                        >
+                          <span
+                            className={`font-orbiter block text-xs font-semibold ${active ? "text-fg-brand" : "text-zinc-200"}`}
+                          >
+                            {label}
+                          </span>
+                          <span className="mt-0.5 block text-[10px] text-zinc-400">
+                            {hint}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
               {mode === "login" && (
-                <button
-                  type="button"
-                  disabled={disabled}
-                  onClick={() =>
-                    switchMode(
-                      "forgot",
-                      "A misplaced key? Fear not. Tell me your owl-post address and we shall dispatch a replacement cipher.",
-                    )
-                  }
-                  className="-mt-1 self-end text-xs text-amber-400/90 transition-colors hover:text-amber-300 disabled:opacity-60"
+                <Link
+                  href="/reset-password"
+                  className="font-orbiter -mt-1 self-end text-xs text-fg-brand/90 transition-colors hover:text-fg-brand hover:underline"
                 >
                   Forgot your password?
-                </button>
+                </Link>
               )}
 
-              {error && (
-                <p
-                  ref={alertRef}
-                  tabIndex={-1}
-                  role="alert"
-                  className="break-words rounded-xl border border-red-500/40 bg-red-950/40 p-3 text-xs leading-relaxed text-red-200 outline-none"
-                >
-                  {error}
-                </p>
-              )}
+              <AnimatePresence mode="sync">
+                {error && (
+                  <motion.p
+                    key="auth-error"
+                    ref={alertRef}
+                    tabIndex={-1}
+                    role="alert"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.25 }}
+                    className="break-words rounded-xl border border-red-500/40 bg-red-950/40 p-3 text-xs leading-relaxed text-red-200 outline-none"
+                  >
+                    {error}
+                  </motion.p>
+                )}
 
-              {message && (
-                <p
-                  role="status"
-                  className="flex items-start gap-2 rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-3 text-xs leading-relaxed text-emerald-200"
-                >
-                  <CheckCircle2
-                    size={16}
-                    className="mt-0.5 shrink-0 text-emerald-400"
-                  />
-                  <span className="min-w-0 break-words">{message}</span>
-                </p>
-              )}
+                {message && (
+                  <motion.p
+                    key="auth-message"
+                    role="status"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.25 }}
+                    className="flex items-start gap-2 rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-3 text-xs leading-relaxed text-emerald-200"
+                  >
+                    <CheckCircle2
+                      size={16}
+                      className="mt-0.5 shrink-0 text-emerald-400"
+                    />
+                    <span className="min-w-0 break-words">{message}</span>
+                  </motion.p>
+                )}
 
-              <button
+                {pendingVerificationEmail && !leaving && (
+                  <motion.button
+                    key="resend-btn"
+                    type="button"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    disabled={resendingEmail || busy}
+                    onClick={handleResendVerification}
+                    className="font-orbiter self-start text-xs font-medium text-fg-brand underline underline-offset-4 transition-colors hover:brightness-110 disabled:opacity-60"
+                  >
+                    {resendingEmail
+                      ? "Sending another verification email…"
+                      : `Resend verification email to ${pendingVerificationEmail}`}
+                  </motion.button>
+                )}
+              </AnimatePresence>
+
+              <motion.button
                 type="submit"
                 disabled={disabled}
-                className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 px-6 py-3.5 text-center text-xs font-semibold uppercase tracking-widest text-neutral-950 shadow-lg shadow-amber-500/20 transition-all duration-300 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
+                whileHover={disabled ? undefined : { y: -1 }}
+                whileTap={disabled ? undefined : { scale: 0.99 }}
+                className="font-orbiter mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3.5 text-center text-xs font-semibold uppercase tracking-[0.2em] text-brand-on shadow-glow-brand transition-colors duration-200 hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
               >
-                {continuation ? <><CheckCircle2 size={16} /><span>Registration recorded</span></> : disabled ? (
+                {continuation ? (
+                  <>
+                    <CheckCircle2 size={16} />
+                    <span>
+                      {pendingVerificationEmail
+                        ? "Verification email sent"
+                        : "Registration recorded"}
+                    </span>
+                  </>
+                ) : disabled ? (
                   <>
                     <LoaderCircle size={16} className="shrink-0 animate-spin" />
                     <span>
                       {leaving
                         ? assignedHouse
                           ? `Entering ${assignedHouse.toUpperCase()}…`
-                          : "Opening Common Room…"
+                          : "Opening Dashboard…"
                         : "The Hat is Deliberating…"}
                     </span>
                   </>
@@ -1254,32 +1465,45 @@ export function SignupExperience({
                     <ArrowRight size={16} className="shrink-0" />
                   </>
                 )}
-              </button>
-            </form>
-            {continuation && <Link href={continuation} className={`${linkBtn} inline-flex min-h-11 items-center justify-center gap-2 text-sm`} data-no-transition>{continuation === "/login" ? "Continue to sign in" : "Continue to your Common Room"}<ArrowRight size={15} /></Link>}
+              </motion.button>
+            </motion.form>
 
-            <div className="border-t border-neutral-800 pt-4 text-center text-xs text-neutral-400">
+            {continuation && (
+              <Link
+                href={continuation}
+                className={`${linkBtn} inline-flex min-h-11 items-center justify-center gap-2 text-sm`}
+                data-no-transition
+              >
+                {continuation === "/login"
+                  ? "Go to sign in"
+                  : "Continue to Dashboard"}
+                <ArrowRight size={15} />
+              </Link>
+            )}
+
+            <motion.div
+              variants={itemVariants}
+              className="border-t border-white/10 pt-4 text-center text-xs text-zinc-400"
+            >
               {isSignup ? (
                 <>
                   Already sorted into a house?{" "}
-                  <button
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => switchMode("login")}
-                    className={linkBtn}
-                  >
+                  <Link href="/login" className={linkBtn}>
                     Return to sign in
-                  </button>
+                  </Link>
                 </>
               ) : isForgot ? (
-                <button
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => switchMode("login")}
-                  className={linkBtn}
-                >
-                  ← Back to sign in
-                </button>
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+                  <Link href="/login" className={linkBtn}>
+                    ← Back to sign in
+                  </Link>
+                  <span aria-hidden="true" className="text-zinc-700">
+                    ·
+                  </span>
+                  <Link href="/register" className={linkBtn}>
+                    Create an account
+                  </Link>
+                </div>
               ) : isReset ? (
                 <Link href="/login" className={linkBtn}>
                   Return to sign in →
@@ -1287,25 +1511,15 @@ export function SignupExperience({
               ) : (
                 <>
                   New to the castle?{" "}
-                  <button
-                    type="button"
-                    disabled={disabled}
-                    onClick={() =>
-                      switchMode(
-                        "signup",
-                        "A new student approaches! Speak your name and let your chapter begin.",
-                      )
-                    }
-                    className={linkBtn}
-                  >
-                    Let the Hat discover you
-                  </button>
+                  <Link href="/register" className={linkBtn}>
+                    Create an account
+                  </Link>
                 </>
               )}
-            </div>
+            </motion.div>
           </div>
         </section>
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Component, useCallback, useEffect, useReducer, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, Settings2 } from "lucide-react";
+import { ArrowLeft, Maximize2, Minimize2, Settings2 } from "lucide-react";
 import { houseLogoFor, houseThemes } from "@/lib/houses";
 import { setLandingPreference } from "@/lib/landing-preference";
 import { houseLore, roomObjects } from "@/lib/common-room/content";
@@ -36,7 +36,21 @@ class RoomRendererBoundary extends Component<{ children: ReactNode; onFailure: (
   render() { return this.state.failed ? null : this.props.children; }
 }
 
-export function CommonRoomExperience({ participant, accountActions }: { participant: RoomParticipant; accountActions: ReactNode }) {
+export function CommonRoomExperience({
+  participant,
+  accountActions,
+  embedded = false,
+  isFullscreen = false,
+  onToggleFullscreen,
+  persistLandingPreference = true,
+}: {
+  participant: RoomParticipant;
+  accountActions: ReactNode;
+  embedded?: boolean;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
+  persistLandingPreference?: boolean;
+}) {
   const [state, dispatch] = useReducer(roomReducer, initialRoomState);
   const [expired, setExpired] = useState(false);
   const [modelReady, setModelReady] = useState(false);
@@ -54,9 +68,9 @@ export function CommonRoomExperience({ participant, accountActions }: { particip
   const onFailure = useCallback((reason: RoomFailure) => { setGuideOpen(false); setFallback(reason); }, []);
   const showFallback = fallback !== null || settings.lightweight;
   useEffect(() => { if (showFallback) dispatch({ type: "FALLBACK" }); }, [showFallback]);
-  // Landing here is itself a choice: remember the common room as the
-  // post-sign-in destination (item 9 of the checklist).
-  useEffect(() => { setLandingPreference("common-room"); }, []);
+  useEffect(() => {
+    if (persistLandingPreference) setLandingPreference("common-room");
+  }, [persistLandingPreference]);
   useEffect(() => {
     if (modelReady || showFallback) return;
     const timeout = setTimeout(() => onFailure("loading-error"), 30_000);
@@ -105,9 +119,14 @@ export function CommonRoomExperience({ participant, accountActions }: { particip
   const { selected } = state;
   const panelVisible = selected && ["panel", "closing", "restoring"].includes(state.phase);
   if (expired) return <p role="status">Verifying your castle key…</p>;
-  return <div ref={root} className={`${styles.room} ${!showFallback ? styles.immersive : ""}`} data-testid="common-room" data-house={participant.house} data-theme={participant.house} data-ready={ready} data-phase={state.phase} data-motion={motion} data-quality={quality} data-arrival={arrivalPhase} data-journey-phase={journeyPhase} data-lenis-prevent>
+  const roomSurfaceClass = !showFallback
+    ? embedded && !isFullscreen
+      ? styles.embedded
+      : styles.immersive
+    : "";
+  return <div ref={root} className={`${styles.room} ${roomSurfaceClass}`} data-testid="common-room" data-house={participant.house} data-theme={participant.house} data-ready={ready} data-phase={state.phase} data-motion={motion} data-quality={quality} data-arrival={arrivalPhase} data-journey-phase={journeyPhase} data-lenis-prevent>
     {!showFallback && <><RoomRendererBoundary onFailure={onFailure}><RoomCanvas participant={participant} quality={quality} motion={motion} state={state} dispatch={dispatch} controlsLocked={guideOpen || settingsOpen !== null || arrival.active} entranceRef={entranceRef} onSelect={select} onReady={onReady} onFailure={onFailure} /></RoomRendererBoundary><div className={styles.vignette} />{!modelReady && <RoomLoader stage="Lighting the chamber" />}{state.phase === "entering" && <RoomEntrance participant={participant} progressRef={entranceRef} onSkip={() => dispatch({ type: "SKIP" })} />}</>}
-    <header className={styles.header}><div className={styles.identity}><Image src={houseLogoFor(participant.house)} width={37} height={46} alt={`${houseThemes[participant.house].name} emblem`} /><div><span>{houseThemes[participant.house].name} · Common Room</span><strong>{participant.displayName}</strong></div></div><div className={styles.headerActions}><button type="button" className={styles.settingsButton} aria-label="Room settings" onClick={() => setSettingsOpen("open")} disabled={state.phase !== "exploring" && state.phase !== "loading"}><Settings2 size={17} /></button><Link className={styles.back} href="/" data-no-transition><ArrowLeft size={15} /><span>Leave the room</span></Link></div></header>
+    <header className={styles.header}><div className={styles.identity}><Image src={houseLogoFor(participant.house)} width={37} height={46} alt={`${houseThemes[participant.house].name} emblem`} /><div><span>{houseThemes[participant.house].name} · Common Room</span><strong>{participant.displayName}</strong></div></div><div className={styles.headerActions}><button type="button" className={styles.settingsButton} aria-label="Room settings" onClick={() => setSettingsOpen("open")} disabled={state.phase !== "exploring" && state.phase !== "loading"}><Settings2 size={17} /></button>{onToggleFullscreen && <button type="button" className={styles.settingsButton} aria-label={isFullscreen ? "Exit fullscreen 3D common room" : "Expand 3D common room"} title={isFullscreen ? "Exit fullscreen" : "Expand fullscreen"} onClick={onToggleFullscreen}>{isFullscreen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}</button>}{!embedded ? <Link className={styles.back} href="/" data-no-transition><ArrowLeft size={15} /><span>Leave the room</span></Link> : isFullscreen && onToggleFullscreen ? <button type="button" className={styles.back} onClick={onToggleFullscreen}><ArrowLeft size={15} /><span>Back to dashboard</span></button> : null}</div></header>
     {arrivalPhase === "complete" && <p className={styles.arrivalWelcome} role="status">Welcome home, {participant.displayName}.</p>}
     {showFallback ? <RoomFallback participant={participant} reason={fallback || "chosen"} onSelect={select} onRetry={() => void changeSettings({ lightweight: false })} /> : <>
       <div className={styles.roomTitle}><span className={styles.eyebrow}>{houseLore[participant.house].location}</span><h1>{houseLore[participant.house].title}</h1><p>{houseThemes[participant.house].motto}</p></div>

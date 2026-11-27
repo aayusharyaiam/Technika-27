@@ -138,7 +138,7 @@ export function Footer() {
   const house = activeHouse === "default" ? "hufflepuff" : activeHouse;
 
   return (
-    <footer className="relative overflow-hidden border-t border-white/10 bg-[#07070a] text-zinc-200">
+    <footer className="relative overflow-hidden border-t border-white/10 bg-[#080808] text-zinc-200">
       {/* Subtle top hairline shimmer & ambient house glow */}
       <div
         aria-hidden="true"
