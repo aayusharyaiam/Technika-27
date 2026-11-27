@@ -80,6 +80,8 @@ export interface ParticleLogoProps {
   dotSize?: number;
   /** Hex colour behind the dots. Match your page background. */
   background?: string;
+  /** When false, preloads & extracts points while holding convergence until revealed. */
+  active?: boolean;
   className?: string;
   style?: CSSProperties;
   ariaLabel?: string;
@@ -149,7 +151,7 @@ function extractPoints(
     P.hx[i] = (px + Math.random() - cx) / bh; // logo height = 1 unit
     P.hy[i] = (py + Math.random() - cy) / bh;
     P.hz[i] = (Math.random() - 0.5) * THICKNESS;
-    P.ks[i] = 0.012 + Math.random() * 0.024; // varied low stiffness = slow, graceful trailing
+    P.ks[i] = 0.018 + Math.random() * 0.028; // crisp, graceful gather in sync with hero reveal
     const o = idx * 4;
     const jitter = 0.6 + Math.random() * 0.55; // grain
     P.cr[i] = Math.min(255, data[o] * jitter);
@@ -189,7 +191,7 @@ function scatter(
     P.vx[i] = (Math.random() - 0.5) * 0.003;
     P.vy[i] = (Math.random() - 0.5) * 0.003;
     P.vz[i] = (Math.random() - 0.5) * 0.003;
-    P.delay[i] = Math.random() * 70; // frames at 60fps, so about 1.2s of staggering
+    P.delay[i] = Math.random() * 24; // ~0.4s stagger so particles gather immediately with hero text
   }
 }
 
@@ -371,11 +373,22 @@ export default function ParticleLogo({
   particles,
   dotSize = 1,
   background = "transparent",
+  active = true,
   className,
   style,
   ariaLabel = "Logo made of gathering particles",
 }: ParticleLogoProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const activeRef = useRef(active);
+  const resetDeltaRef = useRef(false);
+
+  useEffect(() => {
+    const wasActive = activeRef.current;
+    activeRef.current = active;
+    if (!wasActive && active) {
+      resetDeltaRef.current = true;
+    }
+  }, [active]);
 
   useEffect(() => {
     const transparent = background === "transparent";
@@ -466,8 +479,15 @@ export default function ParticleLogo({
       if (!P) return;
       layout(); // works out the scale from the logo's shape
       scatter(P, reduceMotion, W / (2 * S), H / (2 * S));
+      if (frame) {
+        render(P, frame, W, H, S, dot, weight);
+        if (transparent) resolveAlpha(frame);
+        ctx.putImageData(frame.imageData, 0, 0);
+      }
     };
     img.onerror = () => console.warn(`ParticleLogo: could not load "${src}"`);
+    img.decoding = "async";
+    img.fetchPriority = "high";
     img.src = src;
 
     layout();
@@ -569,10 +589,15 @@ export default function ParticleLogo({
     let clock = 0;
     const tick = (now: number): void => {
       raf = requestAnimationFrame(tick);
+      if (resetDeltaRef.current) {
+        resetDeltaRef.current = false;
+        last = now;
+      }
       const dtn = Math.min((now - last) / 16.667, 3); // 1 = one 60fps frame
       last = now;
-      clock += dtn;
       if (!P || !frame) return;
+      if (!activeRef.current) return;
+      clock += dtn;
 
       // rotation: follow the drag, then coast and gently spring back to facing front
       if (!ptr.down) {

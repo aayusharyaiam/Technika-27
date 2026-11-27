@@ -41,8 +41,8 @@ const heroContainerVariants: Variants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.18,
-      delayChildren: 0.2,
+      staggerChildren: 0.14,
+      delayChildren: 0.08,
     },
   },
 };
@@ -86,16 +86,16 @@ const heroTitleVariants: Variants = {
 const heroCrestVariants: Variants = {
   hidden: {
     opacity: 0,
-    scale: 0.9,
-    y: 20,
+    scale: 0.92,
+    y: 18,
   },
   visible: {
     opacity: 1,
     scale: 1,
     y: 0,
     transition: {
-      duration: 1.8,
-      delay: 0.4,
+      duration: 1.25,
+      delay: 0.06,
       ease: HERO_EASE,
     },
   },
@@ -339,15 +339,14 @@ export function Hero() {
             className="order-1 relative flex w-full flex-col items-center justify-center lg:order-2 lg:w-[46%]"
           >
             <div className="relative flex h-[155px] w-[155px] items-center justify-center sm:h-[200px] sm:w-[200px] md:h-[230px] md:w-[230px] lg:h-[460px] lg:w-[460px] xl:h-[530px] xl:w-[530px]">
-              {shellReady && (
-                <ParticleLogo
-                  src={`/images/${house}.png`}
-                  dotSize={1.15}
-                  particles={14000}
-                  background="transparent"
-                  ariaLabel={`${house} interactive particle crest`}
-                />
-              )}
+              <ParticleLogo
+                src={`/images/${house}.png`}
+                dotSize={1.15}
+                particles={14000}
+                background="transparent"
+                active={shellReady}
+                ariaLabel={`${house} interactive particle crest`}
+              />
             </div>
           </motion.div>
         </div>
