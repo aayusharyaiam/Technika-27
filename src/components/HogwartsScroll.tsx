@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   motion,
   useMotionValueEvent,
@@ -24,6 +30,7 @@ import {
 import { CDN_BASE_URL, FRAME_CONFIG, ANIMATION_CONFIG } from "@/lib/config";
 import { setHomeIntroCompleted } from "@/lib/intro-state";
 import { useMagic } from "@/components/experience";
+import { MobileHogwartsJourney } from "@/components/mobile-hogwarts-journey";
 
 const {
   COUNT: FRAME_COUNT,
@@ -59,7 +66,8 @@ function calculateCoverFit(
   let dw: number;
   let dh: number;
 
-  if (canvasAR > imgAR) {
+  // Portrait/mobile view: fit 100% width and maintain the landscape aspect ratio
+  if (cw < ch || canvasAR > imgAR) {
     dw = cw;
     dh = cw / imgAR;
   } else {
@@ -83,9 +91,10 @@ function drawImageToCanvas(
   const cw = canvas.width / dpr;
   const ch = canvas.height / dpr;
 
+  ctx.fillStyle = "#080808";
+  ctx.fillRect(0, 0, cw, ch);
+
   if (!img || !img.complete || !img.naturalWidth || !img.naturalHeight) {
-    ctx.fillStyle = "#080808";
-    ctx.fillRect(0, 0, cw, ch);
     return;
   }
 
@@ -244,7 +253,58 @@ export interface HogwartsScrollProps {
   trackHeight?: string;
 }
 
+function subscribeViewport(callback: () => void) {
+  const mq = window.matchMedia("(max-width: 767px)");
+  mq.addEventListener("change", callback);
+  return () => mq.removeEventListener("change", callback);
+}
+
+function getViewportSnapshot(): "mobile" | "desktop" {
+  return window.matchMedia("(max-width: 767px)").matches
+    ? "mobile"
+    : "desktop";
+}
+
+function getServerViewportSnapshot(): "unknown" {
+  return "unknown";
+}
+
 export function HogwartsScroll({
+  children,
+  className = "",
+  trackHeight = "h-[640vh]",
+}: HogwartsScrollProps) {
+  const viewportMode = useSyncExternalStore(
+    subscribeViewport,
+    getViewportSnapshot,
+    getServerViewportSnapshot,
+  );
+
+  if (viewportMode === "unknown") {
+    return (
+      <section
+        className={`relative my-10 min-h-[100svh] w-full bg-[#080808] sm:my-24 lg:my-28 ${className}`}
+        data-hogwarts-scroll="true"
+      />
+    );
+  }
+
+  if (viewportMode === "mobile") {
+    return (
+      <MobileHogwartsJourney className={className}>
+        {children}
+      </MobileHogwartsJourney>
+    );
+  }
+
+  return (
+    <DesktopHogwartsScroll className={className} trackHeight={trackHeight}>
+      {children}
+    </DesktopHogwartsScroll>
+  );
+}
+
+function DesktopHogwartsScroll({
   children,
   className = "",
   trackHeight = "h-[640vh]",
@@ -652,10 +712,10 @@ export function HogwartsScroll({
             style={{ width: "100%", height: "100%", display: "block" }}
           />
 
-          {/* Soft edge vignette keeping the center focal scene bright & unobstructed */}
+          {/* Seamless top/bottom melt vignette on portrait mobile + soft edge vignette on desktop */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(8,8,8,0.06)_25%,rgba(8,8,8,0.42)_72%,rgba(8,8,8,0.78)_100%)]"
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,#080808_0%,rgba(8,8,8,0.68)_25%,transparent_38%,transparent_62%,rgba(8,8,8,0.72)_75%,#080808_100%)] md:bg-[radial-gradient(ellipse_at_center,rgba(8,8,8,0.06)_25%,rgba(8,8,8,0.42)_72%,rgba(8,8,8,0.78)_100%)]"
           />
 
           {!loaded && (
@@ -668,20 +728,20 @@ export function HogwartsScroll({
 
           {/* ================= 3 COMPACT EDGE-PLACED STORY CHAPTERS ================= */}
           <div className="pointer-events-none absolute inset-0 z-20 mx-auto max-w-7xl px-5 sm:px-10 lg:px-14">
-            {/* 1. EVENT TIMELINE (Upper-right night sky beside castle towers) */}
+            {/* 1. EVENT TIMELINE (Upper-right night sky on desktop; bottom gap on mobile) */}
             <motion.div
               style={{
                 opacity: timelineOpacity,
                 y: timelineY,
                 filter: timelineFilter,
               }}
-              className={`absolute inset-0 flex items-start justify-end px-5 pt-20 sm:px-10 sm:pt-24 lg:px-14 ${
+              className={`absolute inset-0 flex items-end justify-start px-5 pb-7 md:items-start md:justify-end md:px-10 md:pt-24 md:pb-0 lg:px-14 ${
                 activeSection === 0
                   ? "pointer-events-auto"
                   : "pointer-events-none"
               }`}
             >
-              <div className="w-full max-w-[280px] sm:max-w-[320px] drop-shadow-[0_3px_18px_rgba(0,0,0,0.95)]">
+              <div className="w-full max-w-[290px] sm:max-w-[320px] drop-shadow-[0_3px_18px_rgba(0,0,0,0.95)]">
                 <div className="mb-3.5 border-b border-white/15 pb-2.5">
                   <span className="font-orbiter inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-fg-brand">
                     <CalendarDays size={11} /> 01 / Event Timeline
@@ -752,20 +812,20 @@ export function HogwartsScroll({
               </div>
             </motion.div>
 
-            {/* 2. ABOUT EVENT (Left shadowed edge beside Platform 9 3/4, off train & steam) */}
+            {/* 2. ABOUT EVENT (Left shadowed edge on desktop; bottom gap on mobile) */}
             <motion.div
               style={{
                 opacity: aboutEventOpacity,
                 y: aboutEventY,
                 filter: aboutEventFilter,
               }}
-              className={`absolute inset-0 flex items-center justify-start px-5 pt-10 sm:px-10 lg:px-14 ${
+              className={`absolute inset-0 flex items-end justify-start px-5 pb-8 md:items-center md:px-10 md:pt-10 md:pb-0 lg:px-14 ${
                 activeSection === 1
                   ? "pointer-events-auto"
                   : "pointer-events-none"
               }`}
             >
-              <div className="w-full max-w-[285px] text-left sm:max-w-[330px] drop-shadow-[0_3px_18px_rgba(0,0,0,0.95)]">
+              <div className="w-full max-w-[290px] text-left sm:max-w-[330px] drop-shadow-[0_3px_18px_rgba(0,0,0,0.95)]">
                 <span className="font-orbiter inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-fg-brand">
                   <Sparkles size={11} /> 02 / About Event
                 </span>
@@ -797,14 +857,14 @@ export function HogwartsScroll({
               </div>
             </motion.div>
 
-            {/* 3. ABOUT BIT PATNA (Bottom-right dark mist below departing train) */}
+            {/* 3. ABOUT BIT PATNA (Bottom-right dark mist) */}
             <motion.div
               style={{
                 opacity: bitPatnaOpacity,
                 y: bitPatnaY,
                 filter: bitPatnaFilter,
               }}
-              className={`absolute inset-0 flex items-end justify-end px-5 pb-10 sm:px-10 sm:pb-14 lg:px-14 ${
+              className={`absolute inset-0 flex items-end justify-end px-5 pb-8 sm:px-10 sm:pb-14 lg:px-14 ${
                 activeSection === 2
                   ? "pointer-events-auto"
                   : "pointer-events-none"
