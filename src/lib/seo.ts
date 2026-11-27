@@ -21,7 +21,10 @@ function normalizeOrigin(value?: string) {
 export const siteUrl =
   normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL) ||
   normalizeOrigin(process.env.VERCEL_PROJECT_PRODUCTION_URL) ||
-  "http://localhost:3000";
+  normalizeOrigin(process.env.VERCEL_URL) ||
+  (process.env.NODE_ENV === "development"
+    ? "http://localhost:3000"
+    : "https://technika.bitmesra.ac.in");
 export const indexable =
   process.env.NODE_ENV === "production" &&
   process.env.VERCEL_ENV !== "preview" &&

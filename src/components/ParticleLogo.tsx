@@ -367,7 +367,7 @@ function resolveAlpha(frame: Frame): void {
 /* ----------------------------- component -------------------------------- */
 
 export default function ParticleLogo({
-  src = "/hufflepuff.png",
+  src = "/images/hufflepuff.png",
   particles,
   dotSize = 1,
   background = "transparent",

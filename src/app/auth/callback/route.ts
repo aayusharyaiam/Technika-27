@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { resolveServerAuthOrigin } from "@/lib/auth/redirect-url";
 import {
   isEmailConfirmed,
   RECOVERY_COOKIE_NAME,
@@ -10,12 +11,7 @@ import { isBitMesraEmail } from "@/lib/bit-email";
 import { houseFromValue } from "@/lib/houses";
 
 function resolveBaseOrigin(request: NextRequest): string {
-  const { origin } = request.nextUrl;
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  if (process.env.NODE_ENV !== "development" && forwardedHost) {
-    return `https://${forwardedHost}`;
-  }
-  return origin;
+  return resolveServerAuthOrigin(request.nextUrl.origin, request.headers);
 }
 
 function metaText(value: unknown): string {

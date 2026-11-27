@@ -32,6 +32,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
+import { buildAuthCallbackUrl } from "@/lib/auth/redirect-url";
 import { isEmailConfirmed } from "@/lib/auth/session-state";
 import { isBitMesraEmail } from "@/lib/bit-email";
 import {
@@ -592,7 +593,7 @@ export function SignupExperience({
         type: "signup",
         email: pendingVerificationEmail,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/dashboard")}`,
+          emailRedirectTo: buildAuthCallbackUrl("/dashboard"),
         },
       });
       if (resendErr) throw resendErr;
@@ -676,9 +677,7 @@ export function SignupExperience({
         const { error: resetErr } = await client.auth.resetPasswordForEmail(
           email,
           {
-            redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-              "/reset-password",
-            )}`,
+            redirectTo: buildAuthCallbackUrl("/reset-password"),
           },
         );
         if (resetErr) throw resetErr;
@@ -708,9 +707,7 @@ export function SignupExperience({
                 house: chosenHouse,
                 is_bit: isBit,
               },
-              emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-                "/dashboard",
-              )}`,
+              emailRedirectTo: buildAuthCallbackUrl("/dashboard"),
             },
           },
         );

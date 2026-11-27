@@ -6,7 +6,6 @@ import { MotionConfig } from "motion/react";
 import { MagicInteractions } from "./magic-interactions";
 import { WandCursor } from "./wand-cursor";
 import { isHomeIntroCompleted } from "@/lib/intro-state";
-import { HouseSwitcher } from "./house-switcher";
 import { useRegistrationArrival } from "./registration-arrival";
 
 interface MagicContextValue {
@@ -173,7 +172,6 @@ export function Experience({
             <WandSparks enabled={enabled} />
             <WandCursor />
             <MagicInteractions />
-            <HouseSwitcher />
             <div className="scroll-progress" aria-hidden="true" />
           </>
         )}

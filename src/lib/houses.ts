@@ -74,14 +74,16 @@ export function houseLogoFor(house: House): string {
   return houseLogoPaths[house];
 }
 
-/** Favicon for the house theme (PNG crest). */
-export function houseIconFor(house: House): string {
-  return houseLogoFor(house) || houseLogoPaths.default;
+const HUFFLEPUFF_ICON = "/images/hufflepuff.png";
+
+/** Favicon is always Hufflepuff across the site. */
+export function houseIconFor(): string {
+  return HUFFLEPUFF_ICON;
 }
 
-/** Apple touch icon for the house theme (PNG crest). */
-export function houseAppleIconFor(house: House): string {
-  return houseLogoFor(house) || houseLogoPaths.default;
+/** Apple touch icon is always Hufflepuff across the site. */
+export function houseAppleIconFor(): string {
+  return HUFFLEPUFF_ICON;
 }
 
 export function isHouse(value: unknown): value is House {
@@ -114,5 +116,5 @@ export function houseBootScript(
   initialHouse: House = "default",
   preferInitialHouse = false,
 ) {
-  return `try{var serverHouse=${JSON.stringify(initialHouse)};var savedHouse=localStorage.getItem(${JSON.stringify(HOUSE_STORAGE_KEY)});var h=${preferInitialHouse ? "serverHouse" : "savedHouse||serverHouse"};var logos=${JSON.stringify(houseLogoPaths)};var resolved=logos[h]?h:"default";document.documentElement.dataset.house=resolved;document.documentElement.dataset.theme=resolved==="default"?"hogwarts":resolved;var href=logos[resolved]+"?house="+resolved;var ensure=function(sel,rel){var els=document.head.querySelectorAll(sel);if(els.length){for(var i=0;i<els.length;i++){els[i].href=href;els[i].type="image/png";els[i].dataset.houseIcon="true";}}else{var l=document.createElement("link");l.rel=rel;l.type="image/png";l.href=href;l.dataset.houseIcon="true";document.head.appendChild(l);}};ensure("link[rel~='icon']","icon");ensure("link[rel='apple-touch-icon']","apple-touch-icon");}catch(e){}`;
+  return `try{var serverHouse=${JSON.stringify(initialHouse)};var savedHouse=localStorage.getItem(${JSON.stringify(HOUSE_STORAGE_KEY)});var h=${preferInitialHouse ? "serverHouse" : "savedHouse||serverHouse"};var valid=${JSON.stringify(houseLogoPaths)};var resolved=valid[h]?h:"default";document.documentElement.dataset.house=resolved;document.documentElement.dataset.theme=resolved==="default"?"hogwarts":resolved;}catch(e){}`;
 }

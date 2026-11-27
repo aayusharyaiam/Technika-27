@@ -96,6 +96,10 @@ export const metadata: Metadata = {
   classification: "Technology and cultural festival",
   referrer: "origin-when-cross-origin",
   formatDetection: { email: false, address: false, telephone: false },
+  icons: {
+    icon: [{ url: "/images/hufflepuff.png", type: "image/png" }],
+    apple: [{ url: "/images/hufflepuff.png", type: "image/png" }],
+  },
   alternates: { canonical: absoluteUrl("/") },
   robots: {
     index: indexable,
@@ -154,6 +158,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <link rel="icon" href="/images/hufflepuff.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/images/hufflepuff.png" type="image/png" />
         <script
           id="restore-house-theme"
           dangerouslySetInnerHTML={{
