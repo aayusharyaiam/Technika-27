@@ -64,10 +64,10 @@ export const webDesignTeam: CoreMember[] = [
     image: "https://i.ibb.co/p6bd49cK/Krishna-Kant-Jha.png",
     title: "Krishankant Jha",
     subtitle: "CO-HEAD",
-    handle: "LinkedIn",
+    handle: "Instagram",
     borderColor: "#45B7D1",
     gradient: "linear-gradient(145deg, #45B7D1, #96E6A1)",
-    url: "https://www.linkedin.com/in/krishankant-jha-kk00001",
+    url: "https://www.instagram.com/thek.krisshhh/?hl=en",
   },
   {
     image: "https://i.ibb.co/yvpDwZq/Aditya-Shrivastava.jpg",
